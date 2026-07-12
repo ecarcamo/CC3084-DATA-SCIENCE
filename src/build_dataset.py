@@ -10,11 +10,18 @@ por eso index_col=False es obligatorio aquí.
 Además, un puñado de filas (5, todas en 2025_07, para el mismo tipo de
 maquinaria pesada "BUSH HOG LOADCRAFT") traen un "|" adicional dentro del
 campo de Centímetros Cúbicos (formato de medida de neumático, ej.
-"12R2D4.75"), lo que rompe el conteo de columnas. Se descartan con
-on_bad_lines="skip" (impacto despreciable: 5 filas de ~700k).
+"12R2D4.75"), lo que rompe el conteo de columnas esperado.
+
+Probamos on_bad_lines="skip" de pandas para esas filas, pero con el motor
+"python" no las descarta: las trunca y desplaza el resto de los valores en
+esa fila (el Impuesto real termina en la columna Valor_CIF, Distintivo se
+pierde), es decir corrompe en silencio en vez de saltarlas. Por eso el
+filtrado de filas malformadas se hace a mano, línea por línea, antes de
+pasarle el texto a pandas.
 """
 
 import re
+from io import StringIO
 from pathlib import Path
 
 import pandas as pd
@@ -65,14 +72,27 @@ TEXT_COLUMNS = [
 
 
 def _read_month_file(txt_path):
-    df = pd.read_csv(
-        txt_path,
-        sep="|",
-        encoding="latin-1",
-        index_col=False,
-        engine="python",
-        on_bad_lines="skip",
-    )
+    with open(txt_path, encoding="latin-1") as fh:
+        lines = fh.read().splitlines()
+
+    header, *data_lines = lines
+    expected_pipes = header.count("|") + 1  # cada fila de datos trae un "|" final extra
+
+    good_lines = []
+    dropped = 0
+    for line in data_lines:
+        if not line:
+            continue
+        if line.count("|") == expected_pipes:
+            good_lines.append(line)
+        else:
+            dropped += 1
+
+    if dropped:
+        print(f"[build_dataset]   {txt_path.name}: {dropped} fila(s) malformada(s) descartada(s)")
+
+    csv_text = "\n".join([header, *good_lines])
+    df = pd.read_csv(StringIO(csv_text), sep="|", index_col=False)
     df.columns = [col.strip() for col in df.columns]
     df = df.rename(columns=COLUMN_RENAME)
     return df
