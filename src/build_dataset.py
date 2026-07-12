@@ -100,7 +100,10 @@ def build_unified_dataset(raw_dir="Datos/raw"):
     df = pd.concat(frames, ignore_index=True)
 
     for col in TEXT_COLUMNS:
-        df[col] = df[col].str.strip()
+        # Algunas columnas (ej. Partida_Arancelaria) son numéricas en meses
+        # donde todos los valores son puramente dígitos; se fuerzan a texto
+        # antes de aplicar .str.strip().
+        df[col] = df[col].astype("string").str.strip()
 
     df["Fecha_Poliza"] = pd.to_datetime(
         df["Fecha_Poliza"].str.strip(), format="%d/%m/%Y", errors="coerce"
