@@ -12,27 +12,13 @@ un notebook de Jupyter.
 
 from src.download import download_zip_from_SAT
 from src.extract import extract_zips
+from src.build_dataset import build_unified_dataset
+from src.save_dataset import save_dataset_to_csv
 
 YEARS = (2025, 2026)
 ZIP_DIR = "Datos/zips"
 RAW_DIR = "Datos/raw"
 DATASET_CSV = "Datos/importacion_vehiculos.csv"
-
-
-def build_unified_dataset(raw_dir=RAW_DIR):
-    """Fase 3: leer los .txt descomprimidos y unificarlos en un solo dataset.
-
-    TODO: implementar en la siguiente iteración.
-    """
-    raise NotImplementedError("Fase 3 pendiente de implementar.")
-
-
-def save_dataset_to_csv(dataset, output_path=DATASET_CSV):
-    """Fase 4: guardar el dataset unificado en un archivo .csv.
-
-    TODO: implementar en la siguiente iteración.
-    """
-    raise NotImplementedError("Fase 4 pendiente de implementar.")
 
 
 def main():
@@ -44,8 +30,11 @@ def main():
     txt_paths = extract_zips(zip_dir=ZIP_DIR, output_dir=RAW_DIR)
     print(f"Total de .txt extraídos: {len(txt_paths)}")
 
-    print("\n== Fase 3: Construcción del dataset unificado (pendiente) ==")
-    print("== Fase 4: Guardado del dataset en .csv (pendiente) ==")
+    print("\n== Fase 3: Construcción del dataset unificado ==")
+    dataset = build_unified_dataset(raw_dir=RAW_DIR)
+
+    print("\n== Fase 4: Guardado del dataset en .csv ==")
+    save_dataset_to_csv(dataset, output_path=DATASET_CSV)
 
 
 if __name__ == "__main__":
