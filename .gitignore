@@ -1,0 +1,18 @@
+# Entorno virtual
+venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Modelos entrenados (generados por el notebook, reproducibles)
+Modelos/
+
+# Sistema operativo / editor
+.DS_Store
+.vscode/
+.idea/
