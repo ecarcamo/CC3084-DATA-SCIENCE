@@ -10,16 +10,16 @@ interpretar esta decisión como evidencia de estacionariedad.
 
 | Serie | Modelo seleccionado por AIC | Fundamento de p y q |
 |---|---|---|
-| Total | SARIMA(1,1,2)(1,1,1)12 | PACF corta y ACF persistente con señal anual |
-| Vía aérea | SARIMA(2,1,2)(1,1,0)12 | Dependencia corta regular y pico estacional |
+| Total | SARIMA(2,1,2)(1,1,1)12 | PACF corta y ACF persistente con señal anual |
+| Vía aérea | SARIMA(2,1,2)(0,1,1)12 | Dependencia corta regular y pico estacional |
 | Vía terrestre | SARIMA(0,1,1)(1,1,0)12 | Corte dominante de ACF y componente anual |
 | Vía marítima | SARIMA(1,2,2)(1,1,1)12 | ACF irregular, diferencias adicionales y ciclo anual |
 | El Salvador | SARIMA(2,1,2)(1,1,1)12 | Dependencia regular mixta y estacionalidad marcada |
-| Estados Unidos | SARIMA(1,1,2)(1,1,1)12 | ACF persistente y PACF concentrada en pocos rezagos |
-| Honduras | SARIMA(1,1,2)(0,1,1)12 | Dependencia corta con efecto estacional de media móvil |
+| Estados Unidos | SARIMA(1,1,2)(0,1,1)12 | ACF persistente y PACF concentrada en pocos rezagos |
+| Honduras | SARIMA(2,1,2)(1,1,0)12 | Dependencia corta con efecto estacional de media móvil |
 
 La rejilla manual evaluó todas las combinaciones de esos rangos y conservó
-los tres menores AIC convergentes por serie. `auto_arima` se ejecutó con la
+los tres menores AIC estables por serie. `auto_arima` se ejecutó con la
 misma diferenciación y límites. Sus propuestas fueron de orden bajo y
 coherentes con las ACF y PACF, aunque no siempre coincidieron con el mínimo
 manual porque su búsqueda es escalonada.
@@ -28,12 +28,12 @@ manual porque su búsqueda es escalonada.
 
 | Serie | order | seasonal order | AIC | BIC | Ljung-Box p |
 |---|---|---|---:|---:|---:|
+| Total | (2,1,2) | (1,1,1,12) | 67.96 | 87.41 | 0.0003 |
 | Total | (1,1,2) | (1,1,1,12) | 68.55 | 85.22 | 0.0046 |
-| Total | (2,1,2) | (0,1,1,12) | 69.19 | 85.87 | <0.0001 |
-| Total | (1,1,2) | (0,1,1,12) | 69.45 | 83.34 | <0.0001 |
-| Vía aérea | (2,1,2) | (1,1,0,12) | 165.06 | 181.78 | 0.1611 |
-| Vía aérea | (2,1,2) | (1,1,1,12) | 165.21 | 184.66 | 0.2248 |
-| Vía aérea | (0,1,1) | (1,1,0,12) | 166.81 | 175.22 | 1.0000 |
+| Total | (2,1,2) | (1,1,0,12) | 68.96 | 85.69 | 0.0012 |
+| Vía aérea | (2,1,2) | (0,1,1,12) | 169.72 | 186.40 | <0.0001 |
+| Vía aérea | (0,1,1) | (0,1,1,12) | 176.29 | 184.65 | 0.0060 |
+| Vía aérea | (0,1,2) | (0,1,1,12) | 176.98 | 188.10 | 0.0059 |
 | Vía terrestre | (0,1,1) | (1,1,0,12) | 124.18 | 132.59 | 0.5395 |
 | Vía terrestre | (1,1,0) | (1,1,0,12) | 124.32 | 132.70 | 0.8681 |
 | Vía terrestre | (2,1,2) | (0,1,1,12) | 124.94 | 141.62 | <0.0001 |
@@ -43,25 +43,29 @@ manual porque su búsqueda es escalonada.
 | El Salvador | (2,1,2) | (1,1,1,12) | 400.62 | 420.07 | 0.1020 |
 | El Salvador | (2,1,2) | (0,1,1,12) | 411.54 | 428.21 | 0.0481 |
 | El Salvador | (1,1,2) | (0,1,1,12) | 411.80 | 425.70 | 0.0770 |
-| Estados Unidos | (1,1,2) | (1,1,1,12) | 365.52 | 382.19 | 0.8244 |
-| Estados Unidos | (2,1,1) | (1,1,0,12) | 368.34 | 382.28 | 0.7537 |
-| Estados Unidos | (1,1,2) | (1,1,0,12) | 368.96 | 382.94 | 0.6696 |
+| Estados Unidos | (1,1,2) | (0,1,1,12) | 367.14 | 381.03 | 0.0427 |
+| Estados Unidos | (2,1,1) | (0,1,1,12) | 371.51 | 385.45 | 0.0373 |
+| Estados Unidos | (2,1,2) | (0,1,1,12) | 371.96 | 388.64 | 0.0154 |
+| Honduras | (2,1,2) | (1,1,0,12) | 359.01 | 375.74 | 0.1854 |
 | Honduras | (1,1,2) | (0,1,1,12) | 360.21 | 374.10 | 0.0107 |
-| Honduras | (2,1,1) | (1,1,1,12) | 363.13 | 379.86 | 0.1444 |
-| Honduras | (2,1,1) | (0,1,1,12) | 365.02 | 378.96 | 0.0050 |
+| Honduras | (0,1,2) | (0,1,1,12) | 370.32 | 381.44 | 0.0277 |
 
-El menor AIC decide la especificación llevada al test, pero los residuos
-matizan la elección. Vía aérea, terrestre, El Salvador y Estados Unidos no
-rechazan ausencia de autocorrelación al 5 %. Total, marítima y Honduras sí
-retienen dependencia residual. Jarque-Bera rechaza normalidad en todos los
-modelos seleccionados. Esto limita la inferencia paramétrica, aunque para
-pronóstico es más preocupante la autocorrelación restante.
+El menor AIC entre especificaciones estables decide el modelo llevado al
+test, pero los residuos matizan la elección. Vía terrestre, El Salvador y
+Honduras no rechazan ausencia de autocorrelación al 5 %. Total, vía aérea,
+marítima y Estados Unidos sí retienen dependencia residual. Jarque-Bera
+rechaza normalidad en todos los modelos seleccionados. Esto limita la
+inferencia paramétrica, aunque para pronóstico es más preocupante la
+autocorrelación restante.
 
-Un AIC bajo tampoco garantiza estabilidad a 63 pasos. Los SARIMA de vía
-aérea y Estados Unidos producen trayectorias explosivas fuera de muestra.
-Este resultado es consistente con haber desactivado las restricciones de
-estacionariedad e invertibilidad para poder ajustar la rejilla. Por ello, la
-selección operativa final se hace con MAE y RMSE del test, no con AIC.
+Además del AIC, la selección exige que el pronóstico a 63 pasos, revertido
+a viajeros, no supere tres veces el máximo histórico de la serie. El filtro
+es necesario porque el ajuste se hizo sin restricciones de estacionariedad
+ni de invertibilidad, de modo que la rejilla completa pudiera converger. De
+las 36 especificaciones ajustadas por serie se descartaron 0 en total, 18 en
+vía aérea, 2 en terrestre, 2 en marítima, 1 en El Salvador, 24 en Estados
+Unidos y 23 en Honduras. Sin ese criterio, varias especificaciones con buen
+AIC habrían producido trayectorias explosivas fuera de muestra.
 
 ## Algoritmos alternativos
 
@@ -79,12 +83,12 @@ la muestra y la parametrización.
 
 | Serie | Modelo | AIC | BIC | MAE | RMSE | MAPE |
 |---|---|---:|---:|---:|---:|---:|
-| Total | SARIMA | 68.55 | 85.22 | 250,565 | 274,180 | 83.32 % |
+| Total | SARIMA | 67.96 | 87.41 | 250,723 | 274,290 | 83.48 % |
 | Total | Holt-Winters |  |  | 196,956 | 216,457 | 65.30 % |
 | Total | SES |  |  | 175,088 | 194,791 | 58.11 % |
 | Total | Seasonal naive |  |  | 235,731 | 253,203 | 83.86 % |
 | Total | Prophet |  |  | 264,527 | 282,313 | 92.50 % |
-| Vía aérea | SARIMA | 165.06 | 181.78 | 5.70e20 | 4.44e21 | 6.10e17 % |
+| Vía aérea | SARIMA | 169.72 | 186.40 | 73,966 | 77,680 | 77.57 % |
 | Vía aérea | Holt-Winters |  |  | 48,043 | 52,231 | 48.51 % |
 | Vía aérea | SES |  |  | 36,109 | 41,368 | 35.62 % |
 | Vía aérea | Seasonal naive |  |  | 75,104 | 79,077 | 80.58 % |
@@ -104,12 +108,12 @@ la muestra y la parametrización.
 | El Salvador | SES |  |  | 94,064 | 104,531 | 74.32 % |
 | El Salvador | Seasonal naive |  |  | 107,474 | 117,633 | 91.60 % |
 | El Salvador | Prophet |  |  | 106,744 | 117,498 | 86.64 % |
-| Estados Unidos | SARIMA | 365.52 | 382.19 | 3.67e24 | 2.39e25 | 5.18e21 % |
+| Estados Unidos | SARIMA | 367.14 | 381.03 | 42,093 | 45,541 | 88.57 % |
 | Estados Unidos | Holt-Winters |  |  | 34,195 | 37,642 | 69.37 % |
 | Estados Unidos | SES |  |  | 25,115 | 28,953 | 49.93 % |
 | Estados Unidos | Seasonal naive |  |  | 41,168 | 44,196 | 88.19 % |
 | Estados Unidos | Prophet |  |  | 43,686 | 46,870 | 91.73 % |
-| Honduras | SARIMA | 360.21 | 374.10 | 19,917 | 22,337 | 86.16 % |
+| Honduras | SARIMA | 359.01 | 375.74 | 21,841 | 24,115 | 90.17 % |
 | Honduras | Holt-Winters |  |  | 18,900 | 21,200 | 74.17 % |
 | Honduras | SES |  |  | 17,240 | 19,587 | 66.05 % |
 | Honduras | Seasonal naive |  |  | 21,190 | 23,244 | 90.95 % |
@@ -134,7 +138,8 @@ SES gana en seis series porque el final del entrenamiento está dominado por
 la pandemia y un modelo de nivel evita extrapolaciones complejas. Esto no
 significa que describa bien la recuperación. Los MAPE entre 35.62 % y
 74.32 % de esos ganadores muestran que la capacidad predictiva sigue siendo
-limitada.
+limitada. El SARIMA estable de vía aérea y de Estados Unidos ya no diverge,
+pero sus MAE de 73,966 y 42,093 viajeros siguen por encima de SES.
 
 Prophet es el mejor en marítima, pero su MAPE es 86.12 %. Los otros métodos
 producen valores cercanos a cero debido al cierre observado al final del

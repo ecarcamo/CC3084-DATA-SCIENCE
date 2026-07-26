@@ -9,6 +9,8 @@ from statsmodels.stats.diagnostic import acorr_ljungbox
 from statsmodels.tsa.holtwinters import ExponentialSmoothing, SimpleExpSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
+FACTOR_ESTABILIDAD = 3.0
+
 
 def ajustar_sarima(
     serie_log: pd.Series,
@@ -25,6 +27,23 @@ def ajustar_sarima(
     return modelo.fit(disp=False)
 
 
+def _pronostico_estable(
+    ajuste,
+    serie_log: pd.Series,
+    horizonte: int,
+    factor: float = FACTOR_ESTABILIDAD,
+) -> tuple[bool, float]:
+    try:
+        pronostico = np.expm1(ajuste.forecast(horizonte).to_numpy(dtype=float))
+    except (ValueError, ArithmeticError, RuntimeError):
+        return False, float("inf")
+    if not np.all(np.isfinite(pronostico)):
+        return False, float("inf")
+    maximo_historico = float(np.expm1(serie_log).max())
+    maximo_pronostico = float(np.nanmax(pronostico))
+    return maximo_pronostico <= factor * maximo_historico, maximo_pronostico
+
+
 def grid_sarima(
     serie_log: pd.Series,
     d: int,
@@ -33,6 +52,7 @@ def grid_sarima(
     max_q: int = 2,
     max_P: int = 1,
     max_Q: int = 1,
+    horizonte: int = 63,
 ) -> pd.DataFrame:
     combinaciones = itertools.product(
         range(max_p + 1),
@@ -49,6 +69,11 @@ def grid_sarima(
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
                 ajuste = ajustar_sarima(serie_log, order, seasonal_order)
+            estable, max_pronostico = _pronostico_estable(
+                ajuste,
+                serie_log,
+                horizonte,
+            )
             resultados.append(
                 {
                     "order": order,
@@ -56,6 +81,8 @@ def grid_sarima(
                     "aic": ajuste.aic,
                     "bic": ajuste.bic,
                     "converged": bool(ajuste.mle_retvals.get("converged", False)),
+                    "max_pronostico": max_pronostico,
+                    "estable": estable,
                 }
             )
         except (ValueError, ArithmeticError, RuntimeError, MemoryError):
@@ -66,10 +93,23 @@ def grid_sarima(
                     "aic": float("inf"),
                     "bic": float("inf"),
                     "converged": False,
+                    "max_pronostico": float("inf"),
+                    "estable": False,
                 }
             )
 
-    return pd.DataFrame(resultados).sort_values("aic").reset_index(drop=True)
+    return (
+        pd.DataFrame(resultados)
+        .sort_values(["estable", "aic"], ascending=[False, True])
+        .reset_index(drop=True)
+    )
+
+
+def seleccionar_sarima(rejilla: pd.DataFrame) -> pd.Series:
+    estables = rejilla[rejilla["estable"]]
+    if len(estables) == 0:
+        return rejilla.sort_values("aic").iloc[0]
+    return estables.sort_values("aic").iloc[0]
 
 
 def diagnostico_residuos(modelo) -> tuple[dict, plt.Figure]:
