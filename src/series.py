@@ -94,12 +94,13 @@ def generar_series_test(output_dir: str) -> dict[str, pd.DataFrame]:
         ruta_completa = os.path.join(output_dir, nombre)
         nombre_train = nombre.replace(".csv", "_train.csv")
         ruta_train = os.path.join(output_dir, nombre_train)
-        completa = pd.read_csv(ruta_completa)
-        train = pd.read_csv(ruta_train)
+        completa = pd.read_csv(ruta_completa, dtype=str)
+        train = pd.read_csv(ruta_train, dtype=str)
         test = completa[completa["fecha"] >= FECHA_INICIO_TEST].reset_index(drop=True)
         _validar_particiones(completa, train, test)
         nombre_test = nombre.replace(".csv", "_test.csv")
         test.to_csv(os.path.join(output_dir, nombre_test), index=False)
+        test["viajeros"] = pd.to_numeric(test["viajeros"])
         resultado[nombre_test.removeprefix("serie_").removesuffix(".csv")] = test
 
     return resultado
