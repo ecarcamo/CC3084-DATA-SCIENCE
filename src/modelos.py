@@ -2,9 +2,11 @@ import itertools
 import warnings
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 from scipy.stats import jarque_bera
 from statsmodels.stats.diagnostic import acorr_ljungbox
+from statsmodels.tsa.holtwinters import ExponentialSmoothing, SimpleExpSmoothing
 from statsmodels.tsa.statespace.sarimax import SARIMAX
 
 
@@ -82,3 +84,82 @@ def diagnostico_residuos(modelo) -> tuple[dict, plt.Figure]:
         "jarque_bera_p": jarque.pvalue,
     }
     return resultado, figura
+
+
+def modelo_holt_winters(
+    serie_train: pd.Series,
+    horizonte: int,
+) -> pd.Series:
+    serie_log = np.log1p(serie_train.astype(float))
+    modelo = ExponentialSmoothing(
+        serie_log,
+        trend="add",
+        seasonal="add",
+        seasonal_periods=12,
+        initialization_method="estimated",
+    ).fit(optimized=True)
+    pronostico = np.expm1(modelo.forecast(horizonte)).clip(lower=0)
+    pronostico.name = "holt_winters"
+    return pronostico
+
+
+def modelo_ses(
+    serie_train: pd.Series,
+    horizonte: int,
+) -> pd.Series:
+    serie_log = np.log1p(serie_train.astype(float))
+    modelo = SimpleExpSmoothing(
+        serie_log,
+        initialization_method="estimated",
+    ).fit(optimized=True)
+    pronostico = np.expm1(modelo.forecast(horizonte)).clip(lower=0)
+    pronostico.name = "ses"
+    return pronostico
+
+
+def modelo_seasonal_naive(
+    serie_train: pd.Series,
+    horizonte: int,
+) -> pd.Series:
+    if len(serie_train) < 12:
+        raise ValueError("Seasonal naive requiere al menos doce observaciones")
+    repeticiones = int(np.ceil(horizonte / 12))
+    valores = np.tile(serie_train.iloc[-12:].to_numpy(), repeticiones)[:horizonte]
+    indice = pd.date_range(
+        serie_train.index[-1] + pd.offsets.MonthBegin(),
+        periods=horizonte,
+        freq="MS",
+    )
+    return pd.Series(valores, index=indice, name="seasonal_naive")
+
+
+def modelo_prophet(
+    serie_train: pd.Series,
+    horizonte: int,
+) -> pd.Series:
+    from prophet import Prophet
+
+    datos = pd.DataFrame(
+        {
+            "ds": serie_train.index,
+            "y": np.log1p(serie_train.to_numpy(dtype=float)),
+        }
+    )
+    modelo = Prophet(
+        yearly_seasonality=True,
+        weekly_seasonality=False,
+        daily_seasonality=False,
+    )
+    modelo.fit(datos)
+    fechas = pd.date_range(
+        serie_train.index[-1] + pd.offsets.MonthBegin(),
+        periods=horizonte,
+        freq="MS",
+    )
+    futuro = pd.DataFrame({"ds": fechas})
+    pronostico = np.expm1(modelo.predict(futuro)["yhat"]).clip(lower=0)
+    return pd.Series(
+        pronostico.to_numpy(),
+        index=fechas,
+        name="prophet",
+    )
