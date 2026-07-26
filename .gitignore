@@ -25,3 +25,9 @@ ENV/
 
 # OS
 .DS_Store
+
+# Instrucciones internas
+*_ENTREGA_FINAL.md
+INSTRUCCIONES_*.md
+HANDOFF_*.md
+PLAN*.md

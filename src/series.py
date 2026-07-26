@@ -12,6 +12,7 @@ import pandas as pd
 FECHA_INICIO = "2009-01-01"
 FECHA_FIN = "2026-06-01"
 FECHA_FIN_TRAIN = "2021-03-01"
+FECHA_INICIO_TEST = "2021-04-01"
 
 VIAS = {
     "aerea": "Aérea",
@@ -64,6 +65,46 @@ def _verificar_suma_vias(series_vias: dict, serie_total_df: pd.DataFrame) -> Non
         )
 
 
+def _validar_particiones(
+    completa: pd.DataFrame,
+    train: pd.DataFrame,
+    test: pd.DataFrame,
+) -> None:
+    if len(test) != 63:
+        raise ValueError("El conjunto de prueba debe contener 63 meses")
+    if test["fecha"].iloc[0] != FECHA_INICIO_TEST:
+        raise ValueError("El conjunto de prueba no inicia en 2021-04-01")
+    if test["fecha"].iloc[-1] != FECHA_FIN:
+        raise ValueError("El conjunto de prueba no termina en 2026-06-01")
+    if len(train) + len(test) != len(completa):
+        raise ValueError("Las particiones no reproducen la serie completa")
+
+
+def generar_series_test(output_dir: str) -> dict[str, pd.DataFrame]:
+    resultado = {}
+    archivos = [
+        nombre
+        for nombre in os.listdir(output_dir)
+        if nombre.startswith("serie_")
+        and nombre.endswith(".csv")
+        and not nombre.endswith(("_train.csv", "_test.csv"))
+    ]
+
+    for nombre in sorted(archivos):
+        ruta_completa = os.path.join(output_dir, nombre)
+        nombre_train = nombre.replace(".csv", "_train.csv")
+        ruta_train = os.path.join(output_dir, nombre_train)
+        completa = pd.read_csv(ruta_completa)
+        train = pd.read_csv(ruta_train)
+        test = completa[completa["fecha"] >= FECHA_INICIO_TEST].reset_index(drop=True)
+        _validar_particiones(completa, train, test)
+        nombre_test = nombre.replace(".csv", "_test.csv")
+        test.to_csv(os.path.join(output_dir, nombre_test), index=False)
+        resultado[nombre_test.removeprefix("serie_").removesuffix(".csv")] = test
+
+    return resultado
+
+
 def generar_series(df: pd.DataFrame, output_dir: str) -> dict:
     """Genera y guarda las 7 series (obligatoria + vías + países) y sus
     versiones de entrenamiento en `output_dir`. Devuelve un dict con todas
@@ -104,4 +145,5 @@ def generar_series(df: pd.DataFrame, output_dir: str) -> dict:
             os.path.join(output_dir, nombre_archivo), index=False
         )
 
+    resultado.update(generar_series_test(output_dir))
     return resultado
