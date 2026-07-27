@@ -1,4 +1,4 @@
-# Análisis exploratorio de datos
+# 2. Análisis exploratorio de datos
 
 El análisis se realizó sobre la base ya limpia (`data/processed/base_limpia.csv`), producida por el
 bloque de carga y limpieza. El notebook reproducible es `notebooks/02_eda.ipynb` y todas las
@@ -24,16 +24,22 @@ de 2009 a 2019; el **colapso por la pandemia** desde marzo de 2020, con el míni
 2022, que retoma el nivel prepandemia. El corte train/test (2021-03) deja la caída en entrenamiento
 y la recuperación en prueba.
 
+![Serie mensual total de viajeros](../figuras/eda_serie_temporal.png)
+
 Los totales anuales (figura `eda_totales_anuales.png`) confirman el crecimiento estructural: de
 **2.03M** en 2009 a **4.69M** en 2019 (máximo histórico). En 2020 y 2021 el volumen se desploma a
 **~1.27M** anuales; en 2022 hay un rebote fuerte y desde 2023 el nivel se estabiliza entre 3.2M y
 3.6M, algo por debajo del pico de 2019 (en parte por el cambio metodológico de 2023). **2026 es
 parcial** (solo enero-junio) y no es comparable con los años completos.
 
+![Totales anuales de viajeros](../figuras/eda_totales_anuales.png)
+
 El patrón estacional (figura `eda_estacionalidad.png`) es claro y estable: **diciembre y enero** son
 los meses más altos (fin de año y vacaciones), con un repunte secundario en **Semana Santa
 (marzo-abril)** y el valle anual en **septiembre**. Esta estacionalidad anual es la señal más
 relevante para el modelado posterior.
+
+![Patrón estacional mensual](../figuras/eda_estacionalidad.png)
 
 ## b. Países con mayor cantidad de viajeros
 
@@ -49,6 +55,8 @@ retornando, **14.79M**, ~28.3% del total). El ranking de países de residencia (
 | 4 | México | 1.81M |
 | 5 | Belice | 1.33M |
 
+![Top países de residencia](../figuras/eda_top_paises.png)
+
 El peso de El Salvador y Honduras refleja el intenso tráfico terrestre fronterizo, mientras que
 Estados Unidos representa el principal mercado aéreo. Los tres primeros son precisamente las series
 por país que construye el bloque 1.
@@ -61,15 +69,19 @@ La distribución regional (figura `eda_regiones.png`, sobre `Región dos`) es mu
 Asia, Oceanía y Oriente Medio son marginales. En síntesis, el ingreso a Guatemala es
 **fundamentalmente regional**: casi 9 de cada 10 viajeros provienen del continente americano.
 
+![Distribución regional de viajeros](../figuras/eda_regiones.png)
+
 ## d. Vías de ingreso y fronteras más utilizadas
 
 La vía **terrestre domina con 31.99M (~61%)**, seguida de la **aérea (19.06M, ~36%)** y muy detrás
 la **marítima (1.23M, ~2%)** (figura `eda_vias_fronteras.png`). Consistente con esto, la frontera
-más usada es el aeropuerto **La Aurora (19.03M)** —que concentra casi toda la vía aérea—, seguido de
+más usada es el aeropuerto **La Aurora (19.03M)** (que concentra casi toda la vía aérea), seguido de
 los pasos terrestres con El Salvador y México: **Valle Nuevo (10.73M)**, **San Cristóbal (5.36M)** y
 **Pedro de Alvarado (4.39M)**. El predominio terrestre explica por qué El Salvador y Honduras
 encabezan el ranking de países. La categoría "Cruceros" aparece mezclada como si fuera una frontera,
 tal como se documentó en el bloque de limpieza.
+
+![Vías de ingreso y fronteras más utilizadas](../figuras/eda_vias_fronteras.png)
 
 ## e. Valores faltantes, duplicados y atípicos
 
@@ -86,6 +98,8 @@ como atípico por IQR** (el límite inferior resulta negativo): es un evento est
 depurar. A nivel de fila, la distribución es de cola larga (visible en escala logarítmica): unas
 pocas combinaciones grandes concentran el volumen. **Conclusión: no se elimina ningún atípico**;
 todos son datos reales relevantes para el modelado.
+
+![Detección de valores atípicos en la serie mensual](../figuras/eda_atipicos.png)
 
 ## f. Síntesis
 

@@ -63,6 +63,8 @@ prácticamente desaparecen entre junio y septiembre, con 0.153 en junio. Las
 otras dos vías oscilan en una banda estrecha alrededor de la unidad, con el
 mismo pico de diciembre y un valle poco profundo.
 
+![Fuerza estacional por vía de ingreso](../figuras/comp_estacionalidad.png)
+
 En crecimiento gana la vía terrestre. Su pendiente prepandemia es de 1,448
 viajeros por mes, equivalente a 0.974 % de su media mensual, y su fuerza de
 tendencia, 0.653, es la más alta de la categoría. Es el único caso en que la
@@ -71,6 +73,8 @@ conclusión. La marítima ilustra el riesgo de mirar solo la absoluta: sus 38
 viajeros por mes parecen despreciables frente a los 407 de la aérea, pero
 normalizados son 0.444 % contra 0.428 %, es decir, un ritmo relativo muy
 similar. La figura `comp_tendencia.png` contrasta las dos lecturas.
+
+![Pendiente de crecimiento absoluta y normalizada por vía de ingreso](../figuras/comp_tendencia.png)
 
 La marítima también es la más volátil, y aquí las dos medidas concuerdan en
 el orden: coeficiente de variación de 0.790 frente a 0.431 de la terrestre y
@@ -86,6 +90,8 @@ coeficiente de variación, que no depende de la transición entre meses
 consecutivos, es la medida más comparable, y también sitúa a la marítima en
 primer lugar. La figura `comp_volatilidad.png` contrasta las dos medidas.
 
+![Volatilidad por vía de ingreso: coeficiente de variación y retornos logarítmicos](../figuras/comp_volatilidad.png)
+
 La más afectada por la pandemia es de nuevo la marítima. Cae 100 % contra su
 media de 2019 y es la última en cruzar el umbral del 80 %, en diciembre de
 2022, doce meses después de la aérea y ocho después de la terrestre. Ese
@@ -98,6 +104,8 @@ un cambio de régimen en el registro de cruceros, y la métrica de velocidad de
 recuperación deja de ser válida para esta serie. La figura
 `comp_recuperacion.png` muestra la trayectoria plana de la marítima después
 de 2023 frente a las demás.
+
+![Trayectoria de recuperación pospandemia por vía de ingreso](../figuras/comp_recuperacion.png)
 
 ## Categoría países de residencia
 

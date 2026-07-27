@@ -58,6 +58,20 @@ rechaza normalidad en todos los modelos seleccionados. Esto limita la
 inferencia paramétrica, aunque para pronóstico es más preocupante la
 autocorrelación restante.
 
+![Residuos del SARIMA seleccionado, total](../figuras/modelo_total_residuos.png)
+
+![Residuos del SARIMA seleccionado, vía aérea](../figuras/modelo_via_aerea_residuos.png)
+
+![Residuos del SARIMA seleccionado, vía terrestre](../figuras/modelo_via_terrestre_residuos.png)
+
+![Residuos del SARIMA seleccionado, vía marítima](../figuras/modelo_via_maritima_residuos.png)
+
+![Residuos del SARIMA seleccionado, El Salvador](../figuras/modelo_pais_el_salvador_residuos.png)
+
+![Residuos del SARIMA seleccionado, Estados Unidos](../figuras/modelo_pais_estados_unidos_residuos.png)
+
+![Residuos del SARIMA seleccionado, Honduras](../figuras/modelo_pais_honduras_residuos.png)
+
 Además del AIC, la selección exige que el pronóstico a 63 pasos, revertido
 a viajeros, no supere tres veces el máximo histórico de la serie. El filtro
 es necesario porque el ajuste se hizo sin restricciones de estacionariedad
@@ -121,6 +135,20 @@ la muestra y la parametrización.
 
 El MAPE marítimo excluye 11 meses del test con valor real igual a cero. En
 las demás series no fue necesario excluir observaciones.
+
+![Predicción sobre el conjunto de prueba, total](../figuras/pred_total.png)
+
+![Predicción sobre el conjunto de prueba, vía aérea](../figuras/pred_via_aerea.png)
+
+![Predicción sobre el conjunto de prueba, vía terrestre](../figuras/pred_via_terrestre.png)
+
+![Predicción sobre el conjunto de prueba, vía marítima](../figuras/pred_via_maritima.png)
+
+![Predicción sobre el conjunto de prueba, El Salvador](../figuras/pred_pais_el_salvador.png)
+
+![Predicción sobre el conjunto de prueba, Estados Unidos](../figuras/pred_pais_estados_unidos.png)
+
+![Predicción sobre el conjunto de prueba, Honduras](../figuras/pred_pais_honduras.png)
 
 ## Modelo seleccionado por serie
 

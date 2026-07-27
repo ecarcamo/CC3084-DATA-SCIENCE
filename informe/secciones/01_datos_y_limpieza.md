@@ -1,4 +1,4 @@
-# Datos y limpieza
+# 1. Datos y limpieza
 
 ## Origen y dimensiones
 
@@ -15,8 +15,8 @@ perfectamente comparables entre tramos, en particular alrededor del quiebre meto
 2022 a 2023.
 
 Además, desde 2023 la columna de país deja de reportar país individual (226 posibles hasta 2022)
-y pasa a reportar por agrupación de mercado (27 grupos). Los mercados principales —El Salvador,
-Estados Unidos, Honduras, México, entre otros— siguen siendo comparables como serie a lo largo de
+y pasa a reportar por agrupación de mercado (27 grupos). Los mercados principales (El Salvador,
+Estados Unidos, Honduras, México, entre otros) siguen siendo comparables como serie a lo largo de
 todo el período; los países más pequeños quedan absorbidos dentro de su agrupación a partir de
 2023.
 

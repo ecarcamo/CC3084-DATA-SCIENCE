@@ -1,7 +1,7 @@
-# Análisis preliminar de series
+# 3. Análisis preliminar de series
 
 Este bloque analiza dos series mensuales de viajeros sobre el **conjunto de entrenamiento**
-(enero 2009 a marzo 2021, 147 observaciones): la **Total mensual** —obligatoria— y la de
+(enero 2009 a marzo 2021, 147 observaciones): la **Total mensual** (obligatoria) y la de
 **Vía Aérea**, elegida por contraste, ya que colapsó a casi cero en 2020 mientras la vía
 terrestre mantuvo flujo. El notebook reproducible es `notebooks/03_series_preliminar.ipynb`
 y las figuras se guardan en `informe/figuras/` con prefijo `serie_` a 150 dpi, usando solo
@@ -9,7 +9,7 @@ y las figuras se guardan en `informe/figuras/` con prefijo `serie_` a 150 dpi, u
 estacionalidad, estacionariedad y órdenes de diferenciación), **no** ajustar modelos: eso
 corresponde a la entrega final.
 
-## Serie 1 — Total mensual
+## Serie 1: Total mensual
 
 **Ficha.** Inicio enero 2009, fin marzo 2021, frecuencia mensual (12 observaciones por año),
 **147 observaciones**. Media **~237,000** viajeros/mes; mínimo **9,779 (mayo 2020)** por el
@@ -22,6 +22,8 @@ nivel**: la desviación estándar pasa de **~32,000** en 2009-2013 a **~74,000**
 Esa amplitud creciente justifica una descomposición **multiplicativa** y una transformación
 que estabilice la varianza.
 
+![Serie total en niveles](../figuras/serie_total_nivel.png)
+
 **Descomposición.** La descomposición multiplicativa (figura `serie_total_descomposicion.png`)
 separa tendencia, estacionalidad y residuo. La **tendencia** crece de forma sostenida hasta
 2019 y se desploma en 2020. La **estacionalidad** es estable, con **pico en diciembre**
@@ -32,15 +34,21 @@ comporta como ruido**: 2020 deja una estructura enorme sin explicar y distorsion
 multiplicativos de ese año, por lo que la lectura estacional se toma del tramo estable
 2009-2019. En consecuencia, la serie **no es estacionaria en media ni en varianza**.
 
-**Transformación.** Se aplica `log1p` —hay meses de valores muy bajos, por eso `log1p` y no
-`log`— y se compara con la original (figura `serie_total_log.png`). La transformación
+![Descomposición de la serie total](../figuras/serie_total_descomposicion.png)
+
+**Transformación.** Se aplica `log1p` (hay meses de valores muy bajos, por eso `log1p` y no
+`log`) y se compara con la original (figura `serie_total_log.png`). La transformación
 **estabiliza la varianza** y vuelve aproximadamente aditiva la estacionalidad, condición útil
 para el modelado.
+
+![Serie total con transformación log1p](../figuras/serie_total_log.png)
 
 **Estacionariedad en media.** La ACF en niveles (figura `serie_total_acf_niveles.png`) **decae
 lentamente** y se mantiene alta en muchos rezagos, evidencia clásica de no estacionariedad; la
 PACF muestra un primer rezago dominante. La prueba de Dickey-Fuller aumentada confirma el
 diagnóstico:
+
+![ACF de la serie total en niveles](../figuras/serie_total_acf_niveles.png)
 
 | Serie | Estadístico ADF | p-valor | V. críticos (1% / 5% / 10%) | Conclusión |
 |---|---|---|---|---|
@@ -56,17 +64,21 @@ diferenciada sugiere componentes de media móvil de orden bajo (q~1) y estaciona
 PACF, componentes autorregresivos de orden bajo (p~1, P~1). Hasta aquí llega el diagnóstico:
 no se ajusta ningún modelo.
 
-## Serie 2 — Vía Aérea
+![ACF de la serie total diferenciada](../figuras/serie_total_acf_diff.png)
+
+## Serie 2: Vía Aérea
 
 **Ficha.** Inicio enero 2009, fin marzo 2021, frecuencia mensual, **147 observaciones**. Media
-**~89,000** viajeros/mes; mínimo **489 (abril 2020)** —el aeropuerto La Aurora prácticamente
-cerró— y máximo **157,842 (diciembre 2019)**.
+**~89,000** viajeros/mes; mínimo **489 (abril 2020)** (el aeropuerto La Aurora prácticamente
+cerró) y máximo **157,842 (diciembre 2019)**.
 
 **Lectura del gráfico.** La serie en niveles (figura `serie_aerea_nivel.png`) tiene una
 tendencia creciente **más suave** que la total (de ~78,000 en 2009 a ~124,000 en 2019) y una
-**caída aún más profunda** en 2020. La amplitud también crece con el nivel (std ~12,000 en
+caída aún más profunda en 2020. La amplitud también crece con el nivel (std ~12,000 en
 2009-2013 a ~18,000 en 2014-2019), de nuevo a favor de descomposición multiplicativa y
 transformación.
+
+![Serie vía aérea en niveles](../figuras/serie_aerea_nivel.png)
 
 **Descomposición.** La descomposición multiplicativa (figura `serie_aerea_descomposicion.png`)
 muestra tendencia creciente hasta 2019 y estacionalidad con **pico en diciembre** (~1.28) y
@@ -74,8 +86,12 @@ muestra tendencia creciente hasta 2019 y estacionalidad con **pico en diciembre*
 vacaciones del hemisferio norte y el peso del mercado estadounidense en la vía aérea. El
 residuo tampoco es ruido: 2020 domina la varianza. Ni la media ni la varianza son constantes.
 
+![Descomposición de la serie vía aérea](../figuras/serie_aerea_descomposicion.png)
+
 **Transformación.** `log1p` es imprescindible aquí porque el valor de abril 2020 (489) está
 muy cerca de cero (figura `serie_aerea_log.png`); estabiliza la varianza.
+
+![Serie vía aérea con transformación log1p](../figuras/serie_aerea_log.png)
 
 **Estacionariedad en media.** Caso matizado. La ADF en niveles da un resultado que
 formalmente rechazaría la raíz unitaria, pero la ACF (figura `serie_aerea_acf_niveles.png`)
@@ -88,11 +104,15 @@ decae lentamente y la tendencia y la estacionalidad son evidentes: el ADF está 
 | Log con d=1 | -3.213 | 0.019 | -3.480 / -2.883 / -2.578 | Estacionaria al 5% |
 | Log con d=1 y D=1 (s=12) | -6.396 | <0.001 | -3.485 / -2.886 / -2.580 | Fuertemente estacionaria |
 
-El diagnóstico robusto —ACF de decaimiento lento y estacionalidad clara— indica diferenciar
+![ACF de la serie vía aérea en niveles](../figuras/serie_aerea_acf_niveles.png)
+
+El diagnóstico robusto (ACF de decaimiento lento y estacionalidad clara) indica diferenciar
 igualmente: con **d=1** y **D=1 (s=12)** la ACF/PACF quedan limpias (figura
 `serie_aerea_acf_diff.png`). **Conclusión práctica: d=1, D=1**, con órdenes sugeridos p~1,
 q~1 y estacionales P~1, Q~1. No se ajusta ningún modelo. Este caso ilustra por qué la ADF no
 debe leerse aislada de la ACF.
+
+![ACF de la serie vía aérea diferenciada](../figuras/serie_aerea_acf_diff.png)
 
 ## Comportamiento durante y después de la pandemia
 
@@ -103,6 +123,8 @@ Ambas series colapsan en marzo-abril de 2020, pero **no en la misma magnitud** (
 |---|---|---|---|
 | Total | ~390,985 | 9,779 (mayo 2020) | **~97.5%** |
 | Vía Aérea | ~123,615 | 489 (abril 2020) | **~99.6%** |
+
+![Comparación del impacto pandémico, base 2019=100](../figuras/serie_pandemia_comparacion.png)
 
 La aérea cae casi por completo porque el aeropuerto cerró, mientras que el total conserva un
 **piso mayor** gracias a la vía terrestre, que nunca se detuvo del todo por el tráfico
