@@ -95,45 +95,47 @@ la muestra y la parametrización.
 
 ## Resultados fuera de muestra
 
-| Serie | Modelo | AIC | BIC | MAE | RMSE | MAPE |
-|---|---|---:|---:|---:|---:|---:|
-| Total | SARIMA | 67.96 | 87.41 | 250,723 | 274,290 | 83.48 % |
-| Total | Holt-Winters |  |  | 196,956 | 216,457 | 65.30 % |
-| Total | SES |  |  | 175,088 | 194,791 | 58.11 % |
-| Total | Seasonal naive |  |  | 235,731 | 253,203 | 83.86 % |
-| Total | Prophet |  |  | 264,527 | 282,313 | 92.50 % |
-| Vía aérea | SARIMA | 169.72 | 186.40 | 73,966 | 77,680 | 77.57 % |
-| Vía aérea | Holt-Winters |  |  | 48,043 | 52,231 | 48.51 % |
-| Vía aérea | SES |  |  | 36,109 | 41,368 | 35.62 % |
-| Vía aérea | Seasonal naive |  |  | 75,104 | 79,077 | 80.58 % |
-| Vía aérea | Prophet |  |  | 89,054 | 92,266 | 93.17 % |
-| Vía terrestre | SARIMA | 124.18 | 132.59 | 174,971 | 192,354 | 88.63 % |
-| Vía terrestre | Holt-Winters |  |  | 148,023 | 164,246 | 73.92 % |
-| Vía terrestre | SES |  |  | 140,428 | 156,310 | 71.75 % |
-| Vía terrestre | Seasonal naive |  |  | 160,013 | 176,653 | 83.47 % |
-| Vía terrestre | Prophet |  |  | 175,767 | 191,877 | 91.07 % |
-| Vía marítima | SARIMA | 498.40 | 515.02 | 858 | 1,732 | 100.00 % |
-| Vía marítima | Holt-Winters |  |  | 858 | 1,732 | 100.00 % |
-| Vía marítima | SES |  |  | 858 | 1,732 | 100.00 % |
-| Vía marítima | Seasonal naive |  |  | 858 | 1,732 | 100.00 % |
-| Vía marítima | Prophet |  |  | 784 | 1,645 | 86.12 % |
-| El Salvador | SARIMA | 400.62 | 420.07 | 113,109 | 123,010 | 97.70 % |
-| El Salvador | Holt-Winters |  |  | 101,044 | 111,527 | 81.05 % |
-| El Salvador | SES |  |  | 94,064 | 104,531 | 74.32 % |
-| El Salvador | Seasonal naive |  |  | 107,474 | 117,633 | 91.60 % |
-| El Salvador | Prophet |  |  | 106,744 | 117,498 | 86.64 % |
-| Estados Unidos | SARIMA | 367.14 | 381.03 | 42,093 | 45,541 | 88.57 % |
-| Estados Unidos | Holt-Winters |  |  | 34,195 | 37,642 | 69.37 % |
-| Estados Unidos | SES |  |  | 25,115 | 28,953 | 49.93 % |
-| Estados Unidos | Seasonal naive |  |  | 41,168 | 44,196 | 88.19 % |
-| Estados Unidos | Prophet |  |  | 43,686 | 46,870 | 91.73 % |
-| Honduras | SARIMA | 359.01 | 375.74 | 21,841 | 24,115 | 90.17 % |
-| Honduras | Holt-Winters |  |  | 18,900 | 21,200 | 74.17 % |
-| Honduras | SES |  |  | 17,240 | 19,587 | 66.05 % |
-| Honduras | Seasonal naive |  |  | 21,190 | 23,244 | 90.95 % |
-| Honduras | Prophet |  |  | 21,239 | 23,497 | 86.70 % |
+| Serie | Modelo | MAE | RMSE | MAPE |
+|---|---|---:|---:|---:|
+| Total | SARIMA | 250,723 | 274,290 | 83.48 % |
+| Total | Holt-Winters | 196,956 | 216,457 | 65.30 % |
+| Total | SES | 175,088 | 194,791 | 58.11 % |
+| Total | Seasonal naive | 235,731 | 253,203 | 83.86 % |
+| Total | Prophet | 264,527 | 282,313 | 92.50 % |
+| Vía aérea | SARIMA | 73,966 | 77,680 | 77.57 % |
+| Vía aérea | Holt-Winters | 48,043 | 52,231 | 48.51 % |
+| Vía aérea | SES | 36,109 | 41,368 | 35.62 % |
+| Vía aérea | Seasonal naive | 75,104 | 79,077 | 80.58 % |
+| Vía aérea | Prophet | 89,054 | 92,266 | 93.17 % |
+| Vía terrestre | SARIMA | 174,971 | 192,354 | 88.63 % |
+| Vía terrestre | Holt-Winters | 148,023 | 164,246 | 73.92 % |
+| Vía terrestre | SES | 140,428 | 156,310 | 71.75 % |
+| Vía terrestre | Seasonal naive | 160,013 | 176,653 | 83.47 % |
+| Vía terrestre | Prophet | 175,767 | 191,877 | 91.07 % |
+| Vía marítima | SARIMA | 858 | 1,732 | 100.00 % |
+| Vía marítima | Holt-Winters | 858 | 1,732 | 100.00 % |
+| Vía marítima | SES | 858 | 1,732 | 100.00 % |
+| Vía marítima | Seasonal naive | 858 | 1,732 | 100.00 % |
+| Vía marítima | Prophet | 784 | 1,645 | 86.12 % |
+| El Salvador | SARIMA | 113,109 | 123,010 | 97.70 % |
+| El Salvador | Holt-Winters | 101,044 | 111,527 | 81.05 % |
+| El Salvador | SES | 94,064 | 104,531 | 74.32 % |
+| El Salvador | Seasonal naive | 107,474 | 117,633 | 91.60 % |
+| El Salvador | Prophet | 106,744 | 117,498 | 86.64 % |
+| Estados Unidos | SARIMA | 42,093 | 45,541 | 88.57 % |
+| Estados Unidos | Holt-Winters | 34,195 | 37,642 | 69.37 % |
+| Estados Unidos | SES | 25,115 | 28,953 | 49.93 % |
+| Estados Unidos | Seasonal naive | 41,168 | 44,196 | 88.19 % |
+| Estados Unidos | Prophet | 43,686 | 46,870 | 91.73 % |
+| Honduras | SARIMA | 21,841 | 24,115 | 90.17 % |
+| Honduras | Holt-Winters | 18,900 | 21,200 | 74.17 % |
+| Honduras | SES | 17,240 | 19,587 | 66.05 % |
+| Honduras | Seasonal naive | 21,190 | 23,244 | 90.95 % |
+| Honduras | Prophet | 21,239 | 23,497 | 86.70 % |
 
-El MAPE marítimo excluye 11 meses del test con valor real igual a cero. En
+Los valores de AIC y BIC de cada SARIMA seleccionado ya se listan en la tabla
+de la subsección anterior; no se repiten aquí porque no son comparables
+contra los otros cuatro algoritmos. El MAPE marítimo excluye 11 meses del test con valor real igual a cero. En
 las demás series no fue necesario excluir observaciones.
 
 ![Predicción sobre el conjunto de prueba, total](../figuras/pred_total.png)
