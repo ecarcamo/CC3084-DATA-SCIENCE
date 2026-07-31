@@ -103,3 +103,80 @@ el origen de los datos, las decisiones de limpieza y el criterio del split 70/30
   secciones en `informe/informe_final.md` con portada e índice, revisión de coherencia entre
   secciones (numeración, figuras, cifras), exportación a PDF, generación de `requirements.txt` y
   de los scripts en `scripts/`, y esta actualización del README.
+
+## Laboratorio 2: Redes LSTM
+
+Modelado con redes LSTM de dos series mensuales de viajeros (total y vía aérea), con tuneo de
+hiperparámetros, dos estrategias de pronóstico (recursiva y directa) y comparación contra los
+modelos del Laboratorio 1. Las dos series se eligieron por no tener meses en cero durante el
+entrenamiento, requisito de la transformación `log1p`, y por contrastar entre sí: total es la peor
+predicha del Laboratorio 1 (MAPE 58.11 %) y vía aérea la mejor (35.62 %).
+
+### Estructura nueva
+
+```
+notebooks/
+├── 08_lstm_preparacion.ipynb
+├── 09_lstm_total.ipynb
+├── 10_lstm_via_aerea.ipynb
+└── 11_comparativo_lstm.ipynb
+scripts/
+└── (notebooks 08-11 exportados a .py con jupyter nbconvert)
+src/
+└── lstm.py
+informe/
+├── secciones_lab2/
+├── figuras/lstm_*.png y comp_lstm_*.png
+├── informe_final_lab2.md
+└── Informe_Final_Lab2.pdf
+resultados/
+├── lstm_tuneo_total.csv, lstm_tuneo_via_aerea.csv
+├── metricas_lstm_total.csv, metricas_lstm_via_aerea.csv, metricas_lstm.csv
+├── comparativo_lstm_lab1.csv
+└── predicciones/{total,via_aerea}_lstm_{recursivo,directo}.csv
+```
+
+Las figuras de este laboratorio usan el prefijo `lstm_` (tuneo, curvas de entrenamiento y
+predicción por serie) y `comp_lstm_` (comparativo final contra el Laboratorio 1).
+
+### Cómo reproducir el análisis del Laboratorio 2
+
+1. Instalar dependencias: `pip install -r requirements-lab2.txt`. Este entorno parte de los CSV
+   ya procesados en `data/processed/series/`, no del Excel crudo, así que no reproduce el
+   Laboratorio 1 y no incluye `pmdarima`, `prophet` ni `openpyxl`.
+2. Correr los notebooks en orden:
+
+   | Orden | Notebook | Qué produce |
+   |---|---|---|
+   | 8 | `08_lstm_preparacion.ipynb` | Valida el ventaneo, el escalado y el protocolo de validación |
+   | 9 | `09_lstm_total.ipynb` | `resultados/lstm_tuneo_total.csv`, métricas y predicciones de la serie total |
+   | 10 | `10_lstm_via_aerea.ipynb` | Lo mismo para la vía aérea |
+   | 11 | `11_comparativo_lstm.ipynb` | `resultados/metricas_lstm.csv`, `resultados/comparativo_lstm_lab1.csv` y las figuras `comp_lstm_*.png` |
+
+3. El informe consolidado está en
+   [`informe/informe_final_lab2.md`](informe/informe_final_lab2.md) y su versión exportada en
+   [`informe/Informe_Final_Lab2.pdf`](informe/Informe_Final_Lab2.pdf). Para regenerar el PDF:
+   ```
+   pandoc informe/informe_final_lab2.md -o informe/Informe_Final_Lab2.pdf \
+     --resource-path=informe --toc --pdf-engine=xelatex -V geometry:margin=2.5cm
+   ```
+4. Los `.py` en `scripts/` incluyen ahora también la exportación literal de los notebooks 08 a 11.
+
+### Nota sobre las dependencias
+
+`requirements.txt` reproduce el Laboratorio 1 completo, desde el Excel crudo. `requirements-lab2.txt`
+reproduce el Laboratorio 2: parte de las series ya procesadas y agrega Keras/TensorFlow, sin las
+dependencias exclusivas del Laboratorio 1 (`pmdarima`, `prophet`, `openpyxl`). Los dos archivos no
+son intercambiables ni acumulativos.
+
+### Contribuciones por integrante (Laboratorio 2)
+
+- **Hugo Daniel Barillas (23556):** núcleo de modelado LSTM en `src/lstm.py` (escalado, ventaneo,
+  arquitectura, entrenamiento, tuneo por rejilla y ajuste final) y el notebook de validación del
+  protocolo, `08_lstm_preparacion.ipynb`.
+- **Esteban Cárcamo (23016):** modelado LSTM de la serie total (`09_lstm_total.ipynb`) y el
+  comparativo final contra el Laboratorio 1 (`11_comparativo_lstm.ipynb`).
+- **Ernesto Ascencio (23009):** modelado LSTM de la vía aérea (`10_lstm_via_aerea.ipynb`),
+  consolidación y exportación del informe final (`informe_final_lab2.md` y el PDF), generación de
+  `requirements-lab2.txt`, exportación de los notebooks 08-11 a `scripts/` y esta actualización del
+  README.
