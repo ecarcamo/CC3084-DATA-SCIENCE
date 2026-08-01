@@ -1,4 +1,5 @@
 import pandas as pd
+import pycatch22
 
 # El orden es el que devuelve pycatch22.catch22_all y no debe alterarse: las columnas de
 # la matriz de características se alinean por posición con la salida de la biblioteca.
@@ -124,3 +125,12 @@ def catalogo() -> pd.DataFrame:
         CATALOGO,
         columns=["caracteristica", "familia", "descripcion"],
     )
+
+
+def extraer_serie(serie: pd.Series) -> pd.Series:
+    resultado = pycatch22.catch22_all(serie.to_numpy().tolist())
+    # El catálogo asigna familia y descripción por nombre; si la biblioteca reordenara su
+    # salida, la matriz quedaría mal etiquetada sin que nada más fallara.
+    if resultado["names"] != CARACTERISTICAS:
+        raise ValueError("pycatch22 devolvió otras características o en otro orden")
+    return pd.Series(resultado["values"], index=CARACTERISTICAS)
