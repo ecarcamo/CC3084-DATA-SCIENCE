@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pycatch22
-from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
+from scipy.cluster.hierarchy import dendrogram, fcluster, leaves_list, linkage
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
@@ -134,6 +134,13 @@ CATALOGO = (
 
 CARACTERISTICAS = [nombre for nombre, _, _ in CATALOGO]
 FAMILIAS = {nombre: familia for nombre, familia, _ in CATALOGO}
+FAMILIAS_ORDENADAS = list(dict.fromkeys(FAMILIAS.values()))
+CARACTERISTICAS_POR_FAMILIA = [
+    nombre
+    for familia in FAMILIAS_ORDENADAS
+    for nombre in CARACTERISTICAS
+    if FAMILIAS[nombre] == familia
+]
 
 
 def catalogo() -> pd.DataFrame:
@@ -349,3 +356,57 @@ def figura_clusters(
         ylim=(0, 1.15 * siluetas.max()),
     )
     _guardar(figura, ruta_figuras / "catch22_clusters.png")
+
+
+def orden_dendrograma(enlace: np.ndarray, claves: pd.Index) -> list[str]:
+    return [claves[hoja] for hoja in leaves_list(enlace)]
+
+
+def figura_heatmap(
+    estandarizada: pd.DataFrame,
+    orden_series: list[str],
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    tabla = estandarizada.loc[orden_series, CARACTERISTICAS_POR_FAMILIA].T
+    # El límite es el z de mayor magnitud posible con estas series, no el observado: así
+    # el color significa lo mismo en esta figura y en cualquier otra del mismo tipo.
+    limite = np.sqrt(len(estandarizada) - 1)
+
+    figura, eje = plt.subplots(figsize=(7.5, 9))
+    imagen = eje.imshow(tabla, cmap="RdBu_r", vmin=-limite, vmax=limite, aspect="auto")
+
+    eje.set_xticks(range(len(orden_series)))
+    eje.set_xticklabels(
+        [SERIES[clave] for clave in orden_series],
+        rotation=30,
+        ha="right",
+    )
+    eje.set_yticks(range(len(tabla)))
+    eje.set_yticklabels(tabla.index, fontsize=7)
+
+    inicio = 0
+    for familia in FAMILIAS_ORDENADAS:
+        tamano = sum(FAMILIAS[nombre] == familia for nombre in tabla.index)
+        if inicio:
+            eje.axhline(inicio - 0.5, color="black", linewidth=0.8)
+        eje.text(
+            len(orden_series) - 0.35,
+            inicio + (tamano - 1) / 2,
+            familia,
+            fontsize=7,
+            color="dimgrey",
+            va="center",
+            ha="left",
+        )
+        inicio += tamano
+
+    eje.set_title("Características estandarizadas por serie")
+    figura.colorbar(
+        imagen,
+        ax=eje,
+        orientation="horizontal",
+        pad=0.08,
+        shrink=0.7,
+        label="z-score de la característica entre las siete series",
+    )
+    _guardar(figura, ruta_figuras / "catch22_heatmap.png")
