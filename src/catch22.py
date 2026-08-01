@@ -134,3 +134,11 @@ def extraer_serie(serie: pd.Series) -> pd.Series:
     if resultado["names"] != CARACTERISTICAS:
         raise ValueError("pycatch22 devolvió otras características o en otro orden")
     return pd.Series(resultado["values"], index=CARACTERISTICAS)
+
+
+def matriz_caracteristicas(series: dict[str, pd.Series]) -> pd.DataFrame:
+    matriz = pd.DataFrame(
+        {clave: extraer_serie(serie) for clave, serie in series.items()}
+    ).T
+    matriz.index.name = "clave"
+    return matriz[CARACTERISTICAS]
