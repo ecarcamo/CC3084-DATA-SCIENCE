@@ -410,3 +410,38 @@ def figura_heatmap(
         label="z-score de la característica entre las siete series",
     )
     _guardar(figura, ruta_figuras / "catch22_heatmap.png")
+
+
+def correlaciones(estandarizada: pd.DataFrame) -> pd.DataFrame:
+    ordenada = estandarizada[CARACTERISTICAS_POR_FAMILIA]
+    return ordenada.corr()
+
+
+def _separadores_familia(eje: plt.Axes, nombres: list[str]) -> None:
+    inicio = 0
+    for familia in FAMILIAS_ORDENADAS:
+        tamano = sum(FAMILIAS[nombre] == familia for nombre in nombres)
+        if inicio:
+            eje.axhline(inicio - 0.5, color="black", linewidth=0.6)
+            eje.axvline(inicio - 0.5, color="black", linewidth=0.6)
+        inicio += tamano
+
+
+def figura_correlaciones(
+    correlacion: pd.DataFrame,
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    nombres = list(correlacion.columns)
+
+    figura, eje = plt.subplots(figsize=(9.5, 8.5))
+    imagen = eje.imshow(correlacion, cmap="RdBu_r", vmin=-1, vmax=1)
+
+    eje.set_xticks(range(len(nombres)))
+    eje.set_xticklabels(nombres, rotation=90, fontsize=6)
+    eje.set_yticks(range(len(nombres)))
+    eje.set_yticklabels(nombres, fontsize=6)
+    _separadores_familia(eje, nombres)
+
+    eje.set_title("Correlación de Pearson entre características, sobre las siete series")
+    figura.colorbar(imagen, ax=eje, shrink=0.75, label="r")
+    _guardar(figura, ruta_figuras / "catch22_correlaciones.png")
