@@ -49,8 +49,9 @@ COLORES = {"lab1": "tab:gray", "lstm": "tab:orange"}
 
 # ## Consolidación de las métricas LSTM
 # 
-# La lectura se hace con un glob sobre `metricas_lstm_*.csv` y no con nombres fijos, de modo que la
-# segunda serie entra sin tocar el código en cuanto el cuaderno 10 deje su archivo.
+# La lectura se hace con un glob sobre `metricas_lstm_*.csv` y no con nombres fijos, de modo que las
+# series entran sin tocar el código: basta que los cuadernos 09 y 10 hayan dejado sus archivos en
+# `resultados/`.
 
 # In[2]:
 
@@ -73,13 +74,6 @@ series = list(dict.fromkeys(metricas_lstm["serie"]))
 print(f"\nseries con LSTM: {series}")
 print(metricas_lstm.to_string(index=False))
 
-
-# ### Estado de la ejecución
-# 
-# La corrida que quedó guardada en este cuaderno leyó un solo archivo, `metricas_lstm_total.csv`. La
-# serie vía aérea entra en las mismas tablas y figuras en cuanto `notebooks/10_lstm_via_aerea.ipynb`
-# deje su `metricas_lstm_via_aerea.csv` en `resultados/`, sin editar ninguna celda: basta volver a
-# ejecutar el cuaderno. Todo lo que sigue está calculado sobre las series efectivamente presentes.
 
 # ## Métricas del Laboratorio 1
 # 
@@ -180,16 +174,28 @@ campeones = {
 print(mejoras.to_string(index=False, float_format=lambda x: f"{x:,.2f}"))
 
 
-# En la serie total el LSTM directo mejora al mejor modelo del Laboratorio 1 en las tres métricas y
-# por márgenes grandes: el MAE cae 56.05 %, de 175,088 a 76,957 viajeros; el RMSE cae 48.51 %, de
-# 194,791 a 100,290; y el MAPE baja 24.35 puntos porcentuales, de 58.11 % a 33.76 %, un 41.90 % en
-# términos relativos.
+# El LSTM directo mejora al mejor modelo del Laboratorio 1 en las tres métricas y en las dos series.
 # 
-# Ninguna de las tres diferencias es lo bastante pequeña como para atribuirla a la semilla o al azar
-# del ajuste. Para dimensionarlo: la distancia entre SES y el segundo mejor modelo del Laboratorio 1,
-# Holt-Winters, era de 21,868 viajeros de MAE, y aquí el salto es de 98,131. Y no solo gana la estrategia ganadora: la recursiva,
-# que pierde la comparación interna, registra 143,303 de MAE y 164,706 de RMSE, también por debajo de
-# los 175,088 y 194,791 de SES.
+# En la serie total el MAE cae 56.05 %, de 175,088 a 76,957 viajeros; el RMSE cae 48.51 %, de 194,791
+# a 100,290; y el MAPE baja 24.35 puntos porcentuales, de 58.11 % a 33.76 %, un 41.90 % en términos
+# relativos. En vía aérea los márgenes son menores pero apuntan en la misma dirección: 37.31 % menos
+# MAE, de 36,109 a 22,635; 28.39 % menos RMSE, de 41,368 a 29,623; y 10.68 puntos porcentuales menos
+# de MAPE, de 35.62 % a 24.93 %.
+# 
+# Que el margen sea más chico en vía aérea era previsible. SES parte de un MAPE de 35.62 % en esa
+# serie contra 58.11 % en total, porque su nivel constante queda 36.4 % por debajo del test y no
+# 62.0 % como en la serie agregada: cuanto menos deprimido está el último mes del entrenamiento
+# respecto del horizonte, menos terreno hay que recuperar.
+# 
+# Conviene medir los dos saltos contra la dispersión interna del Laboratorio 1. En la serie total la
+# distancia entre SES y el segundo mejor modelo de esa entrega, Holt-Winters, era de 21,868 viajeros
+# de MAE, y el salto de SES al LSTM directo es de 98,131, cuatro veces y media mayor. En vía aérea la
+# misma distancia es de 11,935 y el salto es de 13,474, apenas 1.13 veces. La ventaja del LSTM es
+# inequívoca en la serie total y modesta en vía aérea.
+# 
+# En las dos series gana también la estrategia perdedora. La recursiva registra 143,303 de MAE y
+# 164,706 de RMSE en total, y 31,638 y 37,766 en vía aérea, por debajo de los 175,088 y 194,791 y de
+# los 36,109 y 41,368 de SES.
 
 # ## ¿Cuál de las dos estrategias LSTM predijo mejor?
 # 
@@ -221,15 +227,24 @@ margen_lstm = pd.DataFrame(filas)
 print(margen_lstm.to_string(index=False, float_format=lambda x: f"{x:,.2f}"))
 
 
-# En la serie total gana la estrategia directa, y no por poco: 46.30 % menos MAE, 39.11 % menos RMSE y
-# 28.00 % menos MAPE que la recursiva. El resultado contradice la ventaja muestral de la recursiva,
-# que entrena con 123 ventanas frente a 61, y confirma lo que anticipaba la sección de metodología:
-# en un horizonte de 63 pasos, la acumulación de error de la realimentación pesa más que el tamaño de
-# la muestra.
+# La estrategia directa gana en las dos series, y el margen sigue el orden de la volatilidad: en la
+# serie total ahorra 46.30 % de MAE, 39.11 % de RMSE y 28.00 % de MAPE respecto de la recursiva; en
+# vía aérea, 28.46 %, 21.56 % y 19.95 %.
+# 
+# El resultado contradice la ventaja muestral de la recursiva, que en la serie total entrena con 123
+# ventanas frente a 61, y confirma lo que anticipaba la sección de metodología: en un horizonte de 63
+# pasos, la acumulación de error de la realimentación pesa más que el tamaño de la muestra. El sesgo
+# lo deja ver: la recursiva se queda 51.7 % por debajo del test en total y 32.9 % en vía aérea,
+# mientras la directa se queda en −16.0 % y −9.7 %.
+# 
+# Que la brecha sea más estrecha en vía aérea no contradice nada. Es la serie menos volátil de las
+# siete del Laboratorio 1, con un CV de 0.216 contra 0.335 de la total, así que la trayectoria plana a
+# la que tiende la recursiva se aleja menos del test que en la serie agregada.
 # 
 # Vale registrar que la comparación entre estrategias se resuelve aquí y no en el tuneo. Los
-# `rmse_val` de la rejilla, 149,716 en la recursiva y 130,075 en la directa, apuntaban en la misma
-# dirección, pero se miden sobre tramos distintos y no habrían servido como argumento.
+# `rmse_val` de la rejilla apuntaban en la misma dirección en las dos series, 149,716 contra 130,075
+# en total y 45,464 contra 38,698 en vía aérea, pero se miden sobre tramos distintos según la
+# estrategia y no habrían servido como argumento.
 
 # ## Las trayectorias
 # 
@@ -295,6 +310,21 @@ for serie in series:
 # partir de 2023, y en el tramo 2023-2025 se superpone con el test en buena parte de los meses. Sus
 # dos zonas de error son los extremos: sobreestima 2021, cuando la serie real todavía estaba
 # deprimida, y se queda muy corto en el pico de 2022.
+# 
+# ![Trayectorias de la vía aérea](../informe/figuras/comp_lstm_via_aerea.png)
+# 
+# La figura de vía aérea repite el diagnóstico de las dos referencias del Laboratorio 1 y matiza el
+# del LSTM. SES vuelve a ser una recta, aquí en 60,160 viajeros, y el SARIMA(2,1,2)(0,1,1)12 vuelve a
+# quedarse muy por debajo, con una media de 20,639 y los 63 meses subestimados; ese es el modelo que
+# el laboratorio anterior había elegido por AIC.
+# 
+# El LSTM directo acierta el nivel: promedia 85,409 viajeros contra 94,605 del test, un sesgo de
+# −9.7 %, y en 2023-2025 se mueve dentro de la banda del test. Pero la curva es casi plana. Su CV es
+# de 0.157 contra 0.244 del test, de modo que comprime a menos de dos tercios la amplitud real, y de
+# ahí sale su correlación de −0.150: gana en MAE y RMSE por tener el nivel correcto, no por seguir la
+# dinámica mes a mes. La figura señala además los dos tramos donde falla de forma visible, el pico de
+# diciembre de 2022, que el test lleva a 158,463 viajeros, y el primer semestre de 2026, donde el
+# modelo cae a 54,920 contra 107,307 reales.
 
 # ## Comparación gráfica de las métricas
 # 
@@ -370,16 +400,19 @@ for serie in series:
 
 # ### ¿Cuál predijo mejor?
 # 
-# En la serie total, el LSTM de estrategia directa, con MAE de 76,957, RMSE de 100,290 y MAPE de
-# 33.76 % sobre los 63 meses de prueba. Gana a la estrategia recursiva por 46.30 % de MAE y 39.11 %
-# de RMSE, y es también el mejor modelo global de la serie entre las dos familias, marcado como
+# El LSTM de estrategia directa, en las dos series. En total, con MAE de 76,957, RMSE de 100,290 y
+# MAPE de 33.76 % sobre los 63 meses de prueba, por delante de la recursiva en 46.30 % de MAE y
+# 39.11 % de RMSE. En vía aérea, con 22,635, 29,623 y 24.93 %, por delante en 28.46 % y 21.56 %. Es
+# también el mejor modelo global de las dos series entre las dos familias, marcado como
 # `mejor_global` en `comparativo_lstm_lab1.csv`.
 # 
 # ### ¿Son mejores que los del laboratorio pasado?
 # 
-# Sí, en la serie total y por un margen que no admite discusión: 56.05 % menos MAE y 48.51 % menos
-# RMSE que SES, el mejor de los cinco modelos del Laboratorio 1. Es además el primer modelo de esta
-# serie, en las dos entregas, que baja del 50 % de MAPE.
+# Sí, en las dos series y en las tres métricas. En la serie total el margen no admite discusión:
+# 56.05 % menos MAE y 48.51 % menos RMSE que SES, el mejor de los cinco modelos del Laboratorio 1, y
+# es el primer modelo de esa serie, en las dos entregas, que baja del 50 % de MAPE. En vía aérea el
+# margen es más estrecho, 37.31 % y 28.39 %, del mismo orden que la distancia que separaba a SES de
+# Holt-Winters en el laboratorio anterior.
 # 
 # Conviene decir por qué, porque el resultado no se explica solo por la capacidad del modelo. El
 # Laboratorio 1 documentó que el entrenamiento termina en marzo de 2021, con la pandemia dominando el
@@ -388,6 +421,11 @@ for serie in series:
 # aprende un patrón sobre ventanas de 24 meses que en su mayoría provienen del periodo prepandemia, y
 # al pronosticar reconstruye ese patrón en lugar de prolongar el último nivel. Sobre un test que
 # efectivamente vuelve a niveles prepandemia, esa forma de equivocarse resulta ser la correcta.
+# 
+# Con una reserva que las métricas agregadas no muestran. En vía aérea el modelo ganador tiene
+# correlación −0.150 con el test: acierta el nivel medio y comprime la amplitud, de modo que gana por
+# cancelación de errores y no por reproducir la dinámica. En total la correlación es de 0.249,
+# positiva pero baja. Ninguno de los dos sigue el movimiento mes a mes.
 # 
 # ### ¿Cómo se determinó?
 # 
