@@ -1,0 +1,8 @@
+clave,etiqueta,categoria,grupo_ward,grupo_kmeans,silueta
+total,Total,Referencia,1,1,-0.1019
+via_aerea,Vía Aérea,Vía de ingreso,1,3,0.154
+via_terrestre,Vía Terrestre,Vía de ingreso,2,1,0.2605
+via_maritima,Vía Marítima,Vía de ingreso,1,3,0.1396
+pais_el_salvador,El Salvador,País de residencia,2,1,0.3705
+pais_estados_unidos,Estados Unidos,País de residencia,3,2,0.0
+pais_honduras,Honduras,País de residencia,2,1,0.3166

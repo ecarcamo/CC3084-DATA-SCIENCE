@@ -1,6 +1,21 @@
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pycatch22
+from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
+from sklearn.metrics import silhouette_samples, silhouette_score
 from sklearn.preprocessing import StandardScaler
+
+from src.comparativo import COLORES
+from src.utils import RUTA_FIGURAS, SERIES
+
+# La misma semilla del Laboratorio 2. Se repite aquí en lugar de importarla de src/lstm.py
+# porque ese módulo carga TensorFlow y este análisis no lo necesita.
+SEMILLA = 42
 
 # El orden es el que devuelve pycatch22.catch22_all y no debe alterarse: las columnas de
 # la matriz de características se alinean por posición con la salida de la biblioteca.
@@ -148,3 +163,189 @@ def matriz_caracteristicas(series: dict[str, pd.Series]) -> pd.DataFrame:
 def estandarizar(matriz: pd.DataFrame) -> pd.DataFrame:
     valores = StandardScaler().fit_transform(matriz)
     return pd.DataFrame(valores, index=matriz.index, columns=matriz.columns)
+
+
+def analizar_pca(
+    estandarizada: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series]:
+    # La matriz centrada de n series tiene rango n - 1, así que pedir más componentes
+    # solo agregaría direcciones con varianza numéricamente nula.
+    componentes = min(len(estandarizada) - 1, estandarizada.shape[1])
+    pca = PCA(n_components=componentes)
+    nombres = [f"pc{numero}" for numero in range(1, componentes + 1)]
+
+    coordenadas = pd.DataFrame(
+        pca.fit_transform(estandarizada),
+        index=estandarizada.index,
+        columns=nombres,
+    )
+    cargas = pd.DataFrame(
+        pca.components_.T,
+        index=estandarizada.columns,
+        columns=nombres,
+    )
+    varianza = pd.Series(pca.explained_variance_ratio_, index=nombres)
+    return coordenadas, cargas, varianza
+
+
+def _guardar(figura: plt.Figure, ruta: Path) -> None:
+    figura.tight_layout()
+    figura.savefig(ruta, dpi=150, bbox_inches="tight")
+    plt.close(figura)
+
+
+def figura_pca(
+    coordenadas: pd.DataFrame,
+    cargas: pd.DataFrame,
+    varianza: pd.Series,
+    flechas: int = 8,
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    figura, ejes = plt.subplots(1, 2, figsize=(12, 5))
+
+    numero = np.arange(1, len(varianza) + 1)
+    ejes[0].bar(numero, 100 * varianza, color="tab:blue", label="Por componente")
+    ejes[0].plot(
+        numero,
+        100 * varianza.cumsum(),
+        color="black",
+        marker="o",
+        markersize=4,
+        linewidth=1,
+        label="Acumulada",
+    )
+    ejes[0].set(
+        title="Varianza explicada",
+        xlabel="Componente",
+        ylabel="% de la varianza total",
+        xticks=numero,
+    )
+    ejes[0].legend(fontsize=8)
+
+    contribucion = np.hypot(cargas["pc1"], cargas["pc2"]).sort_values(ascending=False)
+    principales = cargas.loc[contribucion.index[:flechas], ["pc1", "pc2"]]
+    alcance = np.abs(coordenadas[["pc1", "pc2"]].to_numpy()).max(axis=0)
+    # Una sola escala para las dos direcciones: si cada eje se escalara por separado, los
+    # ángulos entre flechas dejarían de ser interpretables.
+    escala = 0.9 * np.min(alcance / np.abs(principales.to_numpy()).max(axis=0))
+    puntas = escala * principales
+
+    for caracteristica, vector in puntas.iterrows():
+        ejes[1].annotate(
+            "",
+            xy=(vector["pc1"], vector["pc2"]),
+            xytext=(0, 0),
+            arrowprops={"arrowstyle": "->", "color": "grey", "linewidth": 0.9},
+        )
+        ejes[1].text(
+            1.03 * vector["pc1"],
+            1.03 * vector["pc2"],
+            caracteristica,
+            fontsize=6,
+            color="dimgrey",
+            ha="left" if vector["pc1"] >= 0 else "right",
+            va="bottom" if vector["pc2"] >= 0 else "top",
+        )
+
+    limites = 1.3 * np.maximum(alcance, np.abs(puntas.to_numpy()).max(axis=0))
+    ejes[1].set_xlim(-limites[0], limites[0])
+    ejes[1].set_ylim(-limites[1], limites[1])
+
+    for clave in coordenadas.index:
+        punto = coordenadas.loc[clave]
+        ejes[1].scatter(
+            punto["pc1"],
+            punto["pc2"],
+            color=COLORES[clave],
+            s=70,
+            zorder=3,
+        )
+        ejes[1].annotate(
+            SERIES[clave],
+            (punto["pc1"], punto["pc2"]),
+            textcoords="offset points",
+            xytext=(6, 5),
+            fontsize=8,
+            color=COLORES[clave],
+        )
+
+    ejes[1].axhline(0, color="grey", linewidth=0.8, linestyle="--")
+    ejes[1].axvline(0, color="grey", linewidth=0.8, linestyle="--")
+    ejes[1].set(
+        title=f"Plano principal y las {flechas} características de mayor contribución",
+        xlabel=f"PC1 ({100 * varianza['pc1']:.1f} %)",
+        ylabel=f"PC2 ({100 * varianza['pc2']:.1f} %)",
+    )
+    _guardar(figura, ruta_figuras / "catch22_pca.png")
+
+
+def agrupar(
+    estandarizada: pd.DataFrame,
+    k_maximo: int = 5,
+) -> tuple[np.ndarray, pd.DataFrame, pd.Series]:
+    enlace = linkage(estandarizada, method="ward")
+    siluetas = pd.Series(
+        {
+            grupos: silhouette_score(
+                estandarizada,
+                fcluster(enlace, grupos, criterion="maxclust"),
+            )
+            for grupos in range(2, k_maximo + 1)
+        }
+    )
+    siluetas.index.name = "k"
+
+    k = int(siluetas.idxmax())
+    ward = fcluster(enlace, k, criterion="maxclust")
+    kmeans = KMeans(n_clusters=k, n_init=10, random_state=SEMILLA).fit_predict(
+        estandarizada
+    )
+    grupos = pd.DataFrame(
+        {
+            "grupo_ward": ward,
+            "grupo_kmeans": kmeans + 1,
+            "silueta": silhouette_samples(estandarizada, ward),
+        },
+        index=estandarizada.index,
+    )
+    return enlace, grupos, siluetas
+
+
+def figura_clusters(
+    enlace: np.ndarray,
+    grupos: pd.DataFrame,
+    siluetas: pd.Series,
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    k = grupos["grupo_ward"].nunique()
+    # Cortar entre las alturas de fusión k-ésima y (k-1)-ésima deja exactamente k grupos,
+    # de modo que los colores del dendrograma son los grupos reportados.
+    alturas = np.sort(enlace[:, 2])
+    umbral = 0.5 * (alturas[-k] + alturas[-(k - 1)])
+
+    figura, ejes = plt.subplots(1, 2, figsize=(12, 4.5))
+    dendrogram(
+        enlace,
+        labels=[SERIES[clave] for clave in grupos.index],
+        orientation="right",
+        color_threshold=umbral,
+        above_threshold_color="grey",
+        ax=ejes[0],
+    )
+    ejes[0].axvline(umbral, color="black", linewidth=0.8, linestyle="--")
+    ejes[0].set(
+        title=f"Dendrograma de Ward, corte en {k} grupos",
+        xlabel="Distancia de fusión",
+    )
+
+    colores = ["tab:orange" if numero == k else "tab:blue" for numero in siluetas.index]
+    ejes[1].bar(siluetas.index.astype(str), siluetas, color=colores)
+    for numero, valor in zip(siluetas.index.astype(str), siluetas):
+        ejes[1].text(numero, valor, f"{valor:.3f}", ha="center", va="bottom", fontsize=8)
+    ejes[1].set(
+        title="Silueta media de las particiones de Ward",
+        xlabel="Número de grupos (k)",
+        ylabel="Silueta media",
+        ylim=(0, 1.15 * siluetas.max()),
+    )
+    _guardar(figura, ruta_figuras / "catch22_clusters.png")

@@ -1,0 +1,8 @@
+clave,etiqueta,categoria,pc1,pc2,pc3,pc4,pc5,pc6
+total,Total,Referencia,0.0172,2.6468,1.0926,2.0383,1.5713,0.6046
+via_aerea,Vía Aérea,Vía de ingreso,2.1664,1.2442,3.3466,-0.5008,-1.3081,-0.4029
+via_terrestre,Vía Terrestre,Vía de ingreso,-1.5435,0.0703,-1.7681,2.1611,-0.4507,-1.3539
+via_maritima,Vía Marítima,Vía de ingreso,5.6149,0.3855,-2.5465,-1.0272,0.071,0.2209
+pais_el_salvador,El Salvador,País de residencia,-3.0227,-0.3033,-1.0018,0.3338,-1.4022,1.2961
+pais_estados_unidos,Estados Unidos,País de residencia,0.3014,-5.2157,1.14,0.1415,0.7409,0.042
+pais_honduras,Honduras,País de residencia,-3.5336,1.1722,-0.2628,-3.1467,0.7779,-0.4068
