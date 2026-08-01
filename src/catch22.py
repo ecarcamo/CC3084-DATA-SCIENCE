@@ -1,5 +1,6 @@
 import pandas as pd
 import pycatch22
+from sklearn.preprocessing import StandardScaler
 
 # El orden es el que devuelve pycatch22.catch22_all y no debe alterarse: las columnas de
 # la matriz de características se alinean por posición con la salida de la biblioteca.
@@ -142,3 +143,8 @@ def matriz_caracteristicas(series: dict[str, pd.Series]) -> pd.DataFrame:
     ).T
     matriz.index.name = "clave"
     return matriz[CARACTERISTICAS]
+
+
+def estandarizar(matriz: pd.DataFrame) -> pd.DataFrame:
+    valores = StandardScaler().fit_transform(matriz)
+    return pd.DataFrame(valores, index=matriz.index, columns=matriz.columns)
