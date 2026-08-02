@@ -1,0 +1,23 @@
+,familia,grupo_1,grupo_2,grupo_3
+DN_HistogramMode_5,Distribución de valores,0.5151,-0.1351,-1.1401
+DN_HistogramMode_10,Distribución de valores,0.2643,-0.4831,0.6565
+CO_f1ecac,Autocorrelación lineal,-0.8082,0.85,-0.1254
+CO_FirstMin_ac,Autocorrelación lineal,0.8433,-0.4216,-1.2649
+CO_HistogramAMI_even_2_5,Autocorrelación no lineal,-0.629,0.9097,-0.8422
+CO_trev_1_num,Autocorrelación no lineal,-0.6232,0.0438,1.7383
+MD_hrv_classic_pnn40,Diferencias y pronóstico local,-0.3024,0.1245,0.5337
+SB_BinaryStats_mean_longstretch1,Dinámica simbólica y rachas,-0.3589,0.7854,-1.2793
+SB_TransitionMatrix_3ac_sumdiagcov,Dinámica simbólica y rachas,-0.4746,0.5361,-0.1844
+PD_PeriodicityWang_th0_01,Espectro y periodicidad,1.129,-0.9954,-0.4006
+CO_Embed2_Dist_tau_d_expfit_meandiff,Autocorrelación no lineal,-0.4711,0.291,0.5402
+IN_AutoMutualInfoStats_40_gaussian_fmmi,Autocorrelación no lineal,1.0116,-0.7081,-0.9105
+FC_LocalSimple_mean1_tauresrat,Diferencias y pronóstico local,0.7297,-0.5558,-0.5218
+DN_OutlierInclude_p_001_mdrmd,Eventos extremos,-0.934,0.4878,1.3387
+DN_OutlierInclude_n_001_mdrmd,Eventos extremos,0.6743,-0.5678,-0.3194
+SP_Summaries_welch_rect_area_5_1,Espectro y periodicidad,-0.4751,0.949,-1.4214
+SB_BinaryStats_diff_longstretch0,Diferencias y pronóstico local,0.1054,0.1054,-0.6325
+SB_MotifThree_quantile_hh,Dinámica simbólica y rachas,0.4671,-0.9325,1.3962
+SC_FluctAnal_2_rsrangefit_50_1_logi_prop_r1,Escalamiento de fluctuaciones,0.4018,0.4018,-2.4106
+SC_FluctAnal_2_dfa_50_1_2_logi_prop_r1,Escalamiento de fluctuaciones,0.4999,0.3055,-2.4162
+SP_Summaries_welch_rect_centroid,Espectro y periodicidad,0.7477,-0.5886,-0.4773
+FC_LocalSimple_mean3_stderr,Diferencias y pronóstico local,0.7175,-0.9378,0.661
