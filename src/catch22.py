@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pycatch22
 from scipy.cluster.hierarchy import dendrogram, fcluster, leaves_list, linkage
+from scipy.spatial.distance import pdist, squareform
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_samples, silhouette_score
@@ -445,3 +446,48 @@ def figura_correlaciones(
     eje.set_title("Correlación de Pearson entre características, sobre las siete series")
     figura.colorbar(imagen, ax=eje, shrink=0.75, label="r")
     _guardar(figura, ruta_figuras / "catch22_correlaciones.png")
+
+
+def distancias(estandarizada: pd.DataFrame) -> pd.DataFrame:
+    # Misma matriz y misma distancia euclidiana que alimenta el enlace de Ward del inciso
+    # 5.2, así que el mapa de distancias y el dendrograma describen exactamente el mismo
+    # espacio y no dos nociones de similitud distintas.
+    matriz = squareform(pdist(estandarizada, metric="euclidean"))
+    return pd.DataFrame(matriz, index=estandarizada.index, columns=estandarizada.index)
+
+
+def figura_distancias(
+    distancia: pd.DataFrame,
+    orden_series: list[str],
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    tabla = distancia.loc[orden_series, orden_series]
+    etiquetas = [SERIES[clave] for clave in orden_series]
+
+    figura, eje = plt.subplots(figsize=(6.5, 6))
+    # cmap secuencial, no divergente: la distancia euclidiana no tiene signo y 0 (una serie
+    # contra sí misma) es el extremo de similitud máxima, no un punto medio neutro.
+    imagen = eje.imshow(tabla, cmap="viridis_r")
+
+    eje.set_xticks(range(len(etiquetas)))
+    eje.set_xticklabels(etiquetas, rotation=30, ha="right")
+    eje.set_yticks(range(len(etiquetas)))
+    eje.set_yticklabels(etiquetas)
+
+    for fila in range(len(tabla)):
+        for columna in range(len(tabla)):
+            valor = tabla.iat[fila, columna]
+            color = "white" if valor > 0.6 * tabla.to_numpy().max() else "black"
+            eje.text(
+                columna,
+                fila,
+                f"{valor:.1f}",
+                ha="center",
+                va="center",
+                fontsize=7,
+                color=color,
+            )
+
+    eje.set_title("Distancia euclidiana entre series, sobre las 22 características estandarizadas")
+    figura.colorbar(imagen, ax=eje, shrink=0.8, label="distancia")
+    _guardar(figura, ruta_figuras / "catch22_distancias.png")
