@@ -491,3 +491,83 @@ def figura_distancias(
     eje.set_title("Distancia euclidiana entre series, sobre las 22 características estandarizadas")
     figura.colorbar(imagen, ax=eje, shrink=0.8, label="distancia")
     _guardar(figura, ruta_figuras / "catch22_distancias.png")
+
+
+def importancia(
+    estandarizada: pd.DataFrame,
+    coordenadas: pd.DataFrame,
+    grupos: pd.DataFrame,
+) -> pd.DataFrame:
+    # Después de estandarizar, toda característica aporta lo mismo a la suma de distancias
+    # al cuadrado entre pares, así que la varianza no distingue a ninguna. Lo que cambia es
+    # cómo reparte ese aporte, y eso es lo que miden las tres columnas de abajo.
+    r_pc1 = estandarizada.corrwith(coordenadas["pc1"])
+    r_pc2 = estandarizada.corrwith(coordenadas["pc2"])
+
+    etiquetas = grupos["grupo_ward"]
+    dentro = estandarizada.groupby(etiquetas).transform("mean")
+    suma_dentro = ((estandarizada - dentro) ** 2).sum()
+    suma_entre = (dentro**2).sum()
+    grados_entre = etiquetas.nunique() - 1
+    grados_dentro = len(estandarizada) - etiquetas.nunique()
+    razon_f = (suma_entre / grados_entre) / (suma_dentro / grados_dentro)
+
+    # Se ordena con numpy y no con sort_values dentro de apply: pandas realinearía cada
+    # columna a su índice original y devolvería la matriz sin ordenar.
+    ordenada = -np.sort(-estandarizada.abs().to_numpy(), axis=0)
+    z_maximo = pd.Series(ordenada[0], index=estandarizada.columns)
+    brecha = pd.Series(ordenada[0] - ordenada[1], index=estandarizada.columns)
+    responsable = estandarizada.abs().idxmax()
+
+    return pd.DataFrame(
+        {
+            "familia": pd.Series(FAMILIAS),
+            "contribucion_plano": np.hypot(r_pc1, r_pc2),
+            "r_pc1": r_pc1,
+            "r_pc2": r_pc2,
+            "comunalidad_plano": r_pc1**2 + r_pc2**2,
+            "razon_f_ward": razon_f,
+            "z_maximo": z_maximo,
+            "brecha_z": brecha,
+            "serie_responsable": responsable.map(SERIES),
+        }
+    ).sort_values("comunalidad_plano", ascending=False)
+
+
+def figura_importancia(
+    importancias: pd.DataFrame,
+    cuantas: int = 10,
+    ruta_figuras: Path = RUTA_FIGURAS,
+) -> None:
+    figura, ejes = plt.subplots(1, 2, figsize=(13, 5))
+
+    plano = importancias.nlargest(cuantas, "comunalidad_plano").iloc[::-1]
+    posicion = np.arange(len(plano))
+    ejes[0].barh(posicion, plano["r_pc1"] ** 2, color="tab:blue", label="PC1")
+    ejes[0].barh(
+        posicion,
+        plano["r_pc2"] ** 2,
+        left=plano["r_pc1"] ** 2,
+        color="tab:orange",
+        label="PC2",
+    )
+    ejes[0].set_yticks(posicion)
+    ejes[0].set_yticklabels(plano.index, fontsize=7)
+    ejes[0].set(
+        title=f"Varianza compartida con el plano principal, {cuantas} mayores",
+        xlabel="r² con la componente",
+        xlim=(0, 1),
+    )
+    ejes[0].legend(fontsize=8, loc="lower right")
+
+    separadoras = importancias.nlargest(cuantas, "razon_f_ward").iloc[::-1]
+    posicion = np.arange(len(separadoras))
+    ejes[1].barh(posicion, separadoras["razon_f_ward"], color="tab:green")
+    ejes[1].set_yticks(posicion)
+    ejes[1].set_yticklabels(separadoras.index, fontsize=7)
+    ejes[1].set(
+        title=f"Separación entre los grupos de Ward, {cuantas} mayores",
+        xlabel="razón F entre grupos",
+    )
+
+    _guardar(figura, ruta_figuras / "catch22_importancia.png")
