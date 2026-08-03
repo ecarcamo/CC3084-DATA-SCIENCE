@@ -1,0 +1,3 @@
+serie,modelo,ventana,unidades,capas,dropout,mae,rmse,mape,mape_excluidos,mejor
+total,lstm_recursivo,24,64,1,0.2,143302.83494347328,164705.66192836475,46.89591665146726,0,False
+total,lstm_directo,24,64,2,0.0,76957.26499321785,100289.61372388234,33.763997925089775,0,True

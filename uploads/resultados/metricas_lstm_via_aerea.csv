@@ -1,0 +1,3 @@
+serie,modelo,ventana,unidades,capas,dropout,mae,rmse,mape,mape_excluidos,mejor
+via_aerea,lstm_recursivo,12,32,1,0.0,31638.00178355881,37765.91303560975,31.14340860358248,0,False
+via_aerea,lstm_directo,24,32,2,0.0,22634.832636402876,29623.407680028366,24.931347333656745,0,True

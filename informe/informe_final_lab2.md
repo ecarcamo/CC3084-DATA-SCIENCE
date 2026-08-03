@@ -4,11 +4,14 @@
 **Departamento de Ciencias de la Computación**
 **CC3084 Data Science, Semestre II 2026**
 
-## Laboratorio 2: Redes LSTM
+## Laboratorio 2: Redes LSTM y caracterización con catch22
 
 Modelado con redes LSTM de dos series mensuales de viajeros internacionales a Guatemala (total y
 vía aérea), con tuneo de hiperparámetros, dos estrategias de pronóstico y comparación contra los
-modelos del Laboratorio 1.
+modelos del Laboratorio 1. Se añade la caracterización de las siete series del laboratorio anterior
+con el algoritmo catch22 (22 características canónicas por serie), su análisis mediante PCA,
+clustering, mapa de calor, correlaciones y distancias, y un LSTM adicional que usa esas
+características de ventana móvil como entrada.
 
 **Series analizadas:** total de viajeros y vía aérea, seleccionadas por no tener meses en cero
 durante el entrenamiento (requisito de `log1p`) y por contrastar entre sí: total es la peor
@@ -36,6 +39,7 @@ de 2021 (147 meses) y prueba de abril de 2021 a junio de 2026 (63 meses).
 - 2. Modelado LSTM de la serie total
 - 3. Modelado LSTM de la vía aérea
 - 4. Análisis comparativo: LSTM contra los modelos del Laboratorio 1
+- 5. Caracterización de las series con catch22
 
 \newpage
 
@@ -806,3 +810,350 @@ porque el mejor modelo se mueve al revés que la serie en el mes a mes y subesti
 tramo más reciente. La recomendación es reentrenar con datos posteriores a la recuperación en cuanto
 haya suficientes, porque ninguno de los modelos comparados aquí, de ninguna de las dos familias,
 tuvo forma de aprender el régimen que efectivamente rige las series desde 2023.
+\newpage
+
+# 5. Caracterización de las series con catch22
+
+El enunciado pide, además del modelado LSTM, explorar la similitud de las siete series
+construidas en el Laboratorio 1 con el algoritmo catch22. El desarrollo completo está en
+`notebooks/12_catch22_caracteristicas.ipynb`, que a diferencia de los cuadernos 09 y 10 no
+pronostica: describe y compara la dinámica de las siete series completas, de enero de 2009 a
+junio de 2026 (210 meses), sin respetar la partición de entrenamiento y prueba, porque no hay
+nada que pronosticar. Produce los `resultados/catch22_*.csv` y las figuras `catch22_*.png` que
+se citan en esta sección.
+
+## 5.1 La idea detrás de catch22
+
+Lubba et al. (2019) partieron de una versión filtrada de `hctsa`, 4,791 características de
+series de tiempo, y las evaluaron sobre 93 conjuntos de clasificación con más de 147,000 series.
+Descartaron las que no superan al azar, agruparon las restantes por la similitud de su desempeño
+entre conjuntos —dos características que aciertan y fallan en los mismos problemas son
+redundantes— y conservaron un representante por grupo. De 4,791 quedaron 22. La reducción cuesta
+en promedio 7 % de exactitud de clasificación y devuelve un factor cercano a 1,000 en tiempo de
+cómputo.
+
+La importancia práctica para este laboratorio es que catch22 convierte una serie de longitud
+arbitraria en un vector de 22 valores interpretables y **invariante a escala y nivel**: pone en
+el mismo plano a la serie total, con una media de 248,990 viajeros mensuales, y a vía marítima,
+con 5,851, sin necesidad de normalizar cada indicador a mano como hizo el comparativo del
+Laboratorio 1. La limitación declarada es que catch22 se diseñó para benchmarks de clasificación
+y varias de sus 22 características necesitan series largas; las nuestras tienen 210
+observaciones mensuales. La verificación del inciso 5.2 confirma que, aun así, ninguna de las 22
+resultó constante entre las siete series.
+
+## 5.2 Extracción, matriz y estandarización
+
+Las características se calculan sobre la serie completa —no sobre el conjunto de
+entrenamiento—, con `pycatch22`, el binding oficial en C de los autores. La extracción devuelve
+0 valores faltantes, confirma la invariancia de escala (`2 · serie + 1000` reproduce exactamente
+los mismos 22 valores) y no encuentra ninguna característica constante entre las siete series.
+
+La matriz resultante tiene **7 filas (series) por 22 columnas (características)**, guardada en
+`resultados/catch22_caracteristicas.csv`. Sus columnas viven en escalas incomparables: la racha
+media más larga por encima del promedio (`SB_BinaryStats_mean_longstretch1`) va de 9 a 50 meses
+y el coeficiente de la matriz de transición (`SB_TransitionMatrix_3ac_sumdiagcov`) se mueve entre
+0.006 y 0.111. Estandarizar con `StandardScaler` —ajustado sobre las siete series, con `ddof=0`,
+la misma convención usada para escalar las series antes de la LSTM— es indispensable antes de
+cualquier distancia, PCA o clustering; sin eso, dos o tres columnas decidirían el resultado. La
+matriz estandarizada queda en `resultados/catch22_estandarizado.csv`.
+
+Con solo **siete observaciones**, ningún resultado de esta sección tiene respaldo inferencial
+convencional: no hay pruebas de hipótesis con poder razonable y una sola serie distinta cambiaría
+varias conclusiones. El análisis es descriptivo y cada afirmación se acompaña del número que la
+sostiene.
+
+## 5.3 PCA, clustering, heatmap, correlaciones y distancias
+
+Los cinco análisis que pide el inciso 2.5 del enunciado parten de la misma matriz 7 × 22
+estandarizada.
+
+**PCA.** Las dos primeras componentes explican el **63.4 %** de la varianza (39.2 % la primera,
+24.3 % la segunda). PC1 es un eje de memoria y predictibilidad: en un extremo, series con error
+de pronóstico local alto, espectro concentrado en frecuencias altas y autocorrelación que se
+extingue rápido; en el otro, series con memoria larga y rachas prolongadas. PC2, en cambio, existe
+en buena medida para describir a una sola serie —Estados Unidos, con PC2 = −5.22 cuando ninguna
+otra pasa de 2.65—, un punto que retoma el inciso 5.6.
+
+![Varianza explicada y plano principal de las siete series](figuras/catch22_pca.png)
+
+**Clustering.** El agrupamiento corre sobre las 22 características estandarizadas, no sobre las
+coordenadas del PCA, para no descartar el 36.6 % de varianza restante antes de medir la primera
+distancia. Con `k = 3` (silueta media 0.163, el máximo entre `k = 2` y `k = 5`) Ward produce
+`{total, vía aérea, vía marítima}`, `{vía terrestre, El Salvador, Honduras}` y `{Estados Unidos}`
+en solitario. K-means con el mismo `k` coincide solo parcialmente (Rand ajustado 0.444): mueve a
+total al grupo del trío terrestre y deja a vía aérea y vía marítima juntas. La coincidencia
+parcial entre algoritmos es la primera señal de que no los tres grupos son igual de sólidos, algo
+que el inciso 5.7 confirma con pruebas de estabilidad.
+
+![Dendrograma de Ward y silueta por número de grupos](figuras/catch22_clusters.png)
+
+**Mapa de calor.** Las 22 características, agrupadas por familia, contra las siete series,
+ordenadas según el dendrograma. Confirma visualmente los tres grupos y señala las celdas más
+extremas: Estados Unidos en las dos características de escalamiento de fluctuaciones y Honduras
+en la de la matriz de transición.
+
+![Matriz estandarizada, series ordenadas por el dendrograma](figuras/catch22_heatmap.png)
+
+**Correlaciones entre características.** Calculada sobre la matriz estandarizada, aunque el
+resultado es idéntico al de la matriz cruda por la invariancia afín de Pearson. Con solo siete
+series, correlaciones altas entre características no contradicen el diseño de catch22 —sus
+autores minimizaron la redundancia por desempeño de clasificación sobre 93 conjuntos distintos,
+no por correlación lineal en siete series mensuales de turismo—, y significan solo que, para este
+conjunto en particular, aportan la misma información.
+
+![Correlación de Pearson entre las 22 características](figuras/catch22_correlaciones.png)
+
+**Distancias entre series.** La matriz euclidiana sobre las 22 características estandarizadas es
+la contraparte numérica del dendrograma: Ward decide qué fusionar primero con esta misma
+distancia. Sirve de base a los incisos 5.6 a 5.9.
+
+![Distancias euclidianas entre las siete series](figuras/catch22_distancias.png)
+
+## 5.4 ¿Cuáles series presentan comportamientos más similares?
+
+**El par más similar es vía terrestre y El Salvador, a 3.77**, un 21 % por debajo del siguiente
+par más cercano (El Salvador–Honduras, 4.77). Las tres fuentes de evidencia coinciden: es la
+distancia mínima de los 21 pares, es la primera fusión del dendrograma (altura 3.766) y sobrevive
+tanto a Ward como a k-means, y las dos series quedan contiguas en el plano PC1-PC2. La
+explicación de dominio, ya documentada en el Laboratorio 1, es que El Salvador es el principal
+país de residencia que ingresa por vía terrestre —los pasos fronterizos de mayor tráfico del
+país son salvadoreños—, así que las dos series comparten calendario y respuesta a la pandemia casi
+por construcción. catch22 llega a la misma conclusión sin conocer geografía, solo la forma de las
+curvas.
+
+La serie total queda a medio camino entre vía terrestre (5.02) y vía aérea (5.24), coherente con
+ser la suma de ambas: no se parece de forma particular a ninguna, lo que explica su silueta
+negativa (−0.102) y el desacuerdo entre Ward y k-means precisamente en su asignación.
+
+## 5.5 ¿Qué características fueron las más importantes para diferenciar las series?
+
+No hay una lista única, porque las características importan de tres maneras distintas.
+
+**Para el eje dominante (PC1, 39.2 % de varianza):** `FC_LocalSimple_mean3_stderr` (r = +0.958,
+comunalidad 0.980, la característica más informativa del conjunto) y `CO_f1ecac` (r = −0.910) en
+extremos opuestos.
+
+**Para separar grupos:** `PD_PeriodicityWang_th0_01`, con una razón F de **321**, dos órdenes de
+magnitud por encima de la siguiente y sin ninguna serie atípica inflándola —una separación
+genuina—. En unidades originales: periodo dominante de 11 meses en total, vía aérea y vía
+marítima, contra 3, 3 y 2 meses en vía terrestre, El Salvador y Honduras. El ciclo anual frente a
+ciclos sub-anuales es lo que produce los grupos.
+
+**Para aislar una sola serie:** las dos de escalamiento de fluctuaciones aíslan a Estados Unidos
+(brecha 1.92 y 1.87 sobre un máximo de 2.4), y son las que construyen PC2.
+
+**Las que no sirvieron:** `DN_HistogramMode_10` (comunalidad 0.026) y
+`SB_BinaryStats_diff_longstretch0`, casi constantes entre las siete series —esperable con solo
+siete series de un mismo país, no un fallo del método.
+
+![Contribución de cada característica: plano principal y separación de grupos](figuras/catch22_importancia.png)
+
+## 5.6 ¿Existen grupos naturales de series?
+
+**Sí, pero solo uno de los tres grupos de Ward merece llamarse natural.** Cuatro pruebas
+—cohesión interna, saltos en las alturas de fusión, estabilidad ante la remoción de una serie y
+perfil de características— coinciden en distinguir un trío cohesionado, dos series aisladas y un
+residuo.
+
+**El grupo natural es vía terrestre, El Salvador y Honduras**: distancia interna de 4.90 contra
+7.35 hacia afuera, silueta media +0.316 (la más alta), idéntico en Ward y k-means, estable con
+`k = 3` y `k = 4`. Su perfil combina periodo dominante corto (z medio −1.00), potencia
+concentrada en frecuencias bajas (+0.95) y el menor error de pronóstico local del conjunto
+(−0.94): series dominadas por tendencia y nivel, muy predecibles, sin que el calendario turístico
+anual sea su rasgo dominante. Es, en la lectura de dominio, el tráfico fronterizo terrestre
+centroamericano.
+
+**El grupo total/vía aérea/vía marítima no es natural: es un residuo.** Su cohesión interna es
+apenas 11 % mayor que su distancia hacia afuera (6.71 contra 7.55), contra el 33 % del trío, y
+contiene la única silueta negativa. Lo único que comparten es el rasgo opuesto al trío: ciclo
+anual dominante (z medio +1.13 en `PD_PeriodicityWang_th0_01`).
+
+**Las alturas de fusión sugieren cuatro grupos, no tres**: el salto mayor del dendrograma (2.088)
+ocurre al pasar de 4 a 3, cuando se fusiona vía marítima con total y vía aérea. Con `k = 4` la
+partición es {trío terrestre}, {total, vía aérea}, {vía marítima} y {Estados Unidos}, más fiel al
+resto de la evidencia. La silueta prefirió `k = 3` por una diferencia de 0.0019, sin contenido con
+siete observaciones.
+
+**La prueba de estabilidad —quitar una serie y reagrupar las seis restantes— es la más honesta.**
+Sin cualquier serie ajena al trío, la partición sobrevive intacta (Rand ajustado +1.000). Sin El
+Salvador cae a +0.118: es el vecino más cercano de los otros dos y sin él el trío se desarma. El
+grupo es real *dado este conjunto de siete series* y depende de un miembro central, no de una
+estructura que sobreviva a cualquier recomposición de la muestra. En las tres reorganizaciones
+donde la partición se rompe, vía marítima queda sola las tres veces: su aislamiento es más
+robusto que cualquiera de los grupos.
+
+## 5.7 ¿Las series de una misma categoría tienden a agruparse?
+
+**No.** Con solo siete series repartidas en tres categorías (una de referencia, tres vías de
+ingreso, tres países de residencia), la distribución nula puede enumerarse por completo: 140
+asignaciones posibles, lo que permite un valor *p* **exacto** en lugar de aproximado —la única
+inferencia legítima de toda esta sección.
+
+| Evidencia | Valor | Lectura |
+|---|---:|---|
+| Distancia media dentro de categoría | 7.003 | Prácticamente idéntica a la general (7.015) |
+| p exacto de permutación | **0.486** | Casi la mitad de las 140 asignaciones al azar agrupan igual o mejor |
+| Rand ajustado categoría / grupo de Ward | **0.067** | Coincidencia nula |
+
+Vía de ingreso es incluso peor que el azar: sus tres pares internos promedian 7.398, por encima
+de la media general. País de residencia queda apenas por debajo (6.609) solo porque une a El
+Salvador y Honduras (4.77) sin lograr acercar a Estados Unidos (6.78 y 8.28 de ellos).
+
+Lo que sí organiza el espacio es el **régimen de viaje**, que cruza las categorías administrativas:
+el par más parecido de todo el conjunto (vía terrestre–El Salvador) une categorías distintas, y
+los tres pares más lejanos también las cruzan. Un modelo o una política diseñada "para las vías
+de ingreso" como bloque estaría juntando series con dinámicas incompatibles, mientras que vía
+terrestre, El Salvador y Honduras —hoy reportadas por separado— admitirían un tratamiento común.
+
+## 5.8 ¿Qué series presentan el comportamiento más atípico?
+
+**Dos series son atípicas por razones distintas, y el resultado no depende del indicador:** vía
+marítima ocupa el primer lugar en los cinco criterios calculados (norma z, distancia media,
+distancia al vecino, celdas extremas, silueta) y Estados Unidos el segundo en los cinco.
+
+**Vía marítima es atípica en todos los sentidos a la vez.** Distancia media de 8.41 contra un
+promedio general de 6.92, cuatro características con \|z\| > 2. Es tráfico de cruceros: pasa 27
+de sus 210 meses en cero, con coeficiente de variación de 1.147, más del doble que cualquier otra
+serie. Un centroide espectral casi tres veces más alto que el resto y la dependencia de retardo 2
+más débil del conjunto describen una serie con menos memoria y menos estructura temporal
+aprovechable: eventos discretos, no un flujo continuo. Es también la serie que el Laboratorio 1
+excluyó del modelado LSTM porque sus meses en cero rompían `log1p`.
+
+**Estados Unidos es atípica en una sola dimensión, pero radicalmente.** Solo dos características
+superan \|z\| > 2, contra las cuatro de vía marítima, pero pertenecen a la misma familia y la
+separación es de régimen, no de grado: sus dos características de escalamiento de fluctuaciones
+caen a un quinto del valor de las otras seis (0.143–0.167 contra 0.738–0.857). Esa singularidad
+es la que explica que PC2 (24.3 % de la varianza total) exista casi enteramente para describirla.
+Es también la única serie que forma un grupo unipersonal en Ward y en k-means, y en el
+Laboratorio 1 fue de las más difíciles de modelar: 24 de sus 36 especificaciones SARIMA se
+descartaron por trayectorias explosivas.
+
+**Dos series parecen atípicas y no lo son.** Honduras tiene la celda más extrema del mapa de
+calor, pero su vecino está a 4.77 (el segundo más cercano del conjunto) y pertenece con claridad
+al grupo natural del inciso 5.6: un rasgo extremo, no un comportamiento aislado. La serie total
+tiene la silueta más negativa (−0.102) pero su norma (3.90) está por debajo del promedio y su
+distancia media es la quinta de siete: está en el centro, no afuera; su silueta negativa refleja
+que, siendo la suma de las demás, queda equidistante entre los grupos y ninguno la reclama. En el
+otro extremo, vía terrestre es la serie más típica del conjunto: la menor norma, la menor
+distancia media y ninguna característica con \|z\| > 2.
+
+## 5.9 Comparación con el análisis exploratorio del Laboratorio 1
+
+La pregunta es si los agrupamientos de catch22 son consistentes con la tendencia, la
+estacionalidad, la volatilidad, el impacto de la pandemia y las funciones de autocorrelación que
+el Laboratorio 1 ya había medido a mano. La respuesta es **parcial y desigual entre las cinco
+dimensiones**, no un sí o un no único.
+
+| Serie | Grupo Ward | `ft` (tendencia) | `fs` (estacional) | `cv_2009_2019` (volatilidad) | `caida_pct` (pandemia) | `CO_f1ecac` (ACF) |
+|---|---:|---:|---:|---:|---:|---:|
+| Total | 1 | 0.505 | 0.189 | 0.335 | 97.50 % | 8.58 |
+| Vía aérea | 1 | 0.241 | 0.142 | 0.216 | 99.60 % | 6.44 |
+| Vía marítima | 1 | 0.690 | 0.405 | 0.790 | 100.00 % | 2.77 |
+| Vía terrestre | 2 | 0.653 | 0.169 | 0.431 | 97.77 % | 9.00 |
+| El Salvador | 2 | 0.185 | 0.105 | 0.453 | 100.00 % | 13.87 |
+| Honduras | 2 | 0.116 | 0.119 | 0.335 | 100.00 % | 18.93 |
+| Estados Unidos | 3 | 0.107 | 0.109 | 0.300 | 100.00 % | 9.22 |
+
+**El impacto de la pandemia no discrimina nada.** `caida_pct` va de 97.50 % a 100.00 %, un rango
+de 2.50 puntos entre las siete series: no puede explicar por qué Ward separa tres grupos. Es
+coherente con la invariancia de escala de catch22 (sección 5.2): dos series con caídas de 97.5 %
+y 100 % son indistinguibles para el algoritmo, aunque una haya llegado literalmente a cero.
+
+**La tendencia tampoco se alinea.** Dentro del grupo 2, `ft` va de 0.116 a 0.653, un rango tan
+amplio como el de todo el conjunto.
+
+**La estacionalidad, la volatilidad y la autocorrelación sí se alinean, pero solo en el grupo 2.**
+Sus tres miembros comparten `fs` bajo y compacto (0.105–0.169), `cv_2009_2019` compacto
+(0.335–0.453) y `CO_f1ecac` uniformemente lento (9.0–18.9, ninguno por debajo de nueve meses):
+memoria larga, estacionalidad discreta, volatilidad moderada. Es el mismo trío que la sección 5.6
+ya había identificado como el grupo más cohesionado (distancias internas de 3.77 a 4.77, contra
+5.02 a 7.07 del grupo 1).
+
+**El grupo 1 es la evidencia de que Ward con `k = 3` obliga a un residuo.** Total, vía aérea y
+vía marítima no comparten decaimiento de autocorrelación (2.77 a 8.58), ni `fs` (0.142–0.405), ni
+`cv_2009_2019` (0.216–0.790, dominado por vía marítima). Las distancias al vecino más cercano
+dentro del grupo confirman una cohesión mucho más débil que la del grupo 2, exactamente lo que la
+sección 5.6 ya había advertido sobre vía marítima como miembro forzado.
+
+En conjunto: **los agrupamientos de catch22 son consistentes con la estacionalidad, la
+volatilidad y la autocorrelación del grupo terrestre-El Salvador-Honduras, ciegos al impacto de
+la pandemia por diseño, y no capturan la fuerza de tendencia en ningún grupo.**
+
+## 5.10 Tres descubrimientos que el análisis exploratorio tradicional no había mostrado
+
+**1. Estados Unidos es indistinguible en el EDA tradicional y radicalmente atípica en catch22.**
+Sus indicadores clásicos —`ft` = 0.107, `fs` = 0.109, `cv_2009_2019` = 0.300— están los tres en
+el rango medio de las siete series, sin nada que la señale. catch22 mostró lo contrario: un
+cambio de régimen, no de grado, en sus características de escalamiento de fluctuaciones, algo
+que el comparativo del Laboratorio 1 no tenía forma de detectar porque mide dispersión y
+tendencia, no la estructura de las fluctuaciones a distintas escalas temporales.
+
+**2. Vía marítima no es solo "una serie con muchos ceros": es un proceso de eventos discretos.**
+El diagnóstico del Laboratorio 1 la había señalado por sus 27 meses en cero y la excluyó del
+modelado LSTM por eso. catch22 explica *por qué* tiene esa forma: centroide espectral casi tres
+veces más alto que el resto y la dependencia de retardo 2 más débil del conjunto son la firma de
+tráfico de cruceros —eventos puntuales, no un flujo continuo— y no una simple anomalía de
+conteo.
+
+**3. El impacto de la pandemia, la variable más dramática del análisis exploratorio, resultó
+invisible para catch22.** `caida_pct` varía menos de tres puntos entre las siete series y no
+separa ningún grupo (sección 5.9). No es un fallo del método; es la consecuencia directa de la
+invariancia de escala, que el análisis exploratorio tradicional no tenía —cada serie del
+Laboratorio 1 se leyó con su propio eje— y que aquí queda demostrada con números: catch22
+compara *forma*, no *profundidad del choque*.
+
+## 5.11 Un LSTM con características catch22 de ventana móvil
+
+Los incisos anteriores usan catch22 sobre siete series completas —un vector de 22 valores por
+serie—, insuficiente para entrenar una LSTM. Aquí catch22 se recalcula por **ventana móvil**: para
+cada ventana de 24 meses que ve la LSTM de la serie `total`, se extraen sus 22 características y
+se agregan como canales adicionales de entrada, junto al valor escalado, repetidas en los 24
+pasos de tiempo porque describen la ventana completa.
+
+El protocolo es idéntico al del modelo ganador de la sección 2 salvo por los canales de entrada:
+ventana de 24 meses, dos capas LSTM de 64 unidades, sin dropout, estrategia directa
+(`Dense(63)`), tuneo de épocas por paro anticipado sobre una validación del 15 % y reentrenamiento
+final sobre las 61 ventanas completas por ese número de épocas —exactamente el procedimiento de
+`ajustar_final`—. Las 22 características se calculan sobre los mismos 24 meses de contexto,
+nunca sobre el futuro, y se estandarizan con un `StandardScaler` ajustado solo con las ventanas
+de entrenamiento.
+
+| Modelo | Canales | Épocas | Parámetros | MAE | RMSE | MAPE |
+|---|---:|---:|---:|---:|---:|---:|
+| LSTM directo (base) | 1 | 42 | 54,015 | 76,957 | 100,290 | **33.76 %** |
+| LSTM directo + catch22 | 23 | 37 | 59,647 | 216,932 | 239,228 | 78.56 % |
+
+![Serie total: LSTM base vs. LSTM con canales catch22 de ventana móvil](figuras/lstm_catch22_total.png)
+
+**Agregar catch22 como canales de entrada empeoró el pronóstico, y de forma sustancial.** El
+modelo base reproduce exactamente la métrica publicada en la sección 2 (33.76 % de MAPE),
+confirmando que la comparación es limpia. El modelo con los 23 canales llega a 78.56 %, más del
+doble de error. El resultado es reproducible: dos corridas con la misma semilla dan exactamente
+los mismos números en ambos modelos.
+
+**La causa más probable es el tamaño de muestra, no la arquitectura.** Ambos modelos tienen un
+número de parámetros similar (incremento de solo 10 %), pero el volumen de entrada por ventana
+pasa de 24 valores a 552 (24 pasos × 23 canales) sin agregar una sola observación nueva a las 61
+ventanas de entrenamiento que la sección 2 ya había señalado como pequeñas, con sobreajuste desde
+la época doce en el modelo base. Multiplicar por 23 el número de valores de entrada agrava
+exactamente ese problema: el paro anticipado se activó antes en el modelo con catch22 (37 épocas
+contra 42), consistente con una red que encuentra un mínimo de validación más rápido pero que
+generaliza peor.
+
+**Las 22 características no aportan información temporal nueva dentro de la ventana.** Se
+calculan sobre los mismos 24 valores que ya recibe el canal base y se repiten idénticas en los 24
+pasos de tiempo: no describen algo que ocurra *dentro* de la ventana en un momento distinto, sino
+un resumen constante de la ventana completa. Una LSTM con acceso a los 24 valores crudos ya puede,
+en principio, aprender cualquier función de ellos, incluida su propia estadística resumida; los
+canales catch22 no añaden grados de libertad a lo que el modelo puede representar, y sí diluyen la
+señal, porque 22 de 23 canales llevan la misma constante en cada paso de tiempo y desplazan parte
+de la capacidad de la primera capa LSTM hacia pesos que multiplican una descripción redundante en
+lugar de aprender la dinámica secuencial.
+
+**Conclusión.** Para la serie `total`, con 61 ventanas de entrenamiento, agregar características
+catch22 de ventana móvil no mejora el mejor LSTM del laboratorio: lo empeora, y la explicación más
+defendible es el tamaño de muestra, no la utilidad de catch22 como descriptor. El resultado es
+coherente con el uso que sí funcionó en las secciones 5.1 a 5.10: catch22 aporta valor para
+**comparar series entre sí** con pocas observaciones por serie y muchas series (7 filas, 22
+columnas), no para alimentar directamente un modelo secuencial que ya tiene acceso a la serie
+cruda y muy pocas ventanas de entrenamiento.

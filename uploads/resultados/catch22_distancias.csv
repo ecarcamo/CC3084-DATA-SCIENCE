@@ -1,0 +1,8 @@
+clave,total,via_aerea,via_terrestre,via_maritima,pais_el_salvador,pais_estados_unidos,pais_honduras
+total,0.0,5.2364,5.0196,7.8413,5.8785,8.1551,6.7199
+via_aerea,5.2364,0.0,7.0729,7.0659,7.1988,7.4086,7.5416
+via_terrestre,5.0196,7.0729,0.0,8.0539,3.7659,6.8738,6.166
+via_maritima,7.8413,7.0659,8.0539,0.0,9.0911,8.6628,9.7425
+pais_el_salvador,5.8785,7.1988,3.7659,9.0911,0.0,6.7801,4.7698
+pais_estados_unidos,8.1551,7.4086,6.8738,8.6628,6.7801,0.0,8.2762
+pais_honduras,6.7199,7.5416,6.166,9.7425,4.7698,8.2762,0.0

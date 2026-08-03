@@ -1,0 +1,3 @@
+modelo,n_canales,epocas,n_parametros,mae,rmse,mape,mape_excluidos
+"lstm_directo (reproducido, base publicada)",1,42,54015,76957.26510976613,100289.61599538694,33.76399563522479,0
+lstm_directo_catch22,23,37,59647,216932.24231340855,239228.17083211406,78.56259509484414,0

@@ -1,0 +1,8 @@
+clave,etiqueta,norma_z,distancia_media,distancia_vecino,celdas_extremas,silueta,pc_extrema
+via_maritima,Vía Marítima,6.2665,8.4096,7.0659,4,0.1396,5.6149
+pais_estados_unidos,Estados Unidos,5.4004,7.6927,6.7801,2,0.0,5.2157
+pais_honduras,Honduras,4.9601,7.2027,4.7698,1,0.3166,3.5336
+via_aerea,Vía Aérea,4.4233,6.9207,5.2364,0,0.154,3.3466
+total,Total,3.8973,6.4751,5.0196,1,-0.1019,2.6468
+pais_el_salvador,El Salvador,3.7403,6.2474,3.7659,0,0.3705,3.0227
+via_terrestre,Vía Terrestre,3.4957,6.1587,3.7659,0,0.2605,2.1611

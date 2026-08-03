@@ -1,0 +1,8 @@
+clave,etiqueta,categoria,grupo_ward,ft,fs,cv_2009_2019,caida_pct,acf_f1ecac
+total,Total,Referencia,1,0.505,0.189,0.335,97.499,8.579
+via_aerea,Vía Aérea,Vía de ingreso,1,0.241,0.142,0.216,99.604,6.437
+via_maritima,Vía Marítima,Vía de ingreso,1,0.69,0.405,0.79,100.0,2.771
+pais_el_salvador,El Salvador,País de residencia,2,0.185,0.105,0.453,100.0,13.874
+pais_honduras,Honduras,País de residencia,2,0.116,0.119,0.335,100.0,18.925
+via_terrestre,Vía Terrestre,Vía de ingreso,2,0.653,0.169,0.431,97.772,8.997
+pais_estados_unidos,Estados Unidos,País de residencia,3,0.107,0.109,0.3,100.0,9.224
