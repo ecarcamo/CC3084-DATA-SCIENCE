@@ -37,6 +37,14 @@ def resumen(ruta: Path) -> dict:
     }
 
 
+def recorte_percentil(
+    banda: np.ndarray, agua: np.ndarray, p_bajo: float = 2, p_alto: float = 98
+) -> tuple[np.ndarray, float, float]:
+    enmascarada = np.where(agua > 0, banda, np.nan)
+    vmin, vmax = np.nanpercentile(enmascarada, [p_bajo, p_alto])
+    return enmascarada, float(vmin), float(vmax)
+
+
 def vista_rgb(bandas: dict[str, np.ndarray], percentil: float = 98) -> np.ndarray:
     canales = np.stack([bandas["rojo"], bandas["verde"], bandas["azul"]], axis=-1)
     valida = bandas["mascara"] > 0
