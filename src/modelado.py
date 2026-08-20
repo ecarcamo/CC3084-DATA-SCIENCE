@@ -5,6 +5,8 @@ La variable respuesta se deriva de `clorofila` (clorofila-a en µg/L, calculada 
 construcción quedan excluidas como predictoras para evitar fuga de información.
 """
 
+from pathlib import Path
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -96,6 +98,122 @@ def distribucion_respuesta(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return {"global": global_, "por_lago": por_lago, "por_lago_fecha": por_lago_fecha}
 
 
+def dividir_datos(
+    df: pd.DataFrame, predictores: list[str] = PREDICTORES, test_size: float = 0.3, semilla: int = SEMILLA
+):
+    """División 70/30 estratificada por `alta_cianobacteria` (inciso 4.2).
+
+    Estratificar preserva la proporción de clases del inciso 2.4 en ambos subconjuntos. La
+    semilla fija hace que el mismo conjunto de prueba se reproduzca en cualquier notebook que
+    llame esta función sobre el mismo `df`, sin necesidad de persistir los índices, y es el
+    conjunto de prueba compartido que exige el inciso 4.4 para comparar los tres modelos.
+    """
+    X = df[predictores]
+    y = df["alta_cianobacteria"]
+    return train_test_split(X, y, test_size=test_size, stratify=y, random_state=semilla)
+
+
+def construir_modelos_base(semilla: int = SEMILLA) -> dict:
+    """Instancia los tres modelos mínimos del inciso 4.1, sin ajustar.
+
+    Regresión Logística incluye escalado en un `Pipeline` porque, a diferencia de los dos
+    modelos de árboles, es sensible a la escala de los predictores. Random Forest y
+    Regresión Logística reciben `class_weight="balanced"` para compensar el desbalance del
+    inciso 2.4; `GradientBoostingClassifier` no admite ese parámetro, así que su
+    entrenamiento se compensa con `sample_weight` en `entrenar_modelos`.
+    """
+    return {
+        "regresion_logistica": Pipeline([
+            ("escalado", StandardScaler()),
+            ("modelo", LogisticRegression(max_iter=1000, class_weight="balanced", random_state=semilla)),
+        ]),
+        "random_forest": RandomForestClassifier(class_weight="balanced", random_state=semilla, n_jobs=-1),
+        "gradient_boosting": GradientBoostingClassifier(random_state=semilla),
+    }
+
+
+def entrenar_modelos(modelos: dict, X_train: pd.DataFrame, y_train: pd.Series) -> dict:
+    """Entrena cada modelo de `construir_modelos_base` (inciso 4.2)."""
+    pesos = compute_sample_weight("balanced", y_train)
+    ajustados = {}
+    for nombre, modelo in modelos.items():
+        if nombre == "gradient_boosting":
+            modelo.fit(X_train, y_train, sample_weight=pesos)
+        else:
+            modelo.fit(X_train, y_train)
+        ajustados[nombre] = modelo
+    return ajustados
+
+
+# Grids pequeños e intencionalmente distintos por modelo (inciso 4.3): para cada uno se
+# varían los hiperparámetros que más afectan el balance sesgo/varianza -- regularización en
+# Regresión Logística, profundidad/tamaño de hoja en Random Forest, número de árboles/tasa
+# de aprendizaje/profundidad en Gradient Boosting -- explorados con RandomizedSearchCV para
+# mantener el costo de cómputo acotado sobre la muestra de trabajo.
+GRIDS_HIPERPARAMETROS = {
+    "regresion_logistica": {"modelo__C": [0.01, 0.1, 1.0, 10.0]},
+    "random_forest": {
+        "n_estimators": [200, 400],
+        "max_depth": [8, 16, None],
+        "min_samples_leaf": [1, 5, 20],
+    },
+    "gradient_boosting": {
+        "n_estimators": [100, 200],
+        "learning_rate": [0.05, 0.1],
+        "max_depth": [2, 3, 4],
+    },
+}
+
+
+def ajustar_hiperparametros(
+    nombre: str, modelo, X_train: pd.DataFrame, y_train: pd.Series,
+    n_iter: int = 8, cv: int = 3, semilla: int = SEMILLA,
+):
+    """Búsqueda aleatoria de hiperparámetros para un modelo (inciso 4.3).
+
+    Optimiza ROC-AUC por validación cruzada de `cv` particiones sobre el conjunto de
+    entrenamiento. Es el criterio de selección: se elige la combinación con mejor ROC-AUC
+    promedio, la métrica menos sensible al desbalance de clases del inciso 2.4. Retorna el
+    mejor estimador ya ajustado y sus hiperparámetros.
+    """
+    grid = GRIDS_HIPERPARAMETROS[nombre]
+    fit_params = {}
+    if nombre == "gradient_boosting":
+        fit_params["sample_weight"] = compute_sample_weight("balanced", y_train)
+    buscador = RandomizedSearchCV(
+        modelo, grid, n_iter=n_iter, cv=cv, scoring="roc_auc", random_state=semilla, n_jobs=-1,
+    )
+    buscador.fit(X_train, y_train, **fit_params)
+    return buscador.best_estimator_, buscador.best_params_
+
+
+def evaluar(modelo, X_test: pd.DataFrame, y_test: pd.Series) -> dict:
+    """Calcula Accuracy, Precision, Recall, F1, ROC-AUC y matriz de confusión (inciso 5.1)."""
+    y_pred = modelo.predict(X_test)
+    y_proba = modelo.predict_proba(X_test)[:, 1]
+    return {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        "f1": f1_score(y_test, y_pred, zero_division=0),
+        "roc_auc": roc_auc_score(y_test, y_proba),
+        "matriz_confusion": confusion_matrix(y_test, y_pred),
+        "y_pred": y_pred,
+        "y_proba": y_proba,
+    }
+
+
+def guardar_modelo(nombre: str, modelo, ruta: Path = RUTA_MODELOS) -> None:
+    """Persiste un modelo ajustado, para reusarlo en los incisos 7 a 9 sin reentrenar."""
+    ruta.mkdir(parents=True, exist_ok=True)
+    joblib.dump(modelo, ruta / f"{nombre}.joblib")
+
+
+def cargar_modelo(nombre: str, ruta: Path = RUTA_MODELOS):
+    """Carga un modelo previamente guardado con `guardar_modelo`."""
+    return joblib.load(ruta / f"{nombre}.joblib")
+
+
 def _demo():
     """Self-check: valida la regla del umbral, la feature derivada y que predictoras y
     excluidas no se traslapen."""
@@ -119,6 +237,35 @@ def _demo():
     con_features = agregar_features(df)
     np.testing.assert_allclose(con_features["verde_azul_ratio"], df["verde"] / df["azul"])
     assert "verde_azul_ratio" not in df.columns, "agregar_features no debe mutar el df original"
+
+    import tempfile
+
+    rng = np.random.default_rng(0)
+    n = 400
+    df_grande = pd.DataFrame({p: rng.uniform(0.01, 1.5, n) for p in PREDICTORES})
+    df_grande["clorofila"] = rng.uniform(-5, 30, n)
+    df_grande = construir_respuesta(df_grande)
+
+    X_train, X_test, y_train, y_test = dividir_datos(df_grande)
+    assert len(X_train) + len(X_test) == n
+    assert abs(y_train.mean() - y_test.mean()) < 0.15, "el split estratificado no preservó el balance de clases"
+
+    modelos = entrenar_modelos(construir_modelos_base(), X_train, y_train)
+    assert set(modelos) == {"regresion_logistica", "random_forest", "gradient_boosting"}
+
+    mejor, params = ajustar_hiperparametros("regresion_logistica", modelos["regresion_logistica"], X_train, y_train, n_iter=2, cv=2)
+    assert "modelo__C" in params
+
+    metricas = evaluar(mejor, X_test, y_test)
+    for clave in ("accuracy", "precision", "recall", "f1", "roc_auc"):
+        assert 0.0 <= metricas[clave] <= 1.0, f"{clave} fuera de rango"
+    assert metricas["matriz_confusion"].shape == (2, 2)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        ruta_tmp = Path(tmp)
+        guardar_modelo("test", mejor, ruta=ruta_tmp)
+        recargado = cargar_modelo("test", ruta=ruta_tmp)
+        np.testing.assert_array_equal(recargado.predict(X_test), mejor.predict(X_test))
 
     print("src.modelado: self-check OK")
 
