@@ -214,6 +214,23 @@ def cargar_modelo(nombre: str, ruta: Path = RUTA_MODELOS):
     return joblib.load(ruta / f"{nombre}.joblib")
 
 
+def importancia_global(modelo, predictores: list[str] = PREDICTORES) -> pd.Series:
+    """Importancia global de cada predictora para el modelo ajustado (inciso 8.1).
+
+    Random Forest y Gradient Boosting exponen `feature_importances_` directamente. Regresión
+    Logística, envuelta en un `Pipeline` con escalado, no la tiene: se usa el valor absoluto
+    de sus coeficientes, comparables entre sí porque el escalado ya deja a todas las
+    predictoras en la misma escala. Retorna una Serie ordenada de mayor a menor importancia.
+    """
+    if hasattr(modelo, "feature_importances_"):
+        valores = modelo.feature_importances_
+    elif hasattr(modelo, "named_steps"):
+        valores = np.abs(modelo.named_steps["modelo"].coef_[0])
+    else:
+        raise ValueError("modelo sin `feature_importances_` ni `coef_` reconocido")
+    return pd.Series(valores, index=predictores).sort_values(ascending=False)
+
+
 def _demo():
     """Self-check: valida la regla del umbral, la feature derivada y que predictoras y
     excluidas no se traslapen."""
@@ -266,6 +283,14 @@ def _demo():
         guardar_modelo("test", mejor, ruta=ruta_tmp)
         recargado = cargar_modelo("test", ruta=ruta_tmp)
         np.testing.assert_array_equal(recargado.predict(X_test), mejor.predict(X_test))
+
+    imp_logreg = importancia_global(mejor)
+    assert set(imp_logreg.index) == set(PREDICTORES)
+    assert (imp_logreg.diff().dropna() <= 0).all(), "importancia_global no quedó ordenada de mayor a menor"
+
+    imp_rf = importancia_global(modelos["random_forest"])
+    assert set(imp_rf.index) == set(PREDICTORES)
+    assert (imp_rf >= 0).all()
 
     print("src.modelado: self-check OK")
 
