@@ -5,8 +5,28 @@ La variable respuesta se deriva de `clorofila` (clorofila-a en µg/L, calculada 
 construcción quedan excluidas como predictoras para evitar fuga de información.
 """
 
+import joblib
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.utils.class_weight import compute_sample_weight
+
+from src.config import RUTA_DATA_PROCESSED
+
+SEMILLA = 42
+RUTA_MODELOS = RUTA_DATA_PROCESSED / "modelos"
 
 # Umbral de clorofila-a (µg/L) para separar alta presencia de cianobacteria. WHO (2003),
 # Guidelines for Safe Recreational Water Environments, fija el Alert Level 1 en aguas
@@ -25,7 +45,26 @@ EXCLUIDAS = ["clorofila", "ndci", "rojo", "b05"]
 # la respuesta. `clp` (probabilidad residual de nube) también se excluye de este conjunto:
 # no es fuga de información, pero es un remanente de la limpieza de nubes del inciso 1 sin
 # señal ambiental relevante para cianobacteria, no un predictor espectral o espacial.
-PREDICTORES = ["verde", "azul", "b07", "b08", "b8a", "b11", "b12", "fai", "ndvi", "ndwi"]
+# `verde_azul_ratio` es la única variable derivada (inciso 3.3): no se agregan más razones
+# de bandas SWIR/red-edge porque b11, b12, b07 y b8a ya entran individualmente como
+# predictoras y una razón entre ellas sería casi colineal, sin aportar señal adicional.
+PREDICTORES = [
+    "verde", "azul", "b07", "b08", "b8a", "b11", "b12", "fai", "ndvi", "ndwi",
+    "verde_azul_ratio",
+]
+
+
+def agregar_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Agrega `verde_azul_ratio`, único predictor derivado del inciso 3.3.
+
+    Razón entre las bandas verde (B03) y azul (B02), análoga simplificada a las razones de
+    color oceánico OC2/OC3 (O'Reilly et al., 1998) usadas para estimar pigmentos
+    fotosintéticos en agua abierta. No comparte bandas con `ndci`/`clorofila`, por lo que no
+    introduce fuga de información. No modifica `df` in place, retorna una copia.
+    """
+    out = df.copy()
+    out["verde_azul_ratio"] = (out["verde"] / out["azul"]).astype(np.float32)
+    return out
 
 
 def construir_respuesta(df: pd.DataFrame, umbral: float = UMBRAL_CLOROFILA) -> pd.DataFrame:
@@ -58,13 +97,16 @@ def distribucion_respuesta(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
 
 
 def _demo():
-    """Self-check: valida la regla del umbral y que predictoras y excluidas no se traslapen."""
+    """Self-check: valida la regla del umbral, la feature derivada y que predictoras y
+    excluidas no se traslapen."""
     assert set(PREDICTORES).isdisjoint(EXCLUIDAS), "una predictora está marcada también como excluida"
 
     df = pd.DataFrame({
         "lago": ["atitlan"] * 4 + ["amatitlan"] * 2,
         "fecha": pd.to_datetime(["2025-01-01"] * 6),
         "clorofila": [5.0, 9.99, 10.0, 15.0, 3.0, 20.0],
+        "verde": [0.2, 0.4, 0.3, 0.6, 0.1, 0.5],
+        "azul": [0.1, 0.2, 0.1, 0.3, 0.2, 0.25],
     })
     out = construir_respuesta(df)
     assert out["alta_cianobacteria"].tolist() == [0, 0, 1, 1, 0, 1], "el umbral no se aplicó como >="
@@ -73,6 +115,10 @@ def _demo():
     assert dist["global"]["n"] == 6 and dist["global"]["n_alta"] == 3
     assert dist["por_lago"].loc["atitlan", "n_alta"] == 2
     assert dist["por_lago"].loc["amatitlan", "n_alta"] == 1
+
+    con_features = agregar_features(df)
+    np.testing.assert_allclose(con_features["verde_azul_ratio"], df["verde"] / df["azul"])
+    assert "verde_azul_ratio" not in df.columns, "agregar_features no debe mutar el df original"
 
     print("src.modelado: self-check OK")
 
