@@ -1,14 +1,18 @@
-OUTPUT_BANDS = ["rojo", "verde", "azul", "ndci", "clorofila", "fai", "ndvi", "ndwi", "agua", "mascara"]
+OUTPUT_BANDS = [
+    "rojo", "verde", "azul", "ndci", "clorofila", "fai", "ndvi", "ndwi", "agua", "mascara",
+    "b05", "b07", "b08", "b8a", "b11", "b12", "clm", "clp",
+]
 
 EVALSCRIPT_CIANOBACTERIA = """
 //VERSION=3
 function setup() {
   return {
     input: [{
-      bands: ["B02", "B03", "B04", "B05", "B07", "B08", "B8A", "B11", "B12", "dataMask"],
-      units: "REFLECTANCE"
+      bands: ["B02", "B03", "B04", "B05", "B07", "B08", "B8A", "B11", "B12", "dataMask", "CLM", "CLP"],
+      units: ["REFLECTANCE", "REFLECTANCE", "REFLECTANCE", "REFLECTANCE", "REFLECTANCE",
+              "REFLECTANCE", "REFLECTANCE", "REFLECTANCE", "REFLECTANCE", "DN", "DN", "DN"]
     }],
-    output: { bands: 10, sampleType: "FLOAT32" }
+    output: { bands: 18, sampleType: "FLOAT32" }
   };
 }
 
@@ -40,6 +44,9 @@ function evaluatePixel(s) {
   let ndci = (s.B05 - s.B04) / (s.B05 + s.B04);
   let clorofila = 826.57 * Math.pow(ndci, 3) - 176.43 * Math.pow(ndci, 2) + 19 * ndci + 4.071;
 
-  return [s.B04, s.B03, s.B02, ndci, clorofila, fai, ndvi, ndwi, agua, s.dataMask];
+  return [
+    s.B04, s.B03, s.B02, ndci, clorofila, fai, ndvi, ndwi, agua, s.dataMask,
+    s.B05, s.B07, s.B08, s.B8A, s.B11, s.B12, s.CLM, s.CLP,
+  ];
 }
 """
