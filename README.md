@@ -8,9 +8,9 @@ Conexión con el API de Sentinel Hub (Copernicus Data Space Ecosystem) y descarg
 
 ```
 informe/
-  secciones/     texto de cada inciso
+  secciones/     texto de cada inciso de la Parte II
   figuras/       gráficos y vistas generadas por los notebooks
-  construir_pdf.py  ensambla las secciones de la Parte II en INFORME_PARTE2.pdf
+  construir_pdf.py  ensambla INFORME.md y las secciones en INFORME_FINAL.pdf
 notebooks/       01_conexion_api.ipynb ... 08_analisis_exploratorio.ipynb (Parte I)
                  p2_01_preparacion_datos.ipynb ... p2_09_mapas_predictivos.ipynb (Parte II)
 src/             config.py, credenciales.py, conexion.py, evalscripts.py, descarga.py, raster.py,
@@ -65,10 +65,14 @@ Además de `sentinelhub`, `rasterio` y `pandas`, la Parte II requiere `scikit-le
 
 ### Informe
 
-El informe entregable de la Parte II es `INFORME_PARTE2.pdf`, en la raíz del repositorio. Se genera a partir de los archivos de `informe/secciones/` con:
+El entregable es **`INFORME_FINAL.pdf`**, en la raíz del repositorio: un solo documento con la Parte I y la Parte II. Se genera con:
 
 ```bash
 python informe/construir_pdf.py
 ```
 
-El script convierte las diez secciones a HTML, embebe las figuras de `informe/figuras/` y las imprime con Chromium en modo headless, con el formato pedido por el enunciado: texto negro de 12 pt, títulos de 16 pt centrados y encabezado con los integrantes del grupo. Requiere `markdown` y tener `chromium` disponible en el PATH. `INFORME.pdf` corresponde a la Parte I y se mantiene sin cambios.
+El script une `INFORME.md` (Parte I) con las diez secciones de `informe/secciones/` (Parte II), embebe las figuras de `informe/figuras/` y lo imprime con Chromium en modo headless, con el formato pedido por el enunciado: texto negro de 12 pt, títulos de 16 pt centrados y portada con los integrantes del grupo. Requiere `markdown` y tener `chromium` disponible en el PATH.
+
+La Parte I menciona sus figuras como enlaces dentro del texto; al construir el PDF esos enlaces se convierten en imágenes embebidas después del párrafo que las menciona, ya que un enlace a un archivo local no sirve dentro de un PDF. Los dos mapas interactivos de la Parte I (`.html`) no son embebibles y quedan solo como mención en el texto.
+
+`INFORME.pdf` es el PDF de la Parte I tal como se entregó en su momento y se conserva sin cambios.
