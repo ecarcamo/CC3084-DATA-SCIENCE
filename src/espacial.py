@@ -1,9 +1,11 @@
-"""Validación espacial mediante bloques regulares (Parte 2, inciso 6).
+"""Validación espacial y temporal por bloques (Parte 2, inciso 6).
 
 Divide cada lago en una cuadrícula regular sobre las coordenadas UTM 15N (EPSG:32615, ya
 calculadas en el inciso 1) y usa esa cuadrícula como agrupador para una validación cruzada
 que respeta la dependencia espacial entre observaciones cercanas, en contraste con la
-validación aleatoria del inciso 4.
+validación aleatoria del inciso 4. La misma idea se aplica sobre la fecha de adquisición
+(`cv_temporal`): los píxeles de una misma escena comparten condiciones atmosféricas y estado
+del lago, así que agrupar por fecha mide la capacidad del modelo de predecir escenas nuevas.
 """
 
 import numpy as np
@@ -71,12 +73,52 @@ def cv_aleatoria(modelo, X: pd.DataFrame, y: pd.Series, n_splits: int = 5, semil
     return cross_validate(modelo, X, y, cv=cv, scoring=["roc_auc", "recall", "f1"], n_jobs=-1)
 
 
+def asignar_grupos_temporales(df: pd.DataFrame) -> pd.Series:
+    """Asigna cada observación al grupo de su fecha de adquisición (validación temporal).
+
+    Análogo temporal de `asignar_bloques`: el agrupador es la escena completa. Se usa la fecha
+    sola, sin combinarla con el lago, para que las dos fechas compartidas por ambos lagos
+    (2026-04-13 y 2026-04-28) queden en el mismo fold; si se separaran, el modelo vería la
+    misma escena de un lago mientras se evalúa en la del otro, que es exactamente la fuga que
+    esta validación busca evitar.
+    """
+    return pd.to_datetime(df["fecha"]).dt.strftime("%Y-%m-%d")
+
+
+def resumen_grupos_temporales(df: pd.DataFrame, grupos: pd.Series) -> pd.DataFrame:
+    """Número de fechas y observaciones por fecha, por lago (contraparte de `resumen_bloques`)."""
+    tmp = pd.DataFrame({"lago": df["lago"].to_numpy(), "grupo": grupos.to_numpy()})
+    conteo = tmp.groupby(["lago", "grupo"], observed=True).size()
+    return conteo.groupby("lago", observed=True).agg(
+        n_fechas="count",
+        obs_por_fecha_min="min",
+        obs_por_fecha_mediana="median",
+        obs_por_fecha_max="max",
+    )
+
+
+def cv_temporal(modelo, X: pd.DataFrame, y: pd.Series, grupos: pd.Series, n_splits: int = 5, semilla: int = 42):
+    """Validación cruzada agrupada por fecha de adquisición (inciso 6, validación temporal).
+
+    Misma mecánica que `cv_espacial` pero con la fecha como grupo: ninguna observación de una
+    escena queda repartida entre entrenamiento y validación, de modo que cada fold se evalúa
+    sobre fechas que el modelo no vio. Responde a una pregunta distinta de la espacial: no "¿el
+    modelo predice zonas nuevas del lago?" sino "¿predice días nuevos?", en los que cambian la
+    iluminación solar, la nubosidad residual y el estado de la floración.
+    """
+    cv = StratifiedGroupKFold(n_splits=n_splits, shuffle=True, random_state=semilla)
+    return cross_validate(modelo, X, y, groups=grupos, cv=cv, scoring=["roc_auc", "recall", "f1"], n_jobs=-1)
+
+
 def _demo():
-    """Self-check: cuadrícula, conteo por bloque, elección segura de folds y ambas CV."""
+    """Self-check: cuadrícula, conteo por bloque, elección segura de folds y las tres CV."""
     rng = np.random.default_rng(0)
     n = 600
+    fechas = pd.to_datetime(["2025-01-18", "2025-04-13", "2025-05-13", "2025-07-17",
+                             "2025-11-21", "2025-12-29"])
     df = pd.DataFrame({
         "lago": ["atitlan"] * 400 + ["amatitlan"] * 200,
+        "fecha": rng.choice(fechas, n),
         "x_utm": np.concatenate([rng.uniform(0, 5000, 400), rng.uniform(0, 3000, 200)]),
         "y_utm": np.concatenate([rng.uniform(0, 5000, 400), rng.uniform(0, 3000, 200)]),
     })
@@ -101,6 +143,14 @@ def _demo():
     res_aleatoria = cv_aleatoria(modelo, X, y, n_splits=n_splits)
     assert len(res_espacial["test_roc_auc"]) == n_splits
     assert len(res_aleatoria["test_roc_auc"]) == n_splits
+
+    grupos = asignar_grupos_temporales(df)
+    assert grupos.nunique() == len(fechas)
+    resumen_t = resumen_grupos_temporales(df, grupos)
+    assert set(resumen_t.index) == {"atitlan", "amatitlan"}
+    n_splits_t = n_splits_seguro(grupos, y, maximo=5)
+    res_temporal = cv_temporal(modelo, X, y, grupos, n_splits=n_splits_t)
+    assert len(res_temporal["test_roc_auc"]) == n_splits_t
 
     print("src.espacial: self-check OK")
 
