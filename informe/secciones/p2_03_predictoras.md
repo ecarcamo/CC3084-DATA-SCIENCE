@@ -34,7 +34,9 @@ La figura `p2_correlacion_predictoras_respuesta.png` muestra la correlación de 
 
 ![Correlación de Spearman de cada predictora con la variable respuesta](../figuras/p2_correlacion_predictoras_respuesta.png)
 
-`ndvi` y `verde_azul_ratio` muestran la correlación positiva más fuerte, consistente con que ambas capturan, de forma indirecta, la señal de pigmentos fotosintéticos que también produce el NDCI. `ndwi` muestra la correlación negativa más fuerte, coherente con que las floraciones dispersan y reflejan más luz en el visible/NIR, reduciendo la señal de "agua limpia" que captura ese índice. Las bandas SWIR (`b11`, `b12`) muestran correlaciones más débiles, aportando información complementaria más que señal dominante.
+Las correlaciones positivas más fuertes son `fai` (0.39) y `ndvi` (0.38), seguidas de `b07` (0.35), `verde_azul_ratio` (0.34) y `b08` (0.34): todas capturan, por vías distintas, la señal de biomasa flotante y pigmentos fotosintéticos que también produce el NDCI. `ndwi` es la única con correlación negativa (−0.32), coherente con que las floraciones dispersan y reflejan más luz en el visible/NIR, reduciendo la señal de "agua limpia" que captura ese índice. Las bandas SWIR (`b11` 0.12, `b12` 0.08) muestran las correlaciones más débiles, aportando información complementaria más que señal dominante.
+
+Ninguna predictora individual supera 0.39 en valor absoluto, lo que confirma que la relación entre firma espectral y alta presencia de cianobacteria no es capturable por una sola variable de forma lineal-monótona; es un argumento a favor de los modelos no lineales del inciso 4 frente a un simple umbral sobre un índice.
 
 ## Figuras generadas
 

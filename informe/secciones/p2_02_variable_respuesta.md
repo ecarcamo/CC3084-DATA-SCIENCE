@@ -22,11 +22,22 @@ La figura `p2_distribucion_respuesta.png` muestra la proporción de observacione
 
 ![Distribución de la variable respuesta, por lago y por fecha](../figuras/p2_distribucion_respuesta.png)
 
-Amatitlán presenta una proporción de clase positiva muy superior a Atitlán en todas las fechas, consistente con su mayor deterioro ambiental ya reportado en la Parte I. En Atitlán la proporción se mantiene baja y estable, con un repunte moderado en las fechas de 2026. En Amatitlán la proporción es alta desde el inicio de la serie y muestra picos pronunciados en 2026-04-28 y 2026-06-19, coincidentes con los eventos de floración identificados en la Parte I.
+**Globalmente**, de las 3,753,732 observaciones del dataset, 43,269 (**1.15 %**) quedan clasificadas como alta presencia.
+
+**Por lago**, la diferencia es de dos órdenes de magnitud:
+
+| Lago | Observaciones | Alta presencia | Proporción |
+|---|---|---|---|
+| Amatitlán | 396,165 | 42,405 | **10.70 %** |
+| Atitlán | 3,357,567 | 864 | **0.026 %** |
+
+Es decir, el 98 % de las observaciones positivas del dataset provienen de Amatitlán, que aporta apenas el 10.6 % de las observaciones totales.
+
+**Por fecha**, la proporción positiva en Amatitlán recorre casi todo el rango posible: desde 0.00 % (2026-02-02, 1 píxel de 36,010) hasta **53.7 %** (2026-06-19) y 36.9 % (2026-04-28), con valores intermedios de 7-8 % en 2025-04-28, 2026-01-08 y 2026-03-29. En Atitlán ninguna fecha supera el 0.11 % (máximo 2026-07-22, con 335 píxeles), y siete de las once fechas quedan por debajo de 0.05 %. Los dos picos de Amatitlán coinciden con los eventos de floración identificados en la Parte I.
 
 ### 2.4 Desbalance de clases
 
-Existe un desbalance de clases considerable, dominado por el mayor volumen de observaciones y menor proporción positiva de Atitlán. Las consecuencias sobre el entrenamiento y la evaluación de los modelos son:
+Existe un desbalance de clases severo: la razón global es de **85.8 : 1** a favor de la clase 0 (3,710,463 observaciones de clase 0 contra 43,269 de clase 1). Ese promedio, además, esconde dos regímenes muy distintos: en Amatitlán la razón es de **8.3 : 1**, un desbalance moderado y manejable, mientras que en Atitlán llega a **3,885 : 1**, un caso extremo en el que la clase positiva es prácticamente anecdótica. Las consecuencias sobre el entrenamiento y la evaluación de los modelos son:
 
 - **Entrenamiento**: un clasificador puede minimizar la función de pérdida global prediciendo casi siempre la clase mayoritaria (0), logrando *accuracy* alto sin aprender a distinguir la clase de interés. Se mitiga con `class_weight="balanced"` en Regresión Logística y Random Forest (inciso 4) y con la división estratificada del inciso 4.2.
 - **Evaluación**: el *accuracy* deja de ser informativo, porque un modelo trivial que siempre predice 0 obtendría un *accuracy* cercano a la proporción de la clase mayoritaria. Por eso el inciso 5 reporta también *precision*, *recall*, *F1* y *ROC-AUC*, y prioriza el *recall* de la clase 1 dado el mayor costo ambiental de no detectar una floración real frente al de una falsa alarma (inciso 5.3).
