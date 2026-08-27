@@ -1,0 +1,8 @@
+pandas
+matplotlib
+seaborn
+nltk
+wordcloud
+kaggle
+ipykernel
+nbconvert
