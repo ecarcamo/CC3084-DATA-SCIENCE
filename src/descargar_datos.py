@@ -3,8 +3,8 @@ from pathlib import Path
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 def main():
-    data_dir = Path("../data/raw")
-    data_dir.mkdir(exist_ok=True)
+    data_dir = Path(__file__).resolve().parent.parent / "data" / "raw"
+    data_dir.mkdir(parents=True, exist_ok=True)
     
     print("Descargando dataset...")
     api = KaggleApi()
