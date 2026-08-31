@@ -34,19 +34,34 @@ def remove_numbers(text: str) -> str:
 def remove_stopwords(text: str) -> str:
     return ' '.join([w for w in text.split() if w not in STOPWORDS])
 
+# Orden canonico de la limpieza. Es la unica definicion del pipeline: tanto el
+# procesamiento por lotes del dataset como la clasificacion de un tweet suelto
+# la consumen, de modo que no puedan quedar desalineados.
+STEPS = [
+    ('1_lowercase', to_lowercase),
+    ('2_no_urls', remove_urls),
+    ('3_no_special', remove_special_chars),
+    ('4_no_emojis', remove_emojis),
+    ('5_no_punct', remove_punctuation),
+    ('6_no_numbers', remove_numbers),
+    ('7_no_stopwords', remove_stopwords),
+]
+
+
+def clean_text(text: str) -> str:
+    """Aplica el pipeline completo a un solo texto crudo."""
+    if not isinstance(text, str):
+        return ''
+    for _, func in STEPS:
+        text = func(text)
+    return text.strip()
+
+
 def apply_cleaning_pipeline(df: pd.DataFrame, text_col: str = 'text', preprocessing_dir: Path = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Aplica la limpieza por pasos, guarda los intermedios y devuelve (df_final, stats)."""
-    
-    steps = [
-        ('1_lowercase', to_lowercase),
-        ('2_no_urls', remove_urls),
-        ('3_no_special', remove_special_chars),
-        ('4_no_emojis', remove_emojis),
-        ('5_no_punct', remove_punctuation),
-        ('6_no_numbers', remove_numbers),
-        ('7_no_stopwords', remove_stopwords)
-    ]
-    
+
+    steps = STEPS
+
     if preprocessing_dir:
         preprocessing_dir.mkdir(parents=True, exist_ok=True)
         
