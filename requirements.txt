@@ -6,3 +6,4 @@ wordcloud
 kaggle
 ipykernel
 nbconvert
+scikit-learn
