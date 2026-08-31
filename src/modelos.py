@@ -25,9 +25,11 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
+from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_val_score, train_test_split
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 
 RANDOM_STATE = 42
@@ -92,6 +94,46 @@ def build_best_model() -> Pipeline:
     model = build_models()["Regresión Logística"]
     model.set_params(**BEST_PARAMS)
     return model
+
+
+def _tfidf_ganador() -> TfidfVectorizer:
+    """El vectorizador con los parámetros que ganó la búsqueda en malla."""
+    return TfidfVectorizer(
+        ngram_range=BEST_PARAMS["tfidf__ngram_range"],
+        min_df=BEST_PARAMS["tfidf__min_df"],
+        sublinear_tf=BEST_PARAMS["tfidf__sublinear_tf"],
+    )
+
+
+def _clf_ganador() -> LogisticRegression:
+    return LogisticRegression(
+        C=BEST_PARAMS["clf__C"],
+        class_weight=BEST_PARAMS["clf__class_weight"],
+        max_iter=1000,
+        random_state=RANDOM_STATE,
+    )
+
+
+def build_model_columnas(extra_cols: list[str] | None = None, text_col: str = "text") -> Pipeline:
+    """Modelo ganador reexpresado sobre un DataFrame, con columnas numéricas opcionales.
+
+    Sirve para el inciso 10: permite comparar el modelo de solo texto contra el mismo
+    modelo más la negatividad, cambiando únicamente `extra_cols`. Ambos comparten
+    arquitectura, hiperparámetros y semilla, de modo que cualquier diferencia de
+    desempeño sea atribuible a las columnas añadidas y no al montaje.
+
+    Las columnas numéricas se estandarizan porque conviven con valores TF-IDF
+    acotados a [0, 1]: sin escalar, una variable en otro rango recibiría una
+    penalización de regularización desproporcionada.
+    """
+    transformadores = [("tfidf", _tfidf_ganador(), text_col)]
+    if extra_cols:
+        transformadores.append(("num", StandardScaler(), list(extra_cols)))
+
+    return Pipeline([
+        ("pre", ColumnTransformer(transformadores)),
+        ("clf", _clf_ganador()),
+    ])
 
 
 def _scores(model, X) -> pd.Series | None:
