@@ -5,7 +5,6 @@ from nltk.corpus import stopwords
 import pandas as pd
 from pathlib import Path
 
-# Descargar stopwords (silencioso)
 try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
@@ -23,7 +22,7 @@ def remove_special_chars(text: str) -> str:
     return re.sub(r'[@#\']', '', text)
 
 def remove_emojis(text: str) -> str:
-    # ASCII ignorará emojis. Regex complejo no es necesario aquí (YAGNI).
+    """Los emojis quedan fuera del rango ASCII, así que codificar a ASCII los descarta."""
     return text.encode('ascii', 'ignore').decode('ascii')
 
 def remove_punctuation(text: str) -> str:
