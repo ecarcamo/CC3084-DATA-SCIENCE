@@ -127,21 +127,30 @@ Deps nuevas: `spacy` + modelo `es_core_news_sm`, `nltk` stopwords (ver README).
 
 **Recibe:** `data/processed/*_clean.csv` · **Notebook:** `02_eda.ipynb`
 
-- [ ] **3.1** (6 pts) Reportar: nº videos, canales, comentarios, autores; videos por canal; comentarios y
-      autores únicos **por video**; visualizaciones; respuestas; me gusta; categorías; consultas; hashtags;
-      palabras y **bigramas** frecuentes (sobre `texto_limpio`).
-- [ ] **3.2** (3 pts) Concentración de la participación: % de comentarios en los videos/canales más activos
-      (Lorenz / % acumulado / top-N). Hallazgo esperado: 1 video ≈ 40 %, 4 videos ≈ 69 %, 5 videos ≈ 75 %.
-- [ ] **3.3** (2 pts) Popularidad (`view_count`) vs. participación (nº comentarios): correlación + scatter
-      log-log. Limitación: conteos del momento de recolección, muestra chica.
-- [ ] **3.4** (3 pts) Visualizaciones pertinentes y **bien interpretadas** (cada gráfico con su lectura).
-      Nube de palabras opcional, no sustituye gráficos de frecuencia.
-- [ ] **3.5** (2 pts) Responder con evidencia las 6 preguntas del inciso (participación, audiencias
-      compartidas, autores puente, temas/sentimiento de comunidades — deja lo de comunidades/sentimiento
-      como "se cierra en Etapa 7/9", visibilidad por visualizaciones, límites del muestreo).
-- [ ] **3.6** (2 pts) **≥ 3 preguntas adicionales** propias, respondidas con datos.
+- [x] **3.1** (6 pts) Reportado: 293 videos / 97 canales / 406 comentarios / 332 autores; videos por canal
+      (mediana 1, máx 32); comentarios y autores por video (19 con actividad, mediana 7, máx 161);
+      `view_count`; respuestas (51, solo 7.4 % de comentarios); likes (189 nulos = ' '); categorías;
+      consultas; hashtags (1 en comentarios, 104 videos con hashtag en descripción); palabras y bigramas.
+- [x] **3.2** (3 pts) Concentración con top-N + Lorenz + Gini. **Confirmado:** 1 video = 39.7 %,
+      4 = 69.2 %, 5 = 75.4 % (Gini 0.66). Canales: Quorum 63.1 %, con Gobierno 80.3 %.
+      Contraste clave: autores casi uniformes (Gini 0.16).
+- [x] **3.3** (2 pts) Spearman 0.811 y Pearson log-log 0.718 sobre los 19; 0.08 sobre los 293.
+      Relación sublineal (13.7 vs 0.08 comentarios por mil vistas). Limitaciones documentadas.
+- [x] **3.4** (3 pts) 15 figuras `outputs/figuras/eda_*.png`, cada una con su lectura en markdown.
+      Nube de palabras incluida como complemento.
+- [x] **3.5** (2 pts) Las 6 preguntas respondidas con evidencia. Comunidades/sentimiento marcados como
+      preliminares (proxy por canal y por emoji) → se cierran en Etapas 7 y 9.
+- [x] **3.6** (2 pts) 4 preguntas propias: sesgo de la estrategia de búsqueda (105 videos `official_gov`
+      con 0 comentarios), antigüedad de los comentarios (71.7 % ≥ 1 año, ventanas de horas a 7 años),
+      vocabulario por tipo de emisor, y rasgos superficiales vs. likes (correlación nula).
 
-**Entrega:** figuras en `outputs/figuras/`, notebook corrido. `push` + avisar a **Hugo**.
+**Entregado:** `notebooks/02_eda.ipynb` corrido · `src/eda.py` (módulo reutilizable con self-check) ·
+15 figuras en `outputs/figuras/eda_*.png` · 10 tablas en `outputs/tablas/eda_*.csv`.
+
+**Insumos que la Etapa 4 puede reutilizar:** `eda.cargar_procesados()`, `outputs/tablas/eda_por_video.csv`
+(atributos de video para la tabla de nodos) y `eda_autores_puente.csv` (los 9 autores multi-video).
+**Predicción verificable para Hugo/Ernesto:** la proyección video–video tendrá **11 aristas** de 171
+posibles y peso máximo 2 (ver `eda_pares_videos_compartidos.csv`).
 
 ---
 
