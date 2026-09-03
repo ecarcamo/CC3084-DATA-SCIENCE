@@ -1,0 +1,194 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"><key id="d6" for="edge" attr.name="weight" attr.type="long"/>
+<key id="d5" for="node" attr.name="n_autores" attr.type="long"/>
+<key id="d4" for="node" attr.name="n_comentarios" attr.type="long"/>
+<key id="d3" for="node" attr.name="channel_name" attr.type="string"/>
+<key id="d2" for="node" attr.name="channel_id" attr.type="string"/>
+<key id="d1" for="node" attr.name="tipo" attr.type="string"/>
+<key id="d0" for="node" attr.name="bipartite" attr.type="long"/>
+<graph edgedefault="undirected"><node id="06mFNPU0aB8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCVpSRoZgngfSL03Nlbjtq9A</data>
+  <data key="d3">Noti7</data>
+  <data key="d4">14</data>
+  <data key="d5">13</data>
+</node>
+<node id="3Nfp9h5avBI">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCdSVqHGHzyMTXSafUHY-e-w</data>
+  <data key="d3">Noticiero Guatevisión 13 Hrs.</data>
+  <data key="d4">2</data>
+  <data key="d5">2</data>
+</node>
+<node id="6W4u8sGEnGM">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UC-ZtFBHzgkYFh7whZkuR_Ag</data>
+  <data key="d3">Gobierno de la República de Guatemala</data>
+  <data key="d4">45</data>
+  <data key="d5">32</data>
+</node>
+<node id="JkpVO1hx2f8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">3</data>
+  <data key="d5">3</data>
+</node>
+<node id="OkXlHx0hx-8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCRwA1NUcUnwsly35ikGhp0A</data>
+  <data key="d3">Noticias Telemundo</data>
+  <data key="d4">25</data>
+  <data key="d5">18</data>
+</node>
+<node id="PjmxCj-a9Hg">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UC-ZtFBHzgkYFh7whZkuR_Ag</data>
+  <data key="d3">Gobierno de la República de Guatemala</data>
+  <data key="d4">25</data>
+  <data key="d5">19</data>
+</node>
+<node id="TT4qJ5FXHYE">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">4</data>
+  <data key="d5">4</data>
+</node>
+<node id="UhL9y3KUl8E">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">1</data>
+  <data key="d5">1</data>
+</node>
+<node id="WIUZtitfLRw">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">6</data>
+  <data key="d5">6</data>
+</node>
+<node id="X_FAIef8qlE">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">1</data>
+  <data key="d5">1</data>
+</node>
+<node id="b_Hkrkl3adA">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCEepOY2svuxbsJ-zsAPT9Fg</data>
+  <data key="d3">PrensaLibreOficial</data>
+  <data key="d4">7</data>
+  <data key="d5">7</data>
+</node>
+<node id="is3Mk5oC19g">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCt5Dw7ePnn0AqPqRF8Xpjkw</data>
+  <data key="d3">TN23 Guatemala</data>
+  <data key="d4">7</data>
+  <data key="d5">7</data>
+</node>
+<node id="j43HgwYFKfk">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">50</data>
+  <data key="d5">49</data>
+</node>
+<node id="lj983NWyAQY">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCXa6LVjBzUtmcM3cwbd9e2w</data>
+  <data key="d3">Municipalidad de Guatemala</data>
+  <data key="d4">25</data>
+  <data key="d5">25</data>
+</node>
+<node id="n8iP75gIpmw">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">161</data>
+  <data key="d5">128</data>
+</node>
+<node id="ndAZjHqzzT8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">12</data>
+  <data key="d5">10</data>
+</node>
+<node id="s0eco-BofOs">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">1</data>
+  <data key="d5">1</data>
+</node>
+<node id="yLZS3JiEBg8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">16</data>
+  <data key="d5">16</data>
+</node>
+<node id="zweosulrwA8">
+  <data key="d0">1</data>
+  <data key="d1">video</data>
+  <data key="d2">UCE4rsXcgDb6e1-a9iTbWzfg</data>
+  <data key="d3">Quorum</data>
+  <data key="d4">1</data>
+  <data key="d5">1</data>
+</node>
+<edge source="06mFNPU0aB8" target="6W4u8sGEnGM">
+  <data key="d6">1</data>
+</edge>
+<edge source="6W4u8sGEnGM" target="PjmxCj-a9Hg">
+  <data key="d6">1</data>
+</edge>
+<edge source="PjmxCj-a9Hg" target="n8iP75gIpmw">
+  <data key="d6">1</data>
+</edge>
+<edge source="WIUZtitfLRw" target="yLZS3JiEBg8">
+  <data key="d6">1</data>
+</edge>
+<edge source="WIUZtitfLRw" target="ndAZjHqzzT8">
+  <data key="d6">1</data>
+</edge>
+<edge source="b_Hkrkl3adA" target="n8iP75gIpmw">
+  <data key="d6">1</data>
+</edge>
+<edge source="is3Mk5oC19g" target="j43HgwYFKfk">
+  <data key="d6">1</data>
+</edge>
+<edge source="j43HgwYFKfk" target="n8iP75gIpmw">
+  <data key="d6">2</data>
+</edge>
+<edge source="j43HgwYFKfk" target="ndAZjHqzzT8">
+  <data key="d6">1</data>
+</edge>
+<edge source="n8iP75gIpmw" target="ndAZjHqzzT8">
+  <data key="d6">1</data>
+</edge>
+<edge source="ndAZjHqzzT8" target="yLZS3JiEBg8">
+  <data key="d6">2</data>
+</edge>
+</graph></graphml>
