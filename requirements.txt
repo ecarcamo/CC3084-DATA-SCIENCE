@@ -1,0 +1,23 @@
+# Laboratorio 6 — Análisis de redes sociales (YouTube)
+# Python 3.12 · instalar con:  pip install -r requirements.txt
+
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+seaborn>=0.13
+
+# Texto (Sec. 2 y 9)
+nltk>=3.9
+wordcloud>=1.9
+emoji>=2.12
+
+# Redes (Sec. 4-8)
+networkx>=3.3
+python-louvain>=0.16          # import community  ->  detección de comunidades (Louvain)
+
+# Notebooks
+jupyter>=1.0
+ipykernel>=6.29
+
+# Sentimiento en español (Sec. 9) — pesado (torch); descomentar cuando se llegue a la Etapa 9
+# pysentimiento>=0.7

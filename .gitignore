@@ -1,5 +1,12 @@
 TEMP/
-data/
+.DS_Store
+
+# Datos: se ignora todo salvo los CSV originales del laboratorio 6
+data/*
+!data/raw/
+data/raw/*
+!data/raw/youtube_videos.csv
+!data/raw/youtube_comments.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -81,12 +81,12 @@ README.md   requirements.txt
 **Recibe:** `data/raw/youtube_videos.csv`, `data/raw/youtube_comments.csv`
 **Notebook:** `01_carga_limpieza.ipynb` · **Módulo:** `src/carga.py`
 
-- [ ] **1.1** Cargar ambos CSV con pandas.
-- [ ] **1.2** Markdown: unidad de observación de cada archivo, llave primaria (`video_id` / `comment_id`),
+- [x] **1.1** Cargar ambos CSV con pandas.
+- [x] **1.2** Markdown: unidad de observación de cada archivo, llave primaria (`video_id` / `comment_id`),
       variables relevantes vs. descartables.
-- [ ] **1.3** Explicar la relación canal → video → autor del comentario → comentario → categoría → consulta de
+- [x] **1.3** Explicar la relación canal → video → autor del comentario → comentario → categoría → consulta de
       búsqueda. Aclarar: el autor del comentario ≠ dueño del canal del video.
-- [ ] **1.4** Integrar por `video_id`. Reportar cuántos comentarios se asociaron a un video (esperado
+- [x] **1.4** Integrar por `video_id`. Reportar cuántos comentarios se asociaron a un video (esperado
       **406/406 = 100 %**) y cuántos videos quedan sin comentarios (**274**).
 
 **Entrega:** el notebook con la carga y el `merge` hecho. Seguir de una con la Etapa 2 (misma persona).
@@ -127,7 +127,7 @@ README.md   requirements.txt
       autores únicos **por video**; visualizaciones; respuestas; me gusta; categorías; consultas; hashtags;
       palabras y **bigramas** frecuentes (sobre `texto_limpio`).
 - [ ] **3.2** (3 pts) Concentración de la participación: % de comentarios en los videos/canales más activos
-      (Lorenz / % acumulado / top-N). Hallazgo esperado: 4 videos ≈ 74 %.
+      (Lorenz / % acumulado / top-N). Hallazgo esperado: 1 video ≈ 40 %, 4 videos ≈ 69 %, 5 videos ≈ 75 %.
 - [ ] **3.3** (2 pts) Popularidad (`view_count`) vs. participación (nº comentarios): correlación + scatter
       log-log. Limitación: conteos del momento de recolección, muestra chica.
 - [ ] **3.4** (3 pts) Visualizaciones pertinentes y **bien interpretadas** (cada gráfico con su lectura).
@@ -280,7 +280,7 @@ Pasar esa tabla a **Hugo** para cerrar 7.5, y avisar a **Hugo** para arrancar Et
 
 - **Solo 19 de 293 videos tienen comentarios.** 406 comentarios, **332 autores únicos**.
 - 100 % de comentarios hace match con un `video_id` → la integración (1.4) no pierde filas.
-- Participación **muy concentrada**: 1 video = 161 comentarios; 4 videos ≈ 74 %.
+- Participación **muy concentrada**: 1 video = 161 comentarios (≈ 40 %); 4 videos ≈ 69 %; 5 videos ≈ 75 %.
 - **Solo 9 autores comentan en más de un video** →
   - Proyección **video–video: 11 aristas de 171** → red casi desconectada.
   - Bipartita fragmentada en ~11+ componentes; las "comunidades" ≈ 1 por video.
