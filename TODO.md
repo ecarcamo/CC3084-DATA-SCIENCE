@@ -97,25 +97,29 @@ README.md   requirements.txt
 
 **Recibe:** los datos integrados de la Etapa 1 · **Notebook:** `01_carga_limpieza.ipynb` · **Módulo:** `src/limpieza.py`
 
-- [ ] **2.1** (4 pts) Diagnóstico de calidad: dimensiones, tipos, faltantes por columna, duplicados,
+- [x] **2.1** (4 pts) Diagnóstico de calidad: dimensiones, tipos, faltantes por columna, duplicados,
       **constantes** (`is_pinned`), **vacías** (`viewer_rating`), atípicos, consistencia IDs/nombres/handles.
-- [ ] **2.2** (2 pts) Variables de uso delicado + tratamiento: `published_time`/`published_text` (relativas),
+      Hallazgo extra: 36/406 `comment_id` con `.` son respuestas, no comentarios raíz (se conservan y documenta).
+- [x] **2.2** (2 pts) Variables de uso delicado + tratamiento: `published_time`/`published_text` (relativas),
       `view_count_text` (display), `source_query` (muestreo, no tema), listas en texto
       (`dataset_sources`, `query_hits`, `keywords`).
-- [ ] **2.3** (2 pts) Normalizar IDs y nombres **sin sustituir ID por nombre visible**. IDs canónicos:
-      `channel_id`, `video_id`, `comment_id`, `author_channel_id` (a string, `strip`).
-- [ ] **2.4** (3 pts) Conteos de texto → numérico: `like_count_text` → `like_count`, cotejar
-      `view_count_text` vs. `view_count`. Documentar separadores de miles, abreviaturas ("1.2K"), inválidos
-      (`' '`, vacío → NaN).
-- [ ] **2.5** (3 pts) Crear `texto_original` (intacto) y `texto_limpio`. Justificar conservar ambos.
-- [ ] **2.6** (2 pts) Documentar cada paso de `texto_limpio`: minúsculas, URLs, hashtags/menciones,
-      puntuación, números, stopwords **español**, lematización, emojis.
-- [ ] **2.7** (2 pts) Cuantificar efecto de la limpieza: registros eliminados/modificados, textos vacíos y
-      duplicados **antes vs. después**.
+- [x] **2.3** (2 pts) Normalizar IDs y nombres **sin sustituir ID por nombre visible**. IDs canónicos:
+      `channel_id`, `video_id`, `comment_id`, `author_channel_id` (a string, `strip`). Handles: quita `/@`,
+      decodifica `%XX`, minúsculas (solo presentación). Elimina `viewer_rating`, `is_pinned`, `video_title`,
+      `upload_date`, `owner_handle`.
+- [x] **2.4** (3 pts) `like_count_text` → `like_count` (`Int64`, 189 `' '` → `<NA>`); `view_count_text` →
+      `view_count_text_num` y cotejado con `view_count`. Parser general (miles, coma decimal, `K`/`M`/`mil`).
+      `keywords`/`query_hits`/`dataset_sources` → listas (`*_list`).
+- [x] **2.5** (3 pts) `texto_original` (intacto, para auditoría/sentimiento) y `texto_limpio`.
+- [x] **2.6** (2 pts) 9 pasos de `texto_limpio` documentados en tabla: minúsculas, URLs, separar
+      menciones/hashtags, emojis (a columna aparte), números/puntuación, stopwords NLTK-es (313),
+      lematización spaCy `es_core_news_sm`, filtro ≥3 letras.
+- [x] **2.7** (2 pts) `efecto_limpieza()`: 0 filas eliminadas; long. media 139→86 car.; 6/406 quedan con
+      `texto_limpio` vacío (marcadas con `texto_limpio_vacio`).
 
-**Entrega:** `data/processed/comments_clean.csv` y `videos_clean.csv` con IDs normalizados (string),
-`like_count`/`reply_count`/`view_count` numéricos, y en comments `texto_original` + `texto_limpio`.
-`git commit` + `push` + avisar a **Esteban**.
+**Entrega:** `data/processed/comments_clean.csv` (406×23) y `videos_clean.csv` (293×23) con IDs normalizados,
+`like_count` numérico, listas parseadas y `texto_original`/`texto_limpio`. `push` + avisar a **Esteban**.
+Deps nuevas: `spacy` + modelo `es_core_news_sm`, `nltk` stopwords (ver README).
 
 ---
 

@@ -7,9 +7,13 @@ matplotlib>=3.8
 seaborn>=0.13
 
 # Texto (Sec. 2 y 9)
-nltk>=3.9
+nltk>=3.9                      # stopwords en español (nltk.download('stopwords'))
 wordcloud>=1.9
 emoji>=2.12
+spacy>=3.7
+# modelo de lematización en español (instalar aparte):
+#   python -m spacy download es_core_news_sm
+es-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
 
 # Redes (Sec. 4-8)
 networkx>=3.3
