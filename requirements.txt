@@ -17,6 +17,7 @@ es-core-news-sm @ https://github.com/explosion/spacy-models/releases/download/es
 
 # Redes (Sec. 4-8)
 networkx>=3.3
+scipy>=1.11                    # requerido por networkx para pagerank / eigenvector (Etapa 8)
 python-louvain>=0.16          # import community  ->  detección de comunidades (Louvain)
 
 # Notebooks
