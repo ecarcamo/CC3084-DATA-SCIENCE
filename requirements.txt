@@ -25,5 +25,5 @@ jupyter>=1.0
 ipykernel>=6.29
 jupytext>=1.16                # los notebooks se pueden editar/versionar como .py (formato percent)
 
-# Sentimiento en español (Sec. 9) — pesado (torch); descomentar cuando se llegue a la Etapa 9
-# pysentimiento>=0.7
+# Sentimiento en español (Sec. 9) — modelo RoBERTa-es (TASS); instala torch + transformers (~2 GB)
+pysentimiento>=0.7

@@ -1,0 +1,9 @@
+channel_id,n_comentarios,score_medio,positivo,neutral,negativo,pct_negativo,muestra_suficiente,canal
+UCE4rsXcgDb6e1-a9iTbWzfg,256,-0.5022,36,41,179,69.9,True,Quorum
+UC-ZtFBHzgkYFh7whZkuR_Ag,70,-0.2206,17,18,35,50.0,True,Gobierno de la República de Guatemala
+UCRwA1NUcUnwsly35ikGhp0A,25,-0.4731,2,7,16,64.0,True,Noticias Telemundo
+UCXa6LVjBzUtmcM3cwbd9e2w,25,0.6094,20,3,2,8.0,True,Municipalidad de Guatemala
+UCVpSRoZgngfSL03Nlbjtq9A,14,-0.1765,3,7,4,28.6,True,Noti7
+UCEepOY2svuxbsJ-zsAPT9Fg,7,-0.759,0,1,6,85.7,False,PrensaLibreOficial
+UCt5Dw7ePnn0AqPqRF8Xpjkw,7,-0.6218,0,1,6,85.7,False,TN23 Guatemala
+UCdSVqHGHzyMTXSafUHY-e-w,2,-0.5193,0,1,1,50.0,False,Noticiero Guatevisión 13 Hrs.
