@@ -575,7 +575,7 @@ from pyspark.ml.stat import Correlation
 
 _assembler = VectorAssembler(inputCols=NUMERIC_VARS, outputCol="features_corr")
 _vec_df = _assembler.transform(df_2025).select("features_corr")
-corr_matrix = Correlation.corr(_vec_df, "features_corr").head()[0].toArray()
+corr_matrix = Correlation.corr(_vec_df, "features_corr", "pearson").head()[0].toArray()
 corr_pdf = pd.DataFrame(corr_matrix, index=NUMERIC_VARS, columns=NUMERIC_VARS)
 
 fig, ax = plt.subplots(figsize=(6, 5))
@@ -588,16 +588,30 @@ corr_pdf
 # %% [markdown]
 # **Respuestas (P2):**
 # - **¿Qué variables presentan mayor asociación lineal con el salario?**
-#   Todas las correlaciones con `salario_mensual` son débiles: `antiguedad`
-#   (≈0.18) y `edad` (≈0.15) son las más altas, seguidas de `horas_semanales`
-#   (≈0.08, prácticamente nula). Ninguna variable numérica por sí sola explica
-#   linealmente el salario — es esperable, ya que el salario también depende
-#   de variables categóricas (nivel educativo, categoría ocupacional) no
-#   incluidas en esta matriz.
-# - **¿Existe relación entre edad y antigüedad?** Sí, es la correlación más
-#   fuerte de toda la matriz (≈0.49, positiva y moderada): las personas de
-#   mayor edad tienden a llevar más tiempo en su ocupación principal, lo cual
-#   es consistente con una trayectoria laboral acumulada.
+#   Se ordenan las correlaciones absolutas calculadas, no las supuestas.
+# - **¿Existe relación entre edad y antigüedad?** El signo y la magnitud
+#   observados se informan debajo. Correlación no significa causalidad.
+
+# %%
+asociaciones = corr_pdf.loc["salario_mensual"].drop("salario_mensual")
+asociaciones = asociaciones.reindex(asociaciones.abs().sort_values(ascending=False).index)
+r_edad_antiguedad = corr_pdf.loc["edad", "antiguedad"]
+relacion_edad_antiguedad = (
+    "no se aprecia una relación lineal importante"
+    if abs(r_edad_antiguedad) < 0.1
+    else "se aprecia una relación lineal positiva"
+    if r_edad_antiguedad > 0
+    else "se aprecia una relación lineal negativa"
+)
+display(Markdown(
+    "**Lectura del mapa de calor:** las asociaciones lineales con el salario, "
+    "ordenadas por magnitud absoluta, son "
+    + ", ".join(f"`{variable}` ({valor:+.2f})" for variable, valor in asociaciones.items())
+    + f". Entre edad y antigüedad, r = {r_edad_antiguedad:+.2f}: "
+    f"{relacion_edad_antiguedad}. "
+    "Son correlaciones de Pearson sin ponderación sobre todos los registros "
+    "elegibles de 2025; no establecen relaciones causales."
+))
 
 # %% [markdown]
 # ## S4 — Segmentación de perfiles mediante KMeans (dueño: P3, Ej.4 — 10 pts)
