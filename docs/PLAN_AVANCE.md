@@ -126,6 +126,9 @@ DataFrame sintético con el mismo esquema).
 4. Elegir el mejor K y justificar el criterio usado.
 5. Describir cada cluster en prosa (edad promedio, antigüedad, horas, mezcla de
    categorías/dominios dominante).
+6. Ejecutar `Kernel → Restart & Run All` en el entorno con PySpark y datos,
+   comprobar que S2 y S3 corren sin error y contrastar sus tablas, gráficas e
+   interpretaciones con los resultados reales.
 
 ## Reglas técnicas comunes (no negociables)
 
