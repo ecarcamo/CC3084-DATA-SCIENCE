@@ -33,9 +33,6 @@
 # %%
 import os
 
-# Override, not setdefault: many shells already export JAVA_HOME (e.g. to an
-# unversioned/newer JDK via `brew link openjdk`). Spark 3.5 needs 8/11/17;
-# setdefault would silently keep an incompatible JAVA_HOME already in the env.
 os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
 
 import setuptools  # noqa: F401  (shims stdlib distutils, removed in Python 3.12; pyspark 3.5 still imports it)
@@ -85,9 +82,6 @@ RAW_COLS = [
     "P05D01", "P05H01A",
 ]
 
-# El período real depende del archivo de origen, no de TRIMESTRE (ver
-# docs/PLAN_AVANCE.md): I-2025 trae TRIMESTRE=2, II-2025=3 (175 filas en 2),
-# III-2025=4, IV-2025=5, I-2026=6. TRIMESTRE se conserva sin modificar.
 FILE_MANIFEST = [
     dict(path=f"{RAW_DIR}/personas_2025_T1.xlsx", fmt="xlsx",
          periodo_archivo="2025T1", anio_archivo=2025, trimestre_calendario=1,
@@ -376,9 +370,6 @@ import numpy as np
 df_2025 = spark.read.parquet(f"{PROCESSED_DIR}/eneic_2025.parquet")
 NUMERIC_VARS = ["salario_mensual", "edad", "antiguedad", "horas_semanales"]
 
-# count, media, mediana, sd, min, max, p25, p75, p95 -- una sola pasada sobre
-# el DataFrame completo (percentil aproximado nativo de Spark, no requiere
-# recolectar los datos).
 summary_pdf = (
     df_2025.select(*NUMERIC_VARS)
     .summary("count", "mean", "stddev", "min", "25%", "50%", "75%", "95%", "max")
@@ -398,9 +389,6 @@ summary_pdf
 # instrucción explícita del enunciado.
 
 # %%
-# Distribución de registros por categoría ocupacional, nivel educativo y
-# dominio: conteos ya agregados (groupBy), livianos, se llevan a pandas
-# directo -- no es la muestra de graficar de registros individuales.
 fig, axes = plt.subplots(1, 3, figsize=(15, 4))
 labels = {
     "categoria_ocupacional": ["Gobierno", "Emp. privada", "Jornalero/peón", "Doméstico"],
@@ -424,10 +412,6 @@ plt.show()
 # muestra frente a Rural Nacional.
 
 # %%
-# Forma de la distribución del salario: muestra <=5,000 filas a pandas (la
-# media/mediana/sd de arriba ya se calcularon sobre el total, no sobre esta
-# muestra). Escala log solo para visualizar -- el objetivo en quetzales no se
-# transforma en ningún otro punto del notebook.
 _n_2025 = df_2025.count()
 sample_salario_pdf = (
     df_2025.select("salario_mensual")
@@ -451,8 +435,6 @@ plt.show()
 # (típica de variables de ingreso).
 
 # %%
-# Salario mediano por nivel educativo y por categoría ocupacional -- agregado
-# sobre el DataFrame completo.
 fig, axes = plt.subplots(1, 2, figsize=(11, 4))
 for ax, col in zip(axes, ["nivel_educativo", "categoria_ocupacional"]):
     agg_pdf = (
@@ -475,8 +457,6 @@ plt.show()
 # y servicio doméstico, con la mediana más baja (≈Q1,000).
 
 # %%
-# Tamaño de muestra y salario mediano por trimestre -- agregado sobre el
-# DataFrame completo.
 trim_pdf = (
     df_2025.groupBy("trimestre_calendario")
     .agg(F.count("*").alias("n"), F.expr("percentile_approx(salario_mensual, 0.5)").alias("mediana"))
@@ -508,8 +488,6 @@ trim_pdf
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.stat import Correlation
 
-# Correlación de Pearson sobre todos los registros elegibles de 2025 (no una
-# muestra): VectorAssembler + Correlation.corr() de pyspark.ml.stat.
 _assembler = VectorAssembler(inputCols=NUMERIC_VARS, outputCol="features_corr")
 _vec_df = _assembler.transform(df_2025).select("features_corr")
 corr_matrix = Correlation.corr(_vec_df, "features_corr").head()[0].toArray()
@@ -541,9 +519,6 @@ corr_pdf
 # Requiere `data/processed/eneic_2025.parquet` (de S1).
 
 # %%
-# TODO(P3): selección de variables, decisión justificada sobre incluir salario,
-# estandarización (StandardScaler), KMeans para K=2,3,4,5 con métrica de
-# calidad (WSSSE / silueta vía ClusteringEvaluator).
 
 
 # %%
@@ -560,8 +535,6 @@ corr_pdf
 #   categoria_ocupacional, dominio.
 
 # %%
-# TODO(P1): split de 2025 en train (T1-T3) y validación (T4). Compartido por
-# S5, S6 y S7 — no duplicar la lógica, todos leen las mismas variables.
 
 # %% [markdown]
 # ## S5 — Baseline + Pipeline de regresión lineal (dueño: P1, Ej.5 — 20 pts)
@@ -571,20 +544,12 @@ corr_pdf
 
 
 # %%
-# TODO(P1): Pipeline StringIndexer+OneHotEncoder (nivel_educativo,
-# categoria_ocupacional, dominio) + VectorAssembler + estandarización
-# (standardization=True en LinearRegression o StandardScaler, no ambos) +
-# LinearRegression. >=2 configuraciones de regularización documentadas.
-# Guardar mejor modelo en models/lr_best.
 
 # %% [markdown]
 # ## S6 — Pipeline de Random Forest (dueño: P2, Ej.6 — 20 pts)
 # Usa el mismo split y las mismas columnas categóricas que S5.
 
 # %%
-# TODO(P2): Pipeline StringIndexer+OneHotEncoder + VectorAssembler +
-# RandomForestRegressor (sin estandarizar). >=2 configuraciones (numTrees /
-# maxDepth) documentadas, semilla fija. Guardar mejor modelo en models/rf_best.
 
 
 # %% [markdown]
@@ -600,28 +565,18 @@ corr_pdf
 
 
 # %%
-# TODO(P1+P2): predicciones sobre 2026 T1 (mismas reglas de preparación de S1),
-# verificar mismo conteo de registros elegibles para ambos modelos, tabla
-# comparativa baseline/LR/RF con MAE/RMSE/R² en validación y en prueba.
 
 # %% [markdown]
 # ## S8 — Visualización y análisis de errores (dueño: P3, Ej.8 — 15 pts)
 # Requiere las predicciones de prueba de S7.
 
 # %%
-# TODO(P3): residuo = salario_real - salario_predicho. Para LR y RF, misma
-# muestra <=5,000 filas de 2026 T1: real vs. predicho (línea y=x), residuos
-# vs. predicho (línea en 0).
 
 
 # %%
-# TODO(P3): tabla de MAE y error medio por nivel_educativo y por dominio
-# (sobre todos los registros de prueba, con n por grupo).
 
 
 # %%
-# TODO(P3): análisis por percentil de salario — ¿tendencia a subestimar o
-# sobreestimar salarios altos?
 
 # %% [markdown]
 # ### Discusión final (P3, con insumos de todo el equipo)
