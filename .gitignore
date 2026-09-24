@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Lab 7 - Spark MLlib (ENEIC)
+data/raw/eneic/
+data/processed/*.parquet
+models/
+.DS_Store
