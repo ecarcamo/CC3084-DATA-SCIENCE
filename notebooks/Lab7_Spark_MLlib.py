@@ -369,25 +369,172 @@ print(f"Releído 2025: {_chk.count()} filas, {len(_chk.columns)} columnas")
 # Requiere `data/processed/eneic_2025.parquet` (de S1).
 
 # %%
-# TODO(P2): lectura de Parquet 2025, tabla de n/media/mediana/sd/min/max/p25/p75/p95
-# para salario_mensual, edad, antiguedad, horas_semanales.
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 
+df_2025 = spark.read.parquet(f"{PROCESSED_DIR}/eneic_2025.parquet")
+NUMERIC_VARS = ["salario_mensual", "edad", "antiguedad", "horas_semanales"]
+
+# count, media, mediana, sd, min, max, p25, p75, p95 -- una sola pasada sobre
+# el DataFrame completo (percentil aproximado nativo de Spark, no requiere
+# recolectar los datos).
+summary_pdf = (
+    df_2025.select(*NUMERIC_VARS)
+    .summary("count", "mean", "stddev", "min", "25%", "50%", "75%", "95%", "max")
+    .toPandas()
+    .set_index("summary")
+    .T
+    .rename(columns={"50%": "mediana", "mean": "media", "stddev": "sd"})
+)
+summary_pdf
+
+# %% [markdown]
+# El salario mensual tiene media ≈Q3,422 pero mediana ≈Q3,000: la media supera
+# a la mediana, señal de asimetría positiva (cola larga hacia salarios altos —
+# el máximo observado es Q99,000 frente a un p95 de Q8,000). Edad y horas
+# semanales están mucho más cerca de una distribución simétrica (media y
+# mediana casi iguales). No se recortan estos valores extremos de salario por
+# instrucción explícita del enunciado.
 
 # %%
-# TODO(P2): gráficas (muestra <=5,000-10,000 filas a pandas; métricas sobre el
-# total) + interpretación en Markdown de cada una.
+# Distribución de registros por categoría ocupacional, nivel educativo y
+# dominio: conteos ya agregados (groupBy), livianos, se llevan a pandas
+# directo -- no es la muestra de graficar de registros individuales.
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+labels = {
+    "categoria_ocupacional": ["Gobierno", "Emp. privada", "Jornalero/peón", "Doméstico"],
+    "nivel_educativo": None,
+    "dominio": ["Urb. Metropolitano", "Resto Urbano", "Rural Nacional"],
+}
+for ax, col in zip(axes, ["categoria_ocupacional", "nivel_educativo", "dominio"]):
+    counts_pdf = df_2025.groupBy(col).count().orderBy(col).toPandas()
+    ax.bar(counts_pdf[col].astype(str), counts_pdf["count"])
+    ax.set_title(col)
+    ax.tick_params(axis="x", rotation=45)
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# La población asalariada de 2025 se concentra en empleados de empresa
+# privada (categoría 2) y jornaleros/peones (categoría 3); gobierno (1) y
+# servicio doméstico (4) son minoría. Por nivel educativo predominan primaria
+# (2) y diversificado (4); pocos casos con maestría/doctorado (6, 7). Por
+# dominio, Urbano Metropolitano y Resto Urbano concentran la mayoría de la
+# muestra frente a Rural Nacional.
+
+# %%
+# Forma de la distribución del salario: muestra <=5,000 filas a pandas (la
+# media/mediana/sd de arriba ya se calcularon sobre el total, no sobre esta
+# muestra). Escala log solo para visualizar -- el objetivo en quetzales no se
+# transforma en ningún otro punto del notebook.
+_n_2025 = df_2025.count()
+sample_salario_pdf = (
+    df_2025.select("salario_mensual")
+    .sample(withReplacement=False, fraction=min(1.0, 5000 / _n_2025), seed=SEED)
+    .limit(5000)
+    .toPandas()
+)
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+axes[0].hist(sample_salario_pdf["salario_mensual"], bins=40, color="steelblue")
+axes[0].set_title("Salario mensual (Q), escala normal")
+axes[1].hist(np.log1p(sample_salario_pdf["salario_mensual"]), bins=40, color="darkorange")
+axes[1].set_title("log(1 + salario mensual) -- solo para visualizar")
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# En escala normal la distribución es claramente asimétrica a la derecha: la
+# mayoría de los salarios se agrupa por debajo de Q5,000 con una cola larga y
+# delgada de valores altos. En escala logarítmica la forma se acerca más a
+# una campana, lo que confirma que la asimetría es de tipo multiplicativo
+# (típica de variables de ingreso).
+
+# %%
+# Salario mediano por nivel educativo y por categoría ocupacional -- agregado
+# sobre el DataFrame completo.
+fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+for ax, col in zip(axes, ["nivel_educativo", "categoria_ocupacional"]):
+    agg_pdf = (
+        df_2025.groupBy(col)
+        .agg(F.expr("percentile_approx(salario_mensual, 0.5)").alias("mediana"), F.count("*").alias("n"))
+        .orderBy(col)
+        .toPandas()
+    )
+    ax.bar(agg_pdf[col].astype(str), agg_pdf["mediana"])
+    ax.set_title(f"Salario mediano por {col}")
+    ax.set_ylabel("Q")
+plt.tight_layout()
+plt.show()
+
+# %% [markdown]
+# El salario mediano crece de forma prácticamente monótona con el nivel
+# educativo: de ≈Q1,500 en "ninguno" hasta ≈Q12,000 en doctorado. Por
+# categoría ocupacional, empleados de gobierno tienen la mediana más alta
+# (≈Q5,000), seguidos de empresa privada (≈Q3,560), jornalero/peón (≈Q1,800)
+# y servicio doméstico, con la mediana más baja (≈Q1,000).
+
+# %%
+# Tamaño de muestra y salario mediano por trimestre -- agregado sobre el
+# DataFrame completo.
+trim_pdf = (
+    df_2025.groupBy("trimestre_calendario")
+    .agg(F.count("*").alias("n"), F.expr("percentile_approx(salario_mensual, 0.5)").alias("mediana"))
+    .orderBy("trimestre_calendario")
+    .toPandas()
+)
+fig, ax1 = plt.subplots(figsize=(7, 4))
+ax1.bar(trim_pdf["trimestre_calendario"], trim_pdf["n"], color="lightgray", label="n")
+ax1.set_ylabel("n registros")
+ax2 = ax1.twinx()
+ax2.plot(trim_pdf["trimestre_calendario"], trim_pdf["mediana"], color="crimson", marker="o", label="mediana")
+ax2.set_ylabel("Salario mediano (Q)")
+ax1.set_xlabel("Trimestre calendario")
+plt.title("Tamaño de muestra y salario mediano por trimestre, 2025")
+plt.show()
+trim_pdf
+
+# %% [markdown]
+# El tamaño de la muestra analítica se mantiene relativamente estable entre
+# trimestres (~12,700–13,500 registros elegibles), sin una caída abrupta que
+# sugiera un problema de armonización entre archivos. El salario mediano se
+# mueve poco (Q3,000 en T1-T2, Q3,200 en T3-T4) — no hay evidencia de un salto
+# artificial entre trimestres que delate una inconsistencia de preparación.
 
 # %% [markdown]
 # ## S3 — Relaciones entre variables numéricas (dueño: P2, Ej.3 — 5 pts)
 
 # %%
-# TODO(P2): VectorAssembler + Correlation.corr() de pyspark.ml.stat sobre
-# salario_mensual, edad, antiguedad, horas_semanales. Mapa de calor.
+from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.stat import Correlation
+
+# Correlación de Pearson sobre todos los registros elegibles de 2025 (no una
+# muestra): VectorAssembler + Correlation.corr() de pyspark.ml.stat.
+_assembler = VectorAssembler(inputCols=NUMERIC_VARS, outputCol="features_corr")
+_vec_df = _assembler.transform(df_2025).select("features_corr")
+corr_matrix = Correlation.corr(_vec_df, "features_corr").head()[0].toArray()
+corr_pdf = pd.DataFrame(corr_matrix, index=NUMERIC_VARS, columns=NUMERIC_VARS)
+
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.heatmap(corr_pdf, annot=True, fmt=".2f", cmap="coolwarm", vmin=-1, vmax=1, ax=ax)
+ax.set_title("Correlación de Pearson, población analítica 2025")
+plt.tight_layout()
+plt.show()
+corr_pdf
 
 # %% [markdown]
 # **Respuestas (P2):**
-# - ¿Qué variables presentan mayor asociación lineal con el salario?
-# - ¿Existe relación entre edad y antigüedad?
+# - **¿Qué variables presentan mayor asociación lineal con el salario?**
+#   Todas las correlaciones con `salario_mensual` son débiles: `antiguedad`
+#   (≈0.18) y `edad` (≈0.15) son las más altas, seguidas de `horas_semanales`
+#   (≈0.08, prácticamente nula). Ninguna variable numérica por sí sola explica
+#   linealmente el salario — es esperable, ya que el salario también depende
+#   de variables categóricas (nivel educativo, categoría ocupacional) no
+#   incluidas en esta matriz.
+# - **¿Existe relación entre edad y antigüedad?** Sí, es la correlación más
+#   fuerte de toda la matriz (≈0.49, positiva y moderada): las personas de
+#   mayor edad tienden a llevar más tiempo en su ocupación principal, lo cual
+#   es consistente con una trayectoria laboral acumulada.
 
 # %% [markdown]
 # ## S4 — Segmentación de perfiles mediante KMeans (dueño: P3, Ej.4 — 10 pts)
