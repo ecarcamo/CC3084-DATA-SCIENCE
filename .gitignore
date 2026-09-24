@@ -1,5 +1,10 @@
 TEMP/
-data/
+# Lab 6 leftovers (blanket "data/" removed so Lab 7's data/raw/eneic/ can be
+# versioned; these keep the old Lab 6 files out instead)
+data/cleaned/
+data/preprocessing/
+data/processed/*.csv
+data/raw/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -223,7 +228,8 @@ __marimo__/
 .streamlit/secrets.toml
 
 # Lab 7 - Spark MLlib (ENEIC)
-data/raw/eneic/
+# data/raw/eneic/ SÍ se versiona (fuente en SharePoint requiere login manual,
+# ver docs/PLAN_AVANCE.md). Solo se ignoran los derivados, reproducibles con S1.
 data/processed/*.parquet
 models/
 .DS_Store
