@@ -8,28 +8,40 @@ correlaciones (Ej.3), KMeans (Ej.4).
 
 ```bash
 export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
-uv pip install --python .venv/bin/python "pyspark==3.5.6" openpyxl
+uv pip install --python .venv/bin/python "pyspark==3.5.6" openpyxl pyreadstat
 ```
 
-Ya instalado en este repo (2026-09-24). `pyspark==3.5.6`, `openpyxl==3.1.5`.
+Ya instalado en este repo (2026-09-24): `pyspark==3.5.6`, `openpyxl==3.1.5`,
+`pyreadstat==1.3.6` (lee los `.sav`). Nota: el `.venv` es gestionado con `uv`
+(no tiene `pip` propio) y no tiene `distutils` (removido en Python 3.12) —
+por eso el notebook hace `import setuptools` antes de importar `pyspark`.
 
 ## Datos
 
-Descargar de https://www.ine.gob.gt/encuesta-nacional-de-empleo-e-ingresos/
-las bases de **Personas** (no Hogares) de I, II, III, IV de 2025 y I de 2026,
-con sus diccionarios. Guardar en `data/raw/eneic/` (ignorado por git) con estos
-nombres exactos:
+Descargados de https://www.ine.gob.gt/encuesta-nacional-de-empleo-e-ingresos/
+las bases de **Personas** (no Hogares) de I, II, III, IV de 2025 y I de 2026.
+Ya están en `data/raw/eneic/` (ignorado por git). **INE solo publica I-2025 en
+`.xlsx`**; los otros cuatro trimestres solo existen como `.sav` (SPSS) en un
+link de SharePoint que requiere login interactivo — se descargaron a mano y
+se copiaron aquí con estos nombres:
 
-| Archivo local | Trimestre real | `TRIMESTRE` original en el archivo |
-|---|---|---|
-| `personas_2025_T1.xlsx` | 2025 T1 | 2 |
-| `personas_2025_T2.xlsx` | 2025 T2 | 3 (175 registros traen 2) |
-| `personas_2025_T3.xlsx` | 2025 T3 | 4 |
-| `personas_2025_T4.xlsx` | 2025 T4 | 5 |
-| `personas_2026_T1.xlsx` | 2026 T1 | 6 |
+| Archivo local | Formato | Trimestre real | `TRIMESTRE` original en el archivo |
+|---|---|---|---|
+| `personas_2025_T1.xlsx` | xlsx | 2025 T1 | 2 |
+| `personas_2025_T2.sav` | sav | 2025 T2 | 3 (175 registros traen 2) |
+| `personas_2025_T3.sav` | sav | 2025 T3 | 4 |
+| `personas_2025_T4.sav` | sav | 2025 T4 | 5 |
+| `personas_2026_T1.sav` | sav | 2026 T1 | 6 |
 
-Verificar conteos originales antes de filtrar: 51,588 / 51,167 / 51,583 / 49,338
-(302 columnas) / 49,843.
+Los `.sav` se leen con `pyreadstat` (ya instalado), no con `openpyxl` — mismo
+principio del enunciado (Spark no tiene lector nativo), formato distinto.
+Diccionarios de Personas disponibles solo para II-2025 y I-2026
+(`dic_personas_2025_T2.xlsx`, `dic_personas_2026_T1.xlsx`); III y IV-2025 no
+tienen diccionario propio publicado — se usa el de II-2025/I-2026 como
+referencia de códigos válidos (mismo instrumento).
+
+Conteos originales verificados contra el enunciado — **coinciden exactos**:
+51,588 / 51,167 / 51,583 / 49,338 (302 columnas) / 49,843.
 
 ## Reparto
 
@@ -47,7 +59,8 @@ primera hora.
 
 ### P1 — S0 Setup + S1 Carga, armonización, calidad (Ej.1, 5 pts)
 
-1. Leer cada `.xlsx` con pandas/openpyxl, uno a la vez (no cargar los 5 juntos).
+1. Leer cada archivo uno a la vez (no cargar los 5 juntos): `.xlsx` con
+   pandas/openpyxl, `.sav` con `pyreadstat`.
 2. Seleccionar solo las columnas de la tabla de variables (ver reglas técnicas
    abajo) y forzar tipos explícitos antes de convertir a Spark DataFrame.
 3. Crear `periodo_archivo`, `anio_archivo`, `trimestre_calendario` y
