@@ -996,14 +996,65 @@ display(comparacion_val)
 #   distinto según la categoría. Las variables más importantes son maestría, superior, gobierno, horas y edad.
 
 # %% [markdown]
-# ## S7 — Entrenamiento final y evaluación en 2026 (dueños: P1 + P2, Ej.7 — 20 pts)
+# ## 7. Entrenamiento final y evaluación en 2026
+#
+# Cada algoritmo se reentrena con todo 2025 usando su configuración elegida. La prueba usa 2026 T1,
+# preparado con las mismas reglas de la sección 1. Los dos modelos se evalúan sobre los mismos registros.
 
 # %%
-# TODO(P1): reentrenar configuración ganadora de LR con todo 2025.
-# TODO(P2): reentrenar configuración ganadora de RF con todo 2025.
+train_final = df_2025.select(TARGET, *NUM_FEATS, *CAT_FEATS).cache()
+test = (
+    df_2026.withColumn("id_registro", F.concat_ws("-", *CLAVE))
+    .select("id_registro", TARGET, *NUM_FEATS, *CAT_FEATS).cache()
+)
 
+lr_final = pipeline_lr(**MEJOR_CONFIG_LR).fit(train_final)
+rf_final = pipeline_rf(**MEJOR_CONFIG_RF).fit(train_final)
+lr_final.write().overwrite().save(str(MODELS_DIR / "lr_final"))
+rf_final.write().overwrite().save(str(MODELS_DIR / "rf_final"))
+media_train_final = train_final.agg(F.mean(TARGET)).first()[0]
+
+pred_test = (
+    lr_final.transform(test).select("id_registro", TARGET, *CAT_FEATS, F.col("prediction").alias("pred_lr"))
+    .join(rf_final.transform(test).select("id_registro", F.col("prediction").alias("pred_rf")), "id_registro", "inner")
+    .withColumn("pred_referencia", F.lit(media_train_final))
+    .withColumn("residuo_lr", F.col(TARGET) - F.col("pred_lr"))
+    .withColumn("residuo_rf", F.col(TARGET) - F.col("pred_rf"))
+    .cache()
+)
+n_test, n_pred = test.count(), pred_test.count()
+print(f"Registros elegibles 2026 T1: {n_test:,} | con predicción de ambos modelos: {n_pred:,}")
+assert n_test == n_pred, "LR y RF no se evaluaron sobre los mismos registros"
+
+metricas_test = {
+    "referencia (media)": metricas(pred_test, "pred_referencia"),
+    "regresión lineal": metricas(pred_test, "pred_lr"),
+    "random forest": metricas(pred_test, "pred_rf"),
+}
+comparacion_final = pd.concat(
+    {"validación 2025 T4": comparacion_val, "prueba 2026 T1": pd.DataFrame(metricas_test).T}, axis=1
+)
+display(comparacion_final)
 
 # %%
+fig, axes = plt.subplots(1, 3, figsize=(15, 4))
+for ax, m in zip(axes, ["MAE", "RMSE", "R2"]):
+    comparacion_final.xs(m, axis=1, level=1).plot.bar(ax=ax, rot=0)
+    ax.set_title(m)
+    ax.set_xlabel("")
+plt.tight_layout()
+guardar(fig, "08_metricas_modelos")
+plt.show()
+
+# %% [markdown]
+# - Los modelos finales se entrenaron con los 53,025 registros de 2025. Ambos se evaluaron sobre los mismos
+#   13,258 registros de 2026 T1.
+# - Random forest vuelve a ganar: MAE Q1,104, RMSE Q1,958 y R² = 0.53. La regresión lineal queda en MAE
+#   Q1,241, RMSE Q2,164 y R² = 0.43. La referencia tiene MAE Q1,718 y RMSE Q2,871.
+# - Las métricas de prueba son casi iguales a las de validación. Los modelos funcionan en un período nuevo
+#   sin perder desempeño.
+# - Aun así, el mejor modelo explica cerca de la mitad de la variación del salario. Con seis variables no se
+#   captura la ocupación, la rama de actividad ni el tamaño de la empresa.
 
 # %% [markdown]
 # ## S8 — Visualización y análisis de errores (dueño: P3, Ej.8 — 15 pts)
