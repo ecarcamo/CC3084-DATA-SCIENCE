@@ -7,7 +7,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.4
 #   kernelspec:
-#     display_name: Python 3 (CC3084)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 # ---
@@ -16,48 +16,72 @@
 # # Laboratorio 7 — Spark MLlib
 # CC3066 — Data Science, Semestre II 2026
 #
-# Reparto y reglas completas en `docs/PLAN_AVANCE.md` (Ej.1-4) y
-# `docs/PLAN_FINAL.md` (Ej.5-8). Cada sección abajo tiene un dueño fijo —
-# no editar fuera de la sección propia para evitar conflictos de merge.
+# Datos: bases de Personas de la ENEIC (INE). 2025 T1–T4 para desarrollo y 2026 T1 para la prueba final.
 #
-# Versionado como `.py` (jupytext, formato `py:percent`). Commitear solo este
-# archivo; el `.ipynb` con salidas se regenera una sola vez antes de cada
-# entrega con `jupytext --sync notebooks/Lab7_Spark_MLlib.py` y se copia a la
-# raíz del repo como `Lab7_Spark_MLlib.ipynb`.
+# Todo el análisis y los modelos usan Spark 3.5 (`pyspark.ml`). pandas solo se usa para leer los
+# archivos originales y para graficar tablas agregadas o muestras de hasta 5,000 registros.
+# El notebook corre de principio a fin con el entorno de `docker/`.
 
 # %% [markdown]
-# ## S0 — Setup (dueño: P1)
-# JAVA_HOME, SparkSession, imports, rutas. No modificar salvo que el setup
-# esté roto para todos.
+# ## 0. Configuración
 
 # %%
 import os
+from pathlib import Path
 
-os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+if "JAVA_HOME" not in os.environ:
+    for _java in ["/opt/java-home", "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+                  "/usr/lib/jvm/java-17-openjdk"]:
+        if Path(_java).exists():
+            os.environ["JAVA_HOME"] = _java
+            break
 
-import setuptools  # noqa: F401  (shims stdlib distutils, removed in Python 3.12; pyspark 3.5 still imports it)
+try:
+    import setuptools  # noqa: F401  (pyspark 3.5 importa distutils, que no existe en Python 3.12)
+except ImportError:
+    pass
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from IPython.display import display
+
 from pyspark.sql import SparkSession
 import pyspark.sql.functions as F
 import pyspark.sql.types as T
 
 spark = (
     SparkSession.builder.appName("lab7-spark-mllib")
-    .master("local[*]")
+    .master("local[8]")
+    .config("spark.driver.memory", "5g")
     .config("spark.sql.shuffle.partitions", "8")
+    .config("spark.sql.execution.arrow.pyspark.enabled", "true")
     .getOrCreate()
 )
-spark.sparkContext.setLogLevel("WARN")
+spark.sparkContext.setLogLevel("ERROR")
 
-RAW_DIR = "data/raw/eneic"
-PROCESSED_DIR = "data/processed"
-MODELS_DIR = "models"
+ROOT = Path.cwd()
+while not (ROOT / "data" / "raw" / "eneic").exists() and ROOT != ROOT.parent:
+    ROOT = ROOT.parent
 
-os.makedirs(PROCESSED_DIR, exist_ok=True)
-os.makedirs(MODELS_DIR, exist_ok=True)
+RAW_DIR = ROOT / "data" / "raw" / "eneic"
+PROCESSED_DIR = ROOT / "data" / "processed"
+MODELS_DIR = ROOT / "models"
+FIG_DIR = ROOT / "outputs" / "lab7"
+for _d in [PROCESSED_DIR, MODELS_DIR, FIG_DIR]:
+    _d.mkdir(parents=True, exist_ok=True)
 
 SEED = 42
+sns.set_theme(style="whitegrid")
+pd.set_option("display.float_format", lambda v: f"{v:,.2f}")
 
-spark
+
+def guardar(fig, nombre):
+    fig.savefig(FIG_DIR / f"{nombre}.png", dpi=130, bbox_inches="tight")
+
+
+print("Spark", spark.version, "| JAVA_HOME:", os.environ.get("JAVA_HOME"))
 
 # %% [markdown]
 # ## S1 — Carga, armonización y calidad de datos (dueño: P1, Ej.1 — 5 pts)
