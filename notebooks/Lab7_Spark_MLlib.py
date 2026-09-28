@@ -937,15 +937,63 @@ display(pd.DataFrame([metricas_baseline_val, metricas_lr_val], index=["referenci
 # - El error sigue siendo alto: el RMSE es cerca de Q2,200. Los salarios extremos pesan mucho en esa métrica.
 
 # %% [markdown]
-# ## S6 — Pipeline de Random Forest (dueño: P2, Ej.6 — 20 pts)
-# Usa el mismo split y las mismas columnas categóricas que S5.
+# ## 6. Random Forest
+#
+# Mismos conjuntos y mismas etapas de preparación. `RandomForestRegressor` no necesita estandarización.
+# Se varían la cantidad de árboles y la profundidad máxima. Semilla fija.
 
 # %%
+CONFIG_RF = [
+    dict(numTrees=50, maxDepth=5),
+    dict(numTrees=100, maxDepth=5),
+    dict(numTrees=50, maxDepth=10),
+    dict(numTrees=100, maxDepth=10),
+]
 
+
+def pipeline_rf(numTrees, maxDepth):
+    rf = RandomForestRegressor(featuresCol="features", labelCol=TARGET, numTrees=numTrees, maxDepth=maxDepth, seed=SEED)
+    return Pipeline(stages=etapas_preparacion() + [rf])
+
+
+filas_rf, modelos_rf = [], []
+for cfg in CONFIG_RF:
+    modelo = pipeline_rf(**cfg).fit(train)
+    filas_rf.append(dict(**cfg, **metricas(modelo.transform(valid)),
+                         RMSE_entrenamiento=metricas(modelo.transform(train))["RMSE"]))
+    modelos_rf.append(modelo)
+
+resultados_rf = pd.DataFrame(filas_rf)
+display(resultados_rf)
+
+mejor_rf_idx = int(resultados_rf["RMSE"].idxmin())
+MEJOR_CONFIG_RF = CONFIG_RF[mejor_rf_idx]
+mejor_rf = modelos_rf[mejor_rf_idx]
+mejor_rf.write().overwrite().save(str(MODELS_DIR / "rf_best"))
+metricas_rf_val = metricas(mejor_rf.transform(valid))
+print("Mejor configuración RF:", MEJOR_CONFIG_RF, "-> guardada en models/rf_best")
+
+# %%
+_imp = pd.DataFrame({
+    "variable": nombres_features(mejor_rf.transform(valid.limit(1))),
+    "importancia": mejor_rf.stages[-1].featureImportances.toArray(),
+}).sort_values("importancia", ascending=False)
+display(_imp)
+
+comparacion_val = pd.DataFrame([metricas_baseline_val, metricas_lr_val, metricas_rf_val],
+                               index=["referencia (media)", "regresión lineal", "random forest"])
+display(comparacion_val)
 
 # %% [markdown]
-# **Comparación LR vs. RF (P2):** ¿cuál obtuvo mejor RMSE de validación y qué
-# diferencias explican el resultado?
+# - La profundidad importa más que el número de árboles. Con profundidad 5 el RMSE es cerca de Q2,160;
+#   con profundidad 10 baja a Q1,969. Pasar de 50 a 100 árboles no mejora.
+# - Gana 50 árboles con profundidad 10: MAE Q1,076, RMSE Q1,969 y R² = 0.53. El RMSE de entrenamiento
+#   (Q1,943) es parecido al de validación, así que no hay sobreajuste fuerte.
+# - Random forest supera a la regresión lineal en las tres métricas (RMSE Q218 menor, R² 0.53 contra 0.43)
+#   y a la referencia.
+# - La regresión lineal suma efectos fijos. El bosque capta relaciones no lineales e interacciones. Por
+#   ejemplo, que el salario crezca más rápido en los niveles educativos altos o que la antigüedad pese
+#   distinto según la categoría. Las variables más importantes son maestría, superior, gobierno, horas y edad.
 
 # %% [markdown]
 # ## S7 — Entrenamiento final y evaluación en 2026 (dueños: P1 + P2, Ej.7 — 20 pts)
