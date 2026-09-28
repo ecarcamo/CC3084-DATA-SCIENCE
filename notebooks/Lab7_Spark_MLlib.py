@@ -489,212 +489,185 @@ df_2025.select("periodo_archivo", "salario_mensual", "edad", "antiguedad", "hora
 # Aquí no se usa: el análisis describe los registros, no el país.
 
 # %% [markdown]
-# ## S2 — Estadística descriptiva y preguntas de exploración (dueño: P2, Ej.2 — 5 pts)
-# Requiere `data/processed/eneic_2025.parquet` (de S1).
+# ## 2. Estadística descriptiva y exploración
+# Todas las estadísticas usan los registros elegibles de 2025 completos. Los percentiles son exactos.
 
 # %%
-import matplotlib.pyplot as plt
-import seaborn as sns
-import numpy as np
-from IPython.display import Markdown, display
-
-df_2025 = spark.read.parquet(f"{PROCESSED_DIR}/eneic_2025.parquet")
 NUMERIC_VARS = ["salario_mensual", "edad", "antiguedad", "horas_semanales"]
-_n_2025 = df_2025.count()
-assert _n_2025 > 0, "El Parquet de 2025 no contiene registros elegibles"
 
-summary_pdf = (
-    df_2025.select(*NUMERIC_VARS)
-    .summary("count", "mean", "stddev", "min", "25%", "50%", "75%", "95%", "max")
-    .toPandas()
-    .set_index("summary")
-    .T
-    .rename(columns={
-        "count": "n", "mean": "media", "50%": "mediana",
-        "stddev": "desviacion_estandar", "25%": "p25", "75%": "p75", "95%": "p95",
-        "min": "minimo", "max": "maximo",
-    })
-)
-summary_pdf = summary_pdf.apply(pd.to_numeric)
-summary_pdf = summary_pdf[
-    ["n", "media", "mediana", "desviacion_estandar", "minimo", "maximo", "p25", "p75", "p95"]
-]
-summary_pdf
+
+def resumen_numerico(df, cols):
+    filas = []
+    for c in cols:
+        r = df.agg(
+            F.count(c).alias("n"), F.mean(c).alias("media"), F.stddev(c).alias("desviacion_estandar"),
+            F.min(c).alias("minimo"), F.max(c).alias("maximo"), F.skewness(c).alias("asimetria"),
+            F.expr(f"percentile({c}, array(0.25, 0.5, 0.75, 0.95))").alias("p"),
+        ).first()
+        filas.append(dict(variable=c, n=r["n"], media=r["media"], mediana=r["p"][1],
+                          desviacion_estandar=r["desviacion_estandar"], minimo=r["minimo"], maximo=r["maximo"],
+                          p25=r["p"][0], p75=r["p"][2], p95=r["p"][3], asimetria=r["asimetria"]))
+    return pd.DataFrame(filas).set_index("variable")
+
+
+resumen_2025 = resumen_numerico(df_2025, NUMERIC_VARS)
+display(resumen_2025)
 
 # %% [markdown]
-# Las estadísticas se calculan sobre todos los registros elegibles de 2025,
-# sin ponderar por `FACTOR`. Las diferencias entre media y mediana describen
-# asimetría, pero no prueban su causa. `FACTOR` permitiría estimar resultados
-# poblacionales con el diseño de la encuesta; aquí se describe la muestra
-# analítica, no el número de trabajadores del país.
+# El salario tiene media Q3,422 y mediana Q3,000. La desviación estándar (Q2,902) es casi igual a la media.
+# El p95 es Q8,000 y el máximo Q99,000. La asimetría es 6.0: la cola derecha es larga. Hay salarios muy
+# bajos (mínimo Q1) y muy altos. Se conservan todos.
+#
+# La edad media es 35.2 años y la mediana 33. La mitad está entre 24 y 44 años.
+#
+# La antigüedad tiene media 5.6 años y mediana 2. La mayoría lleva poco tiempo en su trabajo y pocos
+# llevan décadas (asimetría 2.4).
+#
+# Las horas habituales tienen media 46.3 y mediana 45. La mitad trabaja entre 40 y 55 horas. Hay jornadas
+# reportadas de hasta 126 horas.
+
+# %% [markdown]
+# ### Distribución por categoría ocupacional, nivel educativo y dominio
 
 # %%
-salario_resumen = summary_pdf.loc["salario_mensual"]
-display(Markdown(
-    f"**Lectura de la tabla:** Hay {int(salario_resumen['n']):,} salarios válidos. "
-    f"La media salarial es Q{salario_resumen['media']:,.0f}, frente a una mediana "
-    f"de Q{salario_resumen['mediana']:,.0f}; el percentil 95 es "
-    f"Q{salario_resumen['p95']:,.0f} y el máximo Q{salario_resumen['maximo']:,.0f}. "
-    "No se eliminan salarios extremos."
-))
-for variable, unidad in [("edad", "años"), ("antiguedad", "años"), ("horas_semanales", "horas")]:
-    estadisticas = summary_pdf.loc[variable]
-    display(Markdown(
-        f"**{variable}:** media {estadisticas['media']:.1f} {unidad}, "
-        f"mediana {estadisticas['mediana']:.1f} {unidad}, "
-        f"p25–p75 de {estadisticas['p25']:.1f} a "
-        f"{estadisticas['p75']:.1f} {unidad}; "
-        f"el rango observado llega a {estadisticas['maximo']:.1f} {unidad}."
-    ))
+def conteo_categoria(df, col, orden):
+    pdf = df.groupBy(col).count().toPandas().set_index(col).reindex(orden).dropna()
+    pdf["pct"] = 100 * pdf["count"] / pdf["count"].sum()
+    return pdf
 
-# %%
-fig, axes = plt.subplots(1, 3, figsize=(15, 4))
-distribuciones = {}
-for ax, col in zip(axes, ["categoria_ocupacional", "nivel_educativo", "dominio"]):
-    counts_pdf = df_2025.groupBy(col).count().orderBy(col).toPandas()
-    distribuciones[col] = counts_pdf
-    ax.bar(counts_pdf[col].astype(str), counts_pdf["count"])
-    ax.set_title(col)
+
+distribuciones = {
+    "categoria_ocupacional": conteo_categoria(df_2025, "categoria_ocupacional", ORDEN_CATEGORIA),
+    "nivel_educativo": conteo_categoria(df_2025, "nivel_educativo", ORDEN_EDUCACION),
+    "dominio": conteo_categoria(df_2025, "dominio", ORDEN_DOMINIO),
+}
+fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+for ax, (col, pdf) in zip(axes, distribuciones.items()):
+    ax.bar(pdf.index, pdf["count"], color="steelblue")
+    for i, (v, pct) in enumerate(zip(pdf["count"], pdf["pct"])):
+        ax.text(i, v, f"{pct:.1f}%", ha="center", va="bottom", fontsize=9)
+    ax.set_title(col.replace("_", " ").capitalize())
     ax.set_ylabel("Registros")
-    ax.tick_params(axis="x", rotation=45)
+    ax.tick_params(axis="x", rotation=35)
 plt.tight_layout()
+guardar(fig, "01_distribucion_categorias")
 plt.show()
+for col, pdf in distribuciones.items():
+    display(pdf.rename(columns={"count": "registros"}))
 
 # %% [markdown]
-# Las barras muestran conteos de la muestra, no estimaciones poblacionales;
-# cada gráfico se interpreta con sus conteos calculados, sin suponer de
-# antemano qué categoría es la más frecuente.
+# - Categoría: empresa privada concentra 54.1 %. Siguen jornalero o peón (26.1 %), gobierno (12.4 %) y
+#   servicio doméstico (7.4 %).
+# - Educación: diversificado (31.8 %) y primaria (29.8 %) son los niveles más comunes. Básico 15.6 %,
+#   superior 12.9 % y ninguno 7.5 %. Maestría y doctorado suman 1.6 %. Ningún registro quedó como `DESCONOCIDO`.
+# - Dominio: urbano metropolitano 41.6 %, resto urbano 38.0 % y rural nacional 20.4 %.
+#
+# Son conteos de la muestra, sin ponderar.
+
+# %% [markdown]
+# ### Forma de la distribución del salario
+# El histograma usa una muestra de 5,000 registros. Las líneas de media y mediana vienen del total.
+# El panel derecho usa escala logarítmica en el eje x solo para visualizar.
 
 # %%
-for col, counts_pdf in distribuciones.items():
-    dominante = counts_pdf.loc[counts_pdf["count"].idxmax()]
-    porcentaje = 100 * dominante["count"] / counts_pdf["count"].sum()
-    display(Markdown(
-        f"**{col}:** la categoría `{dominante[col]}` concentra "
-        f"{int(dominante['count']):,} registros ({porcentaje:.1f}% del total). "
-        "Las diferencias entre barras reflejan composición de la muestra no ponderada."
-    ))
-
-# %%
-sample_salario_pdf = (
-    df_2025.select("salario_mensual")
-    .sample(withReplacement=False, fraction=min(1.0, 5000 / _n_2025), seed=SEED)
-    .limit(5000)
-    .toPandas()
+_n_2025 = df_2025.count()
+muestra_salario = (
+    df_2025.select("salario_mensual").sample(fraction=min(1.0, 6000 / _n_2025), seed=SEED).limit(5000).toPandas()
 )
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-axes[0].hist(sample_salario_pdf["salario_mensual"], bins=40, color="steelblue")
-axes[0].set_title("Salario mensual (Q), escala normal")
-axes[1].hist(np.log1p(sample_salario_pdf["salario_mensual"]), bins=40, color="darkorange")
-axes[1].set_title("log(1 + salario mensual), solo visualización")
-axes[0].set_xlabel("Q")
-axes[1].set_xlabel("log(1 + Q)")
+_media, _mediana = resumen_2025.loc["salario_mensual", ["media", "mediana"]]
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
+axes[0].hist(muestra_salario["salario_mensual"], bins=60, color="steelblue")
+axes[0].set_title("Salario mensual (Q), escala lineal")
+axes[0].set_xlabel("Quetzales")
+_bins = np.logspace(np.log10(muestra_salario["salario_mensual"].min()), np.log10(muestra_salario["salario_mensual"].max()), 50)
+axes[1].hist(muestra_salario["salario_mensual"], bins=_bins, color="darkorange")
+axes[1].set_xscale("log")
+axes[1].set_title("Salario mensual (Q), eje x en escala logarítmica")
+axes[1].set_xlabel("Quetzales (escala log)")
+for ax in axes:
+    ax.axvline(_media, color="black", linestyle="--", label=f"Media Q{_media:,.0f}")
+    ax.axvline(_mediana, color="crimson", linestyle="-", label=f"Mediana Q{_mediana:,.0f}")
+    ax.set_ylabel("Registros (muestra)")
+    ax.legend()
 plt.tight_layout()
+guardar(fig, "02_distribucion_salario")
 plt.show()
 
 # %% [markdown]
-# El histograma usa como máximo 5,000 filas para visualizar la forma; los
-# percentiles, la media y la mediana proceden de toda la población analítica.
-# La escala logarítmica modifica solo la visualización, no el salario usado
-# en las estadísticas ni en el modelado.
-
-# %%
-display(Markdown(
-    f"**Distribución salarial:** en la muestra de {len(sample_salario_pdf):,} filas "
-    f"se observa la forma en escala original y logarítmica. En el total, "
-    f"la mediana es Q{salario_resumen['mediana']:,.0f} y el p95 "
-    f"Q{salario_resumen['p95']:,.0f}; su diferencia muestra cuánto se extiende "
-    "la parte alta de la distribución. El eje logarítmico permite distinguir "
-    "los salarios bajos sin recortar los altos."
-))
-
-# %%
-fig, ax = plt.subplots(figsize=(6, 4))
-ax.bar(["Media", "Mediana"], salario_resumen[["media", "mediana"]], color=["steelblue", "darkorange"])
-ax.set_ylabel("Salario mensual (Q)")
-ax.set_title("Media y mediana salarial, todos los registros elegibles")
-plt.tight_layout()
-plt.show()
+# La distribución es asimétrica a la derecha. En escala lineal casi todo se acumula por debajo de Q6,000 y
+# la cola llega a Q99,000. En escala logarítmica la forma se parece más a una campana.
+#
+# La media (Q3,422) es Q422 mayor que la mediana (Q3,000). Los salarios altos jalan la media hacia arriba.
+# La mediana describe mejor al asalariado típico.
 
 # %% [markdown]
-# La comparación usa ambos estadísticos calculados sobre el total. Si la
-# media supera la mediana, los salarios altos elevan la media más de lo que
-# desplazan el valor central; si no, no corresponde atribuir esa asimetría.
+# ### Salario mediano por nivel educativo y categoría ocupacional
 
 # %%
-relacion_salario = "supera" if salario_resumen["media"] > salario_resumen["mediana"] else "no supera"
-display(Markdown(
-    f"**Media frente a mediana:** Q{salario_resumen['media']:,.0f} "
-    f"{relacion_salario} Q{salario_resumen['mediana']:,.0f}. "
-    "La mediana es menos sensible a salarios extremos que la media."
-))
+def mediana_por(df, col, orden):
+    pdf = (df.groupBy(col).agg(F.count("*").alias("n"), F.expr("percentile(salario_mensual, 0.5)").alias("mediana"),
+                                F.mean("salario_mensual").alias("media"))
+           .toPandas().set_index(col).reindex(orden).dropna())
+    return pdf
 
-# %%
-fig, axes = plt.subplots(1, 2, figsize=(11, 4))
-medianas_por_grupo = {}
-for ax, col in zip(axes, ["nivel_educativo", "categoria_ocupacional"]):
-    agg_pdf = (
-        df_2025.groupBy(col)
-        .agg(F.expr("percentile_approx(salario_mensual, 0.5)").alias("mediana"), F.count("*").alias("n"))
-        .orderBy(col)
-        .toPandas()
-    )
-    medianas_por_grupo[col] = agg_pdf
-    ax.bar(agg_pdf[col].astype(str), agg_pdf["mediana"])
-    ax.set_title(f"Salario mediano por {col}")
-    ax.set_ylabel("Q")
-    ax.tick_params(axis="x", rotation=45)
+
+medianas_educacion = mediana_por(df_2025, "nivel_educativo", ORDEN_EDUCACION)
+medianas_categoria = mediana_por(df_2025, "categoria_ocupacional", ORDEN_CATEGORIA)
+
+fig, axes = plt.subplots(1, 2, figsize=(15, 4.5))
+for ax, pdf, titulo in [(axes[0], medianas_educacion, "nivel educativo"), (axes[1], medianas_categoria, "categoría ocupacional")]:
+    ax.bar(pdf.index, pdf["mediana"], color="seagreen")
+    for i, (v, n) in enumerate(zip(pdf["mediana"], pdf["n"])):
+        ax.text(i, v, f"Q{v:,.0f}\nn={int(n):,}", ha="center", va="bottom", fontsize=8)
+    ax.set_title(f"Salario mediano por {titulo}")
+    ax.set_ylabel("Quetzales")
+    ax.set_ylim(0, pdf["mediana"].max() * 1.25)
+    ax.tick_params(axis="x", rotation=35)
 plt.tight_layout()
+guardar(fig, "03_mediana_educacion_categoria")
 plt.show()
+display(medianas_educacion)
+display(medianas_categoria)
 
 # %% [markdown]
-# Estas medianas se calculan sobre todos los registros de cada grupo. Las
-# barras no implican que educación u ocupación causen diferencias salariales;
-# la categoría `DESCONOCIDO`, si aparece, se conserva y se señala como tal.
+# La mediana sube con el nivel educativo: Q1,500 sin educación, Q2,200 con primaria, Q3,600 con
+# diversificado, Q5,000 con superior y Q10,000 con maestría. Doctorado llega a Q12,000, pero con solo 60 registros.
+#
+# Por categoría, gobierno tiene la mediana más alta (Q5,000). Siguen empresa privada (Q3,568), jornalero o
+# peón (Q1,800) y servicio doméstico (Q1,000).
+#
+# Son asociaciones. No prueban que la educación o la categoría causen el salario.
+
+# %% [markdown]
+# ### Tamaño de muestra y salario mediano por trimestre
 
 # %%
-for col, agg_pdf in medianas_por_grupo.items():
-    mayor = agg_pdf.loc[agg_pdf["mediana"].idxmax()]
-    menor = agg_pdf.loc[agg_pdf["mediana"].idxmin()]
-    display(Markdown(
-        f"**Salario por {col}:** la mediana más alta corresponde a "
-        f"`{mayor[col]}` (Q{mayor['mediana']:,.0f}, n={int(mayor['n']):,}) "
-        f"y la más baja a `{menor[col]}` "
-        f"(Q{menor['mediana']:,.0f}, n={int(menor['n']):,}). "
-        "Los tamaños de grupo importan al comparar estas cifras."
-    ))
-
-# %%
-trim_pdf = (
-    df_2025.groupBy("trimestre_calendario")
-    .agg(F.count("*").alias("n"), F.expr("percentile_approx(salario_mensual, 0.5)").alias("mediana"))
-    .orderBy("trimestre_calendario")
-    .toPandas()
+trimestres = (
+    df_2025.groupBy("periodo_archivo")
+    .agg(F.count("*").alias("n"), F.expr("percentile(salario_mensual, 0.5)").alias("mediana"),
+         F.mean("salario_mensual").alias("media"))
+    .orderBy("periodo_archivo").toPandas().set_index("periodo_archivo")
 )
-fig, ax1 = plt.subplots(figsize=(7, 4))
-ax1.bar(trim_pdf["trimestre_calendario"], trim_pdf["n"], color="lightgray", label="n")
-ax1.set_ylabel("n registros")
+fig, ax1 = plt.subplots(figsize=(8, 4.5))
+ax1.bar(trimestres.index, trimestres["n"], color="lightgray")
+ax1.set_ylabel("Registros elegibles")
+ax1.set_ylim(0, trimestres["n"].max() * 1.2)
 ax2 = ax1.twinx()
-ax2.plot(trim_pdf["trimestre_calendario"], trim_pdf["mediana"], color="crimson", marker="o", label="mediana")
-ax2.set_ylabel("Salario mediano (Q)")
-ax1.set_xlabel("Trimestre calendario")
-plt.title("Tamaño de muestra y salario mediano por trimestre, 2025")
+ax2.plot(trimestres.index, trimestres["mediana"], color="crimson", marker="o")
+ax2.set_ylabel("Salario mediano (Q)", color="crimson")
+ax2.set_ylim(0, trimestres["mediana"].max() * 1.2)
+ax2.grid(False)
+ax1.set_title("Registros elegibles y salario mediano por trimestre, 2025")
+plt.tight_layout()
+guardar(fig, "04_trimestres")
 plt.show()
-trim_pdf
+display(trimestres)
 
 # %% [markdown]
-# Cada trimestre corresponde al nombre del archivo, no al código
-# `TRIMESTRE` de la encuesta. Los conteos y medianas no ponderados muestran
-# cambios en la muestra, pero por sí solos no prueban cambios poblacionales
-# ni descartan problemas de armonización.
-
-# %%
-display(Markdown(
-    f"**Trimestres:** el tamaño de muestra varía de {trim_pdf['n'].min():,} a "
-    f"{trim_pdf['n'].max():,} registros; la mediana salarial va de "
-    f"Q{trim_pdf['mediana'].min():,.0f} a Q{trim_pdf['mediana'].max():,.0f}. "
-    "La línea y las barras usan el total elegible de cada trimestre."
-))
+# La muestra analítica es estable: entre 12,664 (T4) y 13,492 (T2) registros. La mediana pasa de Q3,000 en
+# T1 y T2 a Q3,200 en T3 y T4. La media sube de Q3,316 a Q3,545. El cambio es pequeño y no ponderado. No
+# basta para afirmar un aumento en la población.
 
 # %% [markdown]
 # ## S3 — Relaciones entre variables numéricas (dueño: P2, Ej.3 — 5 pts)
