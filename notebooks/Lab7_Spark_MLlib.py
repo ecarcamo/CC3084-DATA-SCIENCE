@@ -84,20 +84,15 @@ def guardar(fig, nombre):
 print("Spark", spark.version, "| JAVA_HOME:", os.environ.get("JAVA_HOME"))
 
 # %% [markdown]
-# ## S1 — Carga, armonización y calidad de datos (dueño: P1, Ej.1 — 5 pts)
-# Leer las 5 bases de Personas de `data/raw/eneic/` (INE publica I-2025 como
-# `.xlsx`; II/III/IV-2025 y I-2026 solo como `.sav` — se leen con
-# `pyreadstat`, ambos formatos se homologan al mismo esquema antes de crear
-# el DataFrame de Spark), seleccionar columnas, homologar tipos, derivar
-# `periodo_archivo`/`anio_archivo`/`trimestre_calendario` del **nombre de
-# archivo** (no de `TRIMESTRE`), unir 2025 con `unionByName`, aplicar filtros
-# de población y calidad, verificar unicidad de clave, y escribir
-# `data/processed/eneic_2025.parquet` y `eneic_2026.parquet`.
+# ## 1. Carga, armonización y calidad de datos
 #
-# Ver reglas técnicas completas en `docs/PLAN_AVANCE.md`.
+# Cada archivo se lee por separado. I-2025 viene en `.xlsx` (pandas + openpyxl) y los demás en `.sav`
+# (pyreadstat). Se seleccionan solo las columnas requeridas, se convierten a número y se crea el
+# DataFrame de Spark con un esquema explícito.
+#
+# El período sale del archivo, no de `TRIMESTRE`.
 
 # %%
-import pandas as pd
 import pyreadstat
 
 RAW_COLS = [
@@ -105,282 +100,393 @@ RAW_COLS = [
     "OCUPADOS", "P02A03", "P03A03A", "P05C07A", "P05C07B", "P05C16",
     "P05D01", "P05H01A",
 ]
+CODE_COLS = ["ANIO", "TRIMESTRE", "DOMINIO", "NUM_HOGAR", "NUM_PERSONA", "OCUPADOS", "P03A03A", "P05C16"]
 
 FILE_MANIFEST = [
-    dict(path=f"{RAW_DIR}/personas_2025_T1.xlsx", fmt="xlsx",
-         periodo_archivo="2025T1", anio_archivo=2025, trimestre_calendario=1,
-         archivo_origen="personas_2025_T1.xlsx", expected_rows=51588),
-    dict(path=f"{RAW_DIR}/personas_2025_T2.sav", fmt="sav",
-         periodo_archivo="2025T2", anio_archivo=2025, trimestre_calendario=2,
-         archivo_origen="personas_2025_T2.sav", expected_rows=51167),
-    dict(path=f"{RAW_DIR}/personas_2025_T3.sav", fmt="sav",
-         periodo_archivo="2025T3", anio_archivo=2025, trimestre_calendario=3,
-         archivo_origen="personas_2025_T3.sav", expected_rows=51583),
-    dict(path=f"{RAW_DIR}/personas_2025_T4.sav", fmt="sav",
-         periodo_archivo="2025T4", anio_archivo=2025, trimestre_calendario=4,
-         archivo_origen="personas_2025_T4.sav", expected_rows=49338),
-    dict(path=f"{RAW_DIR}/personas_2026_T1.sav", fmt="sav",
-         periodo_archivo="2026T1", anio_archivo=2026, trimestre_calendario=1,
-         archivo_origen="personas_2026_T1.sav", expected_rows=49843),
+    dict(archivo="personas_2025_T1.xlsx", fmt="xlsx", periodo="2025T1", anio=2025, trimestre=1, esperado=51588),
+    dict(archivo="personas_2025_T2.sav", fmt="sav", periodo="2025T2", anio=2025, trimestre=2, esperado=51167),
+    dict(archivo="personas_2025_T3.sav", fmt="sav", periodo="2025T3", anio=2025, trimestre=3, esperado=51583),
+    dict(archivo="personas_2025_T4.sav", fmt="sav", periodo="2025T4", anio=2025, trimestre=4, esperado=49338),
+    dict(archivo="personas_2026_T1.sav", fmt="sav", periodo="2026T1", anio=2026, trimestre=1, esperado=49843),
 ]
+PERIODOS_2025 = ["2025T1", "2025T2", "2025T3", "2025T4"]
 
-VALID_NIVEL_EDUCATIVO = list(range(0, 8))   # 0=NINGUNO ... 7=DOCTORADO (dic. Personas)
-VALID_DOMINIO = [1, 2, 3]                   # 1=Urbano Metropolitano, 2=Resto Urbano, 3=Rural Nacional
-VALID_CATEGORIA_OCUPACIONAL = [1, 2, 3, 4]  # gobierno / empresa privada / jornalero-peón / doméstico
+RAW_SCHEMA = T.StructType(
+    [T.StructField(c, T.DoubleType(), True) for c in RAW_COLS]
+    + [
+        T.StructField("periodo_archivo", T.StringType(), False),
+        T.StructField("anio_archivo", T.IntegerType(), False),
+        T.StructField("trimestre_calendario", T.IntegerType(), False),
+        T.StructField("archivo_origen", T.StringType(), False),
+    ]
+)
 
 
-def read_raw(path: str, fmt: str) -> pd.DataFrame:
-    """Lee un archivo (xlsx u openpyxl / sav vía pyreadstat) y homologa tipos.
+def a_numero(serie):
+    if serie.dtype == object:
+        serie = serie.map(lambda v: v.strip() if isinstance(v, str) else v)
+    return pd.to_numeric(serie, errors="coerce").astype("float64")
 
-    Un mismo código puede llegar como número o como texto según el formato de
-    origen; forzar numérico antes de construir el DataFrame de Spark evita
-    ese desajuste al hacer unionByName.
-    """
-    if fmt == "xlsx":
-        pdf = pd.read_excel(path, usecols=RAW_COLS)
+
+def leer_archivo(spec):
+    ruta = RAW_DIR / spec["archivo"]
+    if spec["fmt"] == "xlsx":
+        pdf = pd.read_excel(ruta, usecols=RAW_COLS)
+        n_columnas = len(pd.read_excel(ruta, nrows=0).columns)
     else:
-        pdf, _ = pyreadstat.read_sav(path, usecols=RAW_COLS)
+        pdf, _ = pyreadstat.read_sav(str(ruta), usecols=RAW_COLS)
+        n_columnas = len(pyreadstat.read_sav(str(ruta), metadataonly=True)[1].column_names)
+    tipos = {c: str(pdf[c].dtype) for c in RAW_COLS}
     for c in RAW_COLS:
-        pdf[c] = pd.to_numeric(pdf[c], errors="coerce")
-    return pdf
+        pdf[c] = a_numero(pdf[c])
+    pdf = pdf[RAW_COLS].copy()
+    pdf["periodo_archivo"] = spec["periodo"]
+    pdf["anio_archivo"] = spec["anio"]
+    pdf["trimestre_calendario"] = spec["trimestre"]
+    pdf["archivo_origen"] = spec["archivo"]
+    sdf = spark.createDataFrame(pdf, schema=RAW_SCHEMA)
+    for c in RAW_COLS:
+        sdf = sdf.withColumn(c, F.when(F.isnan(c), None).otherwise(F.col(c)))
+    for c in CODE_COLS:
+        sdf = sdf.withColumn(c, F.when(F.col(c) == F.floor(c), F.col(c).cast("int")))
+    return sdf, len(pdf), n_columnas, tipos
 
 
-def fix_nan_to_null(sdf, cols):
-    """spark.createDataFrame(pandas_df) preserva NaN de pandas como NaN de
-    punto flotante, no como NULL de SQL. Spark trata NaN como mayor que
-    cualquier valor en comparaciones (>, >=), así que sin esto los filtros de
-    calidad de abajo dejarían pasar silenciosamente los valores faltantes."""
-    for c in cols:
-        sdf = sdf.withColumn(c, F.when(F.isnan(F.col(c)), F.lit(None)).otherwise(F.col(c)))
-    return sdf
-
-
-def load_period(spec: dict):
-    pdf = read_raw(spec["path"], spec["fmt"])
-    n_raw = len(pdf)
-    pdf["periodo_archivo"] = spec["periodo_archivo"]
-    pdf["anio_archivo"] = spec["anio_archivo"]
-    pdf["trimestre_calendario"] = spec["trimestre_calendario"]
-    pdf["archivo_origen"] = spec["archivo_origen"]
-    sdf = spark.createDataFrame(pdf)
-    sdf = fix_nan_to_null(sdf, RAW_COLS)
-    return sdf, n_raw
-
-
-raw_counts = {}
-frames_2025 = []
-sdf_2026_raw = None
+frames, resumen_archivos, tipos_origen = {}, [], {}
 for spec in FILE_MANIFEST:
-    _sdf, _n_raw = load_period(spec)
-    raw_counts[spec["periodo_archivo"]] = _n_raw
-    if spec["anio_archivo"] == 2025:
-        frames_2025.append(_sdf)
-    else:
-        sdf_2026_raw = _sdf
+    sdf, n, n_cols, tipos = leer_archivo(spec)
+    frames[spec["periodo"]] = sdf
+    tipos_origen[spec["periodo"]] = tipos
+    resumen_archivos.append(dict(periodo_archivo=spec["periodo"], archivo_origen=spec["archivo"],
+                                 columnas_originales=n_cols, registros=n, esperado=spec["esperado"]))
 
-print("Conteos por archivo antes de filtros (raw), vs. esperado por el enunciado:")
-for spec in FILE_MANIFEST:
-    n, exp = raw_counts[spec["periodo_archivo"]], spec["expected_rows"]
-    print(f"  {spec['periodo_archivo']}: {n} (esperado {exp}) -> {'OK' if n == exp else 'MISMATCH'}")
+resumen_archivos = pd.DataFrame(resumen_archivos)
+resumen_archivos["coincide"] = resumen_archivos["registros"] == resumen_archivos["esperado"]
+display(resumen_archivos)
 
 # %% [markdown]
-# Derivación de columnas analíticas (renombrado + antigüedad) y `unionByName`
-# de los cuatro trimestres de 2025 — nunca `union` posicional, porque IV-2025
-# trae 302 columnas contra 270 en los demás (ver respuesta más abajo).
+# Los conteos y el número de columnas coinciden con el enunciado. Los tipos de origen no son iguales:
+# en el `.xlsx` varias columnas llegan como enteros y en los `.sav` todo llega como decimal. Por eso
+# todo se convierte a número antes de unir y los códigos se pasan a entero.
 
 # %%
-def add_analytic_columns(sdf):
-    return (
-        sdf.withColumnRenamed("P02A03", "edad")
-        .withColumnRenamed("P05H01A", "horas_semanales")
-        .withColumnRenamed("OCUPADOS", "ocupado")
-        .withColumnRenamed("P05C16", "categoria_ocupacional_raw")
-        .withColumn("salario_mensual", F.col("P05D01"))
-        .withColumn("antiguedad_anios", F.col("P05C07A"))
-        .withColumn("antiguedad_meses", F.col("P05C07B"))
-        .withColumn("antiguedad", F.col("antiguedad_anios") + F.col("antiguedad_meses") / F.lit(12.0))
-        .withColumnRenamed("P03A03A", "nivel_educativo_raw")
-        .withColumnRenamed("DOMINIO", "dominio_raw")
-    )
+display(pd.DataFrame(tipos_origen).loc[["DOMINIO", "NUM_HOGAR", "P02A03", "P03A03A", "P05C16", "P05D01"]])
+
+# %% [markdown]
+# ### Por qué IV-2025 no se puede apilar por posición
+# Se comparan los encabezados de III-2025 y IV-2025 sin cargar los datos.
+
+# %%
+_cols_t3 = pyreadstat.read_sav(str(RAW_DIR / "personas_2025_T3.sav"), metadataonly=True)[1].column_names
+_cols_t4 = pyreadstat.read_sav(str(RAW_DIR / "personas_2025_T4.sav"), metadataonly=True)[1].column_names
+_primera = next(i for i, (a, b) in enumerate(zip(_cols_t3, _cols_t4)) if a != b)
+print(f"III-2025: {len(_cols_t3)} columnas | IV-2025: {len(_cols_t4)} columnas")
+print(f"Primera posición distinta: {_primera} -> III-2025 '{_cols_t3[_primera]}' vs IV-2025 '{_cols_t4[_primera]}'")
+print(f"Columnas nuevas en IV-2025: {len(set(_cols_t4) - set(_cols_t3))} | ausentes en IV-2025: {len(set(_cols_t3) - set(_cols_t4))}")
+display(pd.DataFrame(
+    {"posicion_III_2025": [_cols_t3.index(c) for c in RAW_COLS], "posicion_IV_2025": [_cols_t4.index(c) for c in RAW_COLS]},
+    index=RAW_COLS,
+).T)
+
+# %% [markdown]
+# ### Columnas analíticas y unión con `unionByName`
+
+# %%
+LABELS_EDUCACION = {0: "Ninguno", 1: "Preprimaria", 2: "Primaria", 3: "Básico", 4: "Diversificado",
+                    5: "Superior", 6: "Maestría", 7: "Doctorado"}
+LABELS_CATEGORIA = {1: "Gobierno", 2: "Empresa privada", 3: "Jornalero o peón", 4: "Servicio doméstico"}
+LABELS_DOMINIO = {1: "Urbano metropolitano", 2: "Resto urbano", 3: "Rural nacional"}
+ORDEN_EDUCACION = list(LABELS_EDUCACION.values()) + ["DESCONOCIDO"]
+ORDEN_CATEGORIA = list(LABELS_CATEGORIA.values())
+ORDEN_DOMINIO = list(LABELS_DOMINIO.values()) + ["DESCONOCIDO"]
 
 
-frames_2025 = [add_analytic_columns(s) for s in frames_2025]
-sdf_2026_raw = add_analytic_columns(sdf_2026_raw)
+def armonizar(sdf):
+    return sdf.select(
+        "periodo_archivo", "anio_archivo", "trimestre_calendario", "archivo_origen",
+        "ANIO", "TRIMESTRE", "NUM_HOGAR", "NUM_PERSONA", "FACTOR",
+        F.col("P05D01").alias("salario_mensual"),
+        F.col("P02A03").alias("edad"),
+        F.col("P05C07A").alias("antiguedad_anios"),
+        F.col("P05C07B").alias("antiguedad_meses"),
+        F.col("P05H01A").alias("horas_semanales"),
+        F.col("P03A03A").alias("nivel_educativo_cod"),
+        F.col("P05C16").alias("categoria_ocupacional_cod"),
+        F.col("DOMINIO").alias("dominio_cod"),
+        F.col("OCUPADOS").alias("ocupado"),
+    ).withColumn("antiguedad", F.col("antiguedad_anios") + F.col("antiguedad_meses") / 12.0)
 
-df_2025_raw = frames_2025[0]
-for _sdf in frames_2025[1:]:
-    df_2025_raw = df_2025_raw.unionByName(_sdf)
+
+df_2025_raw = armonizar(frames["2025T1"])
+for _p in PERIODOS_2025[1:]:
+    df_2025_raw = df_2025_raw.unionByName(armonizar(frames[_p]))
 df_2025_raw = df_2025_raw.cache()
-print(f"Total 2025 unido (antes de filtrar): {df_2025_raw.count()}")
+df_2026_raw = armonizar(frames["2026T1"]).cache()
+df_all_raw = df_2025_raw.unionByName(df_2026_raw).cache()
 
-ANALYTIC_VARS = [
-    "salario_mensual", "edad", "antiguedad_anios", "antiguedad_meses",
-    "horas_semanales", "nivel_educativo_raw", "categoria_ocupacional_raw",
-    "dominio_raw", "ocupado",
+print(f"2025 unido: {df_2025_raw.count():,} registros | 2026: {df_2026_raw.count():,} registros")
+df_2025_raw.printSchema()
+df_2025_raw.show(5, truncate=False)
+
+# %% [markdown]
+# Valores de `TRIMESTRE` por archivo. Se conservan, pero no se usan como trimestre calendario.
+
+# %%
+display(df_all_raw.groupBy("periodo_archivo", "TRIMESTRE").count().orderBy("periodo_archivo", "TRIMESTRE").toPandas())
+
+# %% [markdown]
+# El resultado coincide con el enunciado: II-2025 trae 175 registros con `TRIMESTRE = 2`. Restar uno
+# al código dejaría esos 175 en el trimestre 1, así que el período se toma del archivo.
+
+# %% [markdown]
+# ### Faltantes por variable antes de los filtros
+
+# %%
+VARS_SELECCIONADAS = [
+    "ANIO", "TRIMESTRE", "NUM_HOGAR", "NUM_PERSONA", "FACTOR", "salario_mensual", "edad",
+    "antiguedad_anios", "antiguedad_meses", "horas_semanales", "nivel_educativo_cod",
+    "categoria_ocupacional_cod", "dominio_cod", "ocupado",
 ]
 
 
-def missingness_report(sdf, cols, label):
-    total = sdf.count()
-    print(f"\nFaltantes antes de filtros ({label}), n={total}:")
-    exprs = [F.sum(F.col(c).isNull().cast("int")).alias(c) for c in cols]
-    row = sdf.select(*exprs).collect()[0].asDict()
-    for c in cols:
-        pct = 100.0 * row[c] / total if total else 0.0
-        print(f"  {c}: {row[c]} faltantes ({pct:.2f}%)")
+def tabla_faltantes(df):
+    agg = df.groupBy("periodo_archivo").agg(
+        F.count("*").alias("n"), *[F.sum(F.col(c).isNull().cast("int")).alias(c) for c in VARS_SELECCIONADAS]
+    ).toPandas().set_index("periodo_archivo").sort_index()
+    total_2025 = agg.loc[PERIODOS_2025].sum()
+    salida = pd.DataFrame({
+        "faltantes_2025": total_2025[VARS_SELECCIONADAS].astype(int),
+        "pct_2025": 100 * total_2025[VARS_SELECCIONADAS] / total_2025["n"],
+    })
+    for p in agg.index:
+        salida[f"pct_{p}"] = 100 * agg.loc[p, VARS_SELECCIONADAS] / agg.loc[p, "n"]
+    return salida
 
 
-missingness_report(df_2025_raw, ANALYTIC_VARS, "2025")
+faltantes_pdf = tabla_faltantes(df_all_raw)
+display(faltantes_pdf)
 
 # %% [markdown]
-# Filtros de población y calidad (docs/PLAN_AVANCE.md), aplicados siempre en
-# el mismo orden y contando exclusiones en cada paso.
+# Antes de filtrar, el salario falta en 74 % de los registros. Antigüedad, horas, categoría y `OCUPADOS`
+# faltan en 56.7 %: son las personas no ocupadas, a quienes no se les hace esa parte del cuestionario.
+# El nivel educativo falta en 12.9 %. La tabla siguiente separa el faltante del salario dentro y fuera del
+# universo donde la pregunta aplica (15 años o más, ocupado y asalariado).
 
 # %%
-def filter_step(df, condition, label, counts):
-    before = df.count()
-    kept = df.filter(condition)
-    after = kept.count()
-    counts.append((label, before, after, before - after))
-    return kept
+_universo = (F.col("edad") >= 15) & (F.col("ocupado") == 1) & F.col("categoria_ocupacional_cod").isin(1, 2, 3, 4)
+faltante_salario = (
+    df_all_raw.withColumn("universo_asalariado", F.coalesce(_universo, F.lit(False)))
+    .groupBy("periodo_archivo", "universo_asalariado")
+    .agg(F.count("*").alias("registros"), F.sum(F.col("salario_mensual").isNull().cast("int")).alias("salario_faltante"))
+    .withColumn("pct_faltante", F.round(100 * F.col("salario_faltante") / F.col("registros"), 2))
+    .orderBy("periodo_archivo", "universo_asalariado")
+    .toPandas()
+)
+display(faltante_salario)
+
+# %% [markdown]
+# Fuera del universo asalariado el salario falta en 100 % de los casos. Dentro no falta ninguno. Todo el
+# faltante del salario es estructural.
+
+# %% [markdown]
+# Validación de códigos categóricos contra el diccionario. Lo ausente o no reconocido se marca como
+# `DESCONOCIDO`. El código educativo 0 es "Ninguno", no un faltante.
+
+# %%
+def codigos_fuera(df, col, validos):
+    return df.select(
+        F.lit(col).alias("variable"),
+        F.sum(F.col(col).isNull().cast("int")).alias("nulos"),
+        F.sum((F.col(col).isNotNull() & ~F.col(col).isin(validos)).cast("int")).alias("no_reconocidos"),
+    )
 
 
-def apply_quality_filters(df, label):
-    counts = []
-    df = filter_step(df, F.col("edad").isNotNull() & (F.col("edad") >= 15),
-                      "edad finita >= 15", counts)
-    df = filter_step(df, F.col("ocupado") == 1, "OCUPADOS == 1", counts)
-    df = filter_step(
-        df, F.col("categoria_ocupacional_raw").isin(VALID_CATEGORIA_OCUPACIONAL),
-        "P05C16 in {1,2,3,4}", counts,
-    )
-    df = filter_step(
-        df, F.col("salario_mensual").isNotNull() & (F.col("salario_mensual") > 0),
-        "P05D01 finito y > 0", counts,
-    )
-    df = filter_step(
-        df, F.col("antiguedad_anios").isNotNull() & (F.col("antiguedad_anios") >= 0),
-        "antiguedad_anios >= 0", counts,
-    )
-    df = filter_step(
-        df,
-        F.col("antiguedad_meses").isNotNull()
-        & (F.col("antiguedad_meses") >= 0) & (F.col("antiguedad_meses") <= 11)
-        & (F.col("antiguedad_meses") == F.floor("antiguedad_meses")),
-        "antiguedad_meses entero 0-11", counts,
-    )
-    df = filter_step(df, F.col("antiguedad") <= F.col("edad"), "antiguedad <= edad", counts)
-    df = filter_step(
-        df, (F.col("horas_semanales") > 0) & (F.col("horas_semanales") <= 168),
-        "0 < horas_semanales <= 168", counts,
-    )
-    print(f"\nCascada de filtros ({label}):")
-    for name, before, after, excluded in counts:
-        print(f"  {name}: {before} -> {after}  (excluidos: {excluded})")
-    return df
+_val = (
+    codigos_fuera(df_all_raw, "nivel_educativo_cod", list(LABELS_EDUCACION))
+    .unionByName(codigos_fuera(df_all_raw, "categoria_ocupacional_cod", list(range(1, 10))))
+    .unionByName(codigos_fuera(df_all_raw, "dominio_cod", list(LABELS_DOMINIO)))
+)
+display(_val.toPandas())
+
+# %% [markdown]
+# ### Filtros de población y calidad
+# El orden es siempre el mismo. Cada paso cuenta cuántos registros excluye por archivo. Los registros
+# que no permiten evaluar un criterio (valor nulo) se excluyen en ese paso. El salario no se imputa.
+
+# %%
+def es_finito(c):
+    return F.col(c).isNotNull() & ~F.isnan(c) & (F.abs(F.col(c)) < float("inf"))
 
 
-def recode_categoricals(df):
-    # cast double -> int -> string para que el código quede "0","1" (no "0.0").
+PASOS = [
+    ("1. edad finita y >= 15", es_finito("edad") & (F.col("edad") >= 15)),
+    ("2. OCUPADOS = 1", F.col("ocupado") == 1),
+    ("3. P05C16 en {1, 2, 3, 4}", F.col("categoria_ocupacional_cod").isin(1, 2, 3, 4)),
+    ("4. P05D01 finito y > 0", es_finito("salario_mensual") & (F.col("salario_mensual") > 0)),
+    ("5. antigüedad en años >= 0", es_finito("antiguedad_anios") & (F.col("antiguedad_anios") >= 0)),
+    ("6. meses entero entre 0 y 11", es_finito("antiguedad_meses") & (F.col("antiguedad_meses") >= 0)
+     & (F.col("antiguedad_meses") <= 11) & (F.col("antiguedad_meses") == F.floor("antiguedad_meses"))),
+    ("7. antigüedad <= edad", F.col("antiguedad") <= F.col("edad")),
+    ("8. 0 < horas <= 168", es_finito("horas_semanales") & (F.col("horas_semanales") > 0) & (F.col("horas_semanales") <= 168)),
+]
+
+
+def conteo_por_periodo(df):
+    return dict(df.groupBy("periodo_archivo").count().collect())
+
+
+def aplicar_filtros(df):
+    periodos = sorted(conteo_por_periodo(df))
+    previo = conteo_por_periodo(df)
+    filas = [dict(paso="0. registros originales", **{p: previo.get(p, 0) for p in periodos})]
+    for nombre, condicion in PASOS:
+        df = df.filter(condicion)
+        actual = conteo_por_periodo(df)
+        filas.append(dict(paso=nombre, **{p: previo.get(p, 0) - actual.get(p, 0) for p in periodos}))
+        previo = actual
+    filas.append(dict(paso="registros finales", **{p: previo.get(p, 0) for p in periodos}))
+    tabla = pd.DataFrame(filas).set_index("paso")
+    tabla["total_2025"] = tabla[PERIODOS_2025].sum(axis=1)
+    return df, tabla
+
+
+def recodificar(df):
+    def mapa(col, labels):
+        expr = F.lit("DESCONOCIDO")
+        for cod, etiqueta in labels.items():
+            expr = F.when(F.col(col) == cod, F.lit(etiqueta)).otherwise(expr)
+        return expr
+
     return (
-        df.withColumn(
-            "nivel_educativo",
-            F.when(
-                F.col("nivel_educativo_raw").isin(VALID_NIVEL_EDUCATIVO),
-                F.col("nivel_educativo_raw").cast("int").cast("string"),
-            ).otherwise(F.lit("DESCONOCIDO")),
-        )
-        .withColumn(
-            "dominio",
-            F.when(
-                F.col("dominio_raw").isin(VALID_DOMINIO),
-                F.col("dominio_raw").cast("int").cast("string"),
-            ).otherwise(F.lit("DESCONOCIDO")),
-        )
-        .withColumn("categoria_ocupacional", F.col("categoria_ocupacional_raw").cast("int").cast("string"))
+        df.withColumn("nivel_educativo", mapa("nivel_educativo_cod", LABELS_EDUCACION))
+        .withColumn("categoria_ocupacional", mapa("categoria_ocupacional_cod", LABELS_CATEGORIA))
+        .withColumn("dominio", mapa("dominio_cod", LABELS_DOMINIO))
     )
 
 
+df_all_filtrado, cascada = aplicar_filtros(df_all_raw)
+display(cascada)
+_ok = (cascada.loc["0. registros originales"] - cascada.iloc[1:-1].sum() == cascada.loc["registros finales"]).all()
+print("Originales - excluidos = finales en todos los archivos:", _ok)
+
+# %% [markdown]
+# Casi toda la exclusión viene de los tres primeros pasos: menores de 15 años, no ocupados y no
+# asalariados. Los pasos 4 a 8 no excluyen registros: todos los asalariados tienen salario positivo y
+# antigüedad y horas válidas. La suma cuadra en todos los archivos.
+#
+# Registros por archivo antes y después de los filtros.
+
+# %%
+antes_despues = pd.DataFrame({
+    "antes": cascada.loc["0. registros originales"],
+    "despues": cascada.loc["registros finales"],
+})
+antes_despues["pct_conservado"] = 100 * antes_despues["despues"] / antes_despues["antes"]
+display(antes_despues)
+
+# %% [markdown]
+# Se conserva cerca de 26 % de cada archivo: 53,025 registros en 2025 y 13,258 en 2026. Ningún registro
+# quedó con nivel educativo o dominio `DESCONOCIDO`.
+
+# %% [markdown]
+# ### Unicidad de `periodo_archivo`, `NUM_HOGAR`, `NUM_PERSONA`
+# Se revisa antes y después de filtrar. Si una clave se repite, se compara la fila completa para saber si
+# es una repetición exacta o un registro en conflicto.
+
+# %%
+CLAVE = ["periodo_archivo", "NUM_HOGAR", "NUM_PERSONA"]
+
+
+def revisar_clave(df, etiqueta):
+    nulos = df.filter(F.col("NUM_HOGAR").isNull() | F.col("NUM_PERSONA").isNull()).count()
+    repetidas = df.groupBy(*CLAVE).count().filter("count > 1")
+    n_rep = repetidas.count()
+    exactas = conflicto = 0
+    if n_rep:
+        cols = [c for c in df.columns if c not in CLAVE]
+        detalle = (df.join(repetidas.select(*CLAVE), CLAVE)
+                   .groupBy(*CLAVE).agg(F.countDistinct(F.to_json(F.struct(*cols))).alias("versiones")))
+        exactas = detalle.filter("versiones = 1").count()
+        conflicto = detalle.filter("versiones > 1").count()
+    return dict(conjunto=etiqueta, registros=df.count(), claves_nulas=nulos, claves_repetidas=n_rep,
+                repeticiones_exactas=exactas, claves_en_conflicto=conflicto)
+
+
+display(pd.DataFrame([
+    revisar_clave(df_2025_raw, "2025 antes de filtrar"),
+    revisar_clave(df_2026_raw, "2026 antes de filtrar"),
+    revisar_clave(df_all_filtrado.filter(F.col("anio_archivo") == 2025), "2025 filtrado"),
+    revisar_clave(df_all_filtrado.filter(F.col("anio_archivo") == 2026), "2026 filtrado"),
+]))
+
+# %% [markdown]
+# No hay claves repetidas dentro de un mismo período, así que no hace falta eliminar nada.
+#
+# La misma persona sí puede aparecer en varios trimestres. Se cuentan los pares hogar-persona de 2025
+# (sin filtrar) que aparecen en más de un archivo y cuya edad cambia a lo sumo un año.
+
+# %%
+_panel = (
+    df_2025_raw.groupBy("NUM_HOGAR", "NUM_PERSONA")
+    .agg(F.countDistinct("periodo_archivo").alias("periodos"), (F.max("edad") - F.min("edad")).alias("rango_edad"))
+)
+display(_panel.groupBy("periodos").agg(
+    F.count("*").alias("hogar_persona"),
+    F.sum((F.col("rango_edad") <= 1).cast("int")).alias("edad_consistente"),
+).orderBy("periodos").toPandas())
+
+# %% [markdown]
+# 61,056 pares hogar-persona aparecen en dos o más trimestres de 2025. En 99.6 % de ellos la edad cambia a
+# lo sumo un año. Son las mismas personas observadas en varios períodos.
+
+# %% [markdown]
+# ### Guardado en Parquet
+
+# %%
 FINAL_COLS = [
     "periodo_archivo", "anio_archivo", "trimestre_calendario", "archivo_origen",
-    "NUM_HOGAR", "NUM_PERSONA", "FACTOR", "ANIO", "TRIMESTRE",
-    "salario_mensual", "edad", "antiguedad", "antiguedad_anios", "antiguedad_meses",
-    "horas_semanales", "nivel_educativo", "categoria_ocupacional", "dominio", "ocupado",
+    "ANIO", "TRIMESTRE", "NUM_HOGAR", "NUM_PERSONA", "FACTOR",
+    "salario_mensual", "edad", "antiguedad", "antiguedad_anios", "antiguedad_meses", "horas_semanales",
+    "nivel_educativo", "categoria_ocupacional", "dominio",
+    "nivel_educativo_cod", "categoria_ocupacional_cod", "dominio_cod", "ocupado",
 ]
 
-df_2025_filtered = apply_quality_filters(df_2025_raw, "2025")
-df_2025_final = recode_categoricals(df_2025_filtered).select(*FINAL_COLS).cache()
-print(f"\n2025 final: {df_2025_final.count()} registros elegibles")
+df_final = recodificar(df_all_filtrado).select(*FINAL_COLS)
+df_final.filter(F.col("anio_archivo") == 2025).write.mode("overwrite").parquet(str(PROCESSED_DIR / "eneic_2025.parquet"))
+df_final.filter(F.col("anio_archivo") == 2026).write.mode("overwrite").parquet(str(PROCESSED_DIR / "eneic_2026.parquet"))
 
-missingness_report(sdf_2026_raw, ANALYTIC_VARS, "2026")
-df_2026_filtered = apply_quality_filters(sdf_2026_raw, "2026")
-df_2026_final = recode_categoricals(df_2026_filtered).select(*FINAL_COLS).cache()
-print(f"\n2026 final: {df_2026_final.count()} registros elegibles")
-
-df_2025_final.printSchema()
-df_2025_final.show(5, truncate=False)
-
-# %% [markdown]
-# Verificación de unicidad de `(periodo_archivo, NUM_HOGAR, NUM_PERSONA)`. Una
-# persona observada en dos períodos distintos **no** es duplicado (panel
-# longitudinal con rotación); lo que se busca aquí es una clave repetida
-# **dentro** del mismo período.
-
-# %%
-def check_duplicate_keys(df, label):
-    dups = df.groupBy("periodo_archivo", "NUM_HOGAR", "NUM_PERSONA").count().filter("count > 1")
-    n_dups = dups.count()
-    print(f"Unicidad de clave ({label}): {n_dups} grupos con clave repetida")
-    if n_dups:
-        dups.show(10, truncate=False)
-
-
-check_duplicate_keys(df_2025_raw, "2025 raw, antes de filtrar")
-check_duplicate_keys(df_2025_final, "2025 final, filtrado")
-check_duplicate_keys(df_2026_final, "2026 final, filtrado")
+df_2025 = spark.read.parquet(str(PROCESSED_DIR / "eneic_2025.parquet")).cache()
+df_2026 = spark.read.parquet(str(PROCESSED_DIR / "eneic_2026.parquet")).cache()
+print(f"eneic_2025.parquet: {df_2025.count():,} filas | eneic_2026.parquet: {df_2026.count():,} filas")
+df_2025.printSchema()
+df_2025.select("periodo_archivo", "salario_mensual", "edad", "antiguedad", "horas_semanales",
+               "nivel_educativo", "categoria_ocupacional", "dominio").show(5, truncate=False)
 
 # %% [markdown]
-# Escritura del conjunto preparado (armonizado + filtrado) de 2025 y 2026,
-# por separado, en Parquet.
-
-# %%
-df_2025_final.write.mode("overwrite").parquet(f"{PROCESSED_DIR}/eneic_2025.parquet")
-df_2026_final.write.mode("overwrite").parquet(f"{PROCESSED_DIR}/eneic_2026.parquet")
-
-_chk = spark.read.parquet(f"{PROCESSED_DIR}/eneic_2025.parquet")
-print(f"Releído 2025: {_chk.count()} filas, {len(_chk.columns)} columnas")
-
-# %% [markdown]
-# **Respuestas (P1):**
+# ### Respuestas
 #
-# - **¿Por qué IV de 2025 no puede apilarse por posición de columnas?**
-#   Trae 302 columnas contra 270 en los demás trimestres, y el orden de las
-#   columnas no coincide entre archivos; `union` posicional emparejaría
-#   columnas distintas por su posición en vez de por su nombre. `unionByName`
-#   (tras seleccionar el mismo subconjunto `RAW_COLS` en todos) evita el
-#   problema.
-# - **¿Diferencia entre dato ausente porque la pregunta no aplica y una
-#   respuesta no registrada?** Que la pregunta no aplique es una ausencia
-#   estructural: a alguien fuera del universo de la pregunta (p. ej.
-#   `P05D01` para quien no está ocupado) nunca se le formula, y el campo
-#   queda vacío por diseño del cuestionario. Una respuesta no registrada es
-#   un vacío dentro del universo elegible (la pregunta sí aplicaba, pero no
-#   se obtuvo dato). Aquí no se distinguen explícitamente porque el filtro de
-#   elegibilidad (ocupado, asalariado) ya restringe el análisis al universo
-#   donde la pregunta aplica.
-# - **¿Por qué una persona observada en dos períodos no se elimina como
-#   duplicado?** La ENEIC tiene diseño longitudinal con rotación de panel: la
-#   misma persona puede entrevistarse en varios trimestres. Cada fila es una
-#   observación válida de un período distinto, no una repetición del mismo
-#   evento; por eso la clave de unicidad usada es
-#   `(periodo_archivo, NUM_HOGAR, NUM_PERSONA)`, no solo `(NUM_HOGAR, NUM_PERSONA)`.
-# - **¿Por qué el número de registros de la base filtrada no representa a
-#   todos los trabajadores del país?** El filtro se restringe a personas de
-#   15+ años, ocupadas, asalariadas (`P05C16` en {1,2,3,4}) y con salario
-#   positivo registrado — excluye cuentapropistas, empleadores, trabajadores
-#   no remunerados, desocupados e inactivos. Además los resultados son
-#   **no ponderados** (no se usa `FACTOR`), por lo que ni siquiera dentro de
-#   ese subgrupo el conteo de filas equivale a personas en la población.
+# **¿Por qué IV-2025 no puede apilarse por posición?** Tiene 302 columnas y los demás 270. Además, el
+# orden cambia desde la posición 7: en IV-2025 la edad (`P02A03`) está en la columna 8 y en III-2025 en
+# la 12. Un apilado por posición mezclaría variables distintas. `unionByName` une por nombre.
+#
+# **¿Dato ausente porque no corresponde vs. respuesta no registrada?** El primero es estructural: la
+# pregunta no se hace a esa persona. Por ejemplo, el salario no se pregunta a quien no está ocupado.
+# El segundo ocurre cuando la pregunta sí aplicaba y no quedó registrada. El primero no debe tratarse
+# como error ni imputarse; el segundo sí indica pérdida de información. En estos archivos todo el
+# faltante del salario es del primer tipo: fuera del universo asalariado falta en 100 % y dentro en 0 %.
+#
+# **¿Por qué no eliminar como duplicado a una persona observada en dos períodos?** La ENEIC es un panel
+# con rotación. Cada fila es una observación de un período distinto. Borrarla quitaría información
+# válida de ese trimestre. Por eso la clave incluye `periodo_archivo`.
+#
+# **¿Por qué la base filtrada no representa a todos los trabajadores del país?** Solo incluye
+# asalariados de 15 años o más con salario positivo registrado. Deja fuera a cuenta propia,
+# empleadores, trabajo no remunerado y a quien no reportó salario. Además, cada fila es una persona de
+# la muestra, no de la población.
+#
+# **Uso de `FACTOR`.** Es el factor de expansión: cuántas personas de la población representa cada
+# registro. Serviría para estimar totales, medias o proporciones poblacionales como promedios ponderados.
+# Aquí no se usa: el análisis describe los registros, no el país.
 
 # %% [markdown]
 # ## S2 — Estadística descriptiva y preguntas de exploración (dueño: P2, Ej.2 — 5 pts)
