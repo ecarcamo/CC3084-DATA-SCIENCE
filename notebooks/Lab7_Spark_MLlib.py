@@ -700,14 +700,126 @@ display(corr_pdf)
 # Correlación no implica causalidad.
 
 # %% [markdown]
-# ## S4 — Segmentación de perfiles mediante KMeans (dueño: P3, Ej.4 — 10 pts)
-# Requiere `data/processed/eneic_2025.parquet` (de S1).
+# ## 4. Segmentación de perfiles con KMeans
+#
+# Variables base: edad, antigüedad y horas habituales. Se prueba también agregar el salario para decidir
+# si vale la pena. Las variables se estandarizan con `StandardScaler` (media 0, desviación 1) dentro de
+# un `Pipeline`. Se evalúa K = 2, 3, 4 y 5 con la silueta y la suma de distancias al centroide (WSSSE).
 
 # %%
+from pyspark.ml import Pipeline
+from pyspark.ml.feature import StandardScaler
+from pyspark.ml.clustering import KMeans
+from pyspark.ml.evaluation import ClusteringEvaluator
 
+VARS_CLUSTER = ["edad", "antiguedad", "horas_semanales"]
+VARIANTES = {"sin salario": VARS_CLUSTER, "con salario": VARS_CLUSTER + ["salario_mensual"]}
+
+
+def pipeline_kmeans(cols, k):
+    return Pipeline(stages=[
+        VectorAssembler(inputCols=cols, outputCol="vars_cluster"),
+        StandardScaler(inputCol="vars_cluster", outputCol="features_cluster", withMean=True, withStd=True),
+        KMeans(k=k, seed=SEED, featuresCol="features_cluster", predictionCol="cluster", maxIter=50),
+    ])
+
+
+evaluador_silueta = ClusteringEvaluator(featuresCol="features_cluster", predictionCol="cluster")
+filas_k, modelos_k = [], {}
+for variante, cols in VARIANTES.items():
+    for k in [2, 3, 4, 5]:
+        modelo = pipeline_kmeans(cols, k).fit(df_2025)
+        pred = modelo.transform(df_2025)
+        tamanos = modelo.stages[-1].summary.clusterSizes
+        filas_k.append(dict(variante=variante, k=k, silueta=evaluador_silueta.evaluate(pred),
+                            wssse=modelo.stages[-1].summary.trainingCost,
+                            cluster_menor_pct=100 * min(tamanos) / _n_2025))
+        modelos_k[(variante, k)] = modelo
+
+eval_k = pd.DataFrame(filas_k)
+display(eval_k)
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+for variante, pdf in eval_k.groupby("variante"):
+    axes[0].plot(pdf["k"], pdf["silueta"], marker="o", label=variante)
+    axes[1].plot(pdf["k"], pdf["wssse"], marker="o", label=variante)
+axes[0].set_title("Silueta por K")
+axes[1].set_title("WSSSE por K (método del codo)")
+for ax in axes:
+    ax.set_xlabel("K")
+    ax.set_xticks([2, 3, 4, 5])
+    ax.legend()
+plt.tight_layout()
+guardar(fig, "06_kmeans_seleccion_k")
+plt.show()
+
+# %% [markdown]
+# **Salario sí o no.** Con salario la silueta baja en todos los K (0.51 contra 0.55 con K = 2; 0.37
+# contra 0.47 con K = 4). El salario es muy asimétrico y, aun estandarizado, sus extremos arrastran los
+# centroides. Además, se busca un perfil laboral para luego comparar salarios entre perfiles. Por eso el
+# salario queda fuera del clustering y solo se usa para describir los grupos.
+#
+# **Elección de K.** K = 2 tiene la mayor silueta (0.55), pero solo separa jóvenes de mayores. Nuestro
+# criterio fue combinar el codo del WSSSE, la silueta y que ningún cluster tenga menos del 10 % de los
+# registros. El WSSSE cae 21 % de 2 a 3, 24 % de 3 a 4 y solo 12 % de 4 a 5. K = 5 deja un cluster de 4.9 %.
+# Se elige K = 4: silueta 0.47 y cluster menor de 12.9 %.
 
 # %%
-# TODO(P3): elección de K + descripción de cada cluster en prosa.
+VARIANTE_ELEGIDA = "sin salario"
+K_ELEGIDO = 4
+
+modelo_kmeans = modelos_k[(VARIANTE_ELEGIDA, K_ELEGIDO)]
+df_clusters = modelo_kmeans.transform(df_2025).drop("vars_cluster", "features_cluster").cache()
+
+perfil = (
+    df_clusters.groupBy("cluster").agg(
+        F.count("*").alias("n"),
+        F.mean("edad").alias("edad_media"),
+        F.mean("antiguedad").alias("antiguedad_media"),
+        F.mean("horas_semanales").alias("horas_media"),
+        F.expr("percentile(salario_mensual, 0.5)").alias("salario_mediano"),
+        F.mean("salario_mensual").alias("salario_medio"),
+        F.mean((F.col("categoria_ocupacional") == "Gobierno").cast("int")).alias("pct_gobierno"),
+        F.mean((F.col("categoria_ocupacional") == "Empresa privada").cast("int")).alias("pct_privada"),
+        F.mean((F.col("categoria_ocupacional") == "Jornalero o peón").cast("int")).alias("pct_jornalero"),
+        F.mean((F.col("categoria_ocupacional") == "Servicio doméstico").cast("int")).alias("pct_domestico"),
+        F.mean((F.col("dominio") == "Rural nacional").cast("int")).alias("pct_rural"),
+        F.mean(F.col("nivel_educativo").isin("Diversificado", "Superior", "Maestría", "Doctorado").cast("int")).alias("pct_diversificado_o_mas"),
+    ).orderBy("cluster").toPandas().set_index("cluster")
+)
+perfil["pct_registros"] = 100 * perfil["n"] / perfil["n"].sum()
+for c in [c for c in perfil.columns if c.startswith("pct_") and c != "pct_registros"]:
+    perfil[c] = 100 * perfil[c]
+display(perfil.T)
+
+# %%
+muestra_clusters = (
+    df_clusters.select("edad", "antiguedad", "horas_semanales", "salario_mensual", "cluster")
+    .sample(fraction=min(1.0, 6000 / _n_2025), seed=SEED).limit(5000).toPandas()
+)
+fig, axes = plt.subplots(1, 3, figsize=(17, 4.8))
+_paleta = sns.color_palette("tab10", K_ELEGIDO)
+for ax, (x, y) in zip(axes, [("edad", "antiguedad"), ("edad", "horas_semanales"), ("antiguedad", "salario_mensual")]):
+    sns.scatterplot(data=muestra_clusters, x=x, y=y, hue="cluster", palette=_paleta, s=10, alpha=0.6, ax=ax, linewidth=0)
+    ax.set_title(f"{y} vs {x}")
+axes[2].set_yscale("log")
+axes[2].set_ylabel("salario_mensual (escala log)")
+plt.tight_layout()
+guardar(fig, "07_kmeans_perfiles")
+plt.show()
+
+# %% [markdown]
+# | Cluster | Registros | Perfil |
+# |---|---|---|
+# | 0 | 46.0 % | **Jóvenes que empiezan.** 26 años, 2.4 años de antigüedad y 41 horas. 52 % con diversificado o más. Mediana Q3,000. |
+# | 1 | 17.5 % | **Jornada extendida.** 30 años, 3.4 años de antigüedad y 74 horas por semana. 67 % en empresa privada. Mediana Q3,000. |
+# | 2 | 23.6 % | **Adultos con poca antigüedad.** 49 años pero solo 4.1 años en su trabajo y 40 horas. Más servicio doméstico (12 %). Mediana Q3,000. |
+# | 3 | 12.9 % | **Trayectoria estable.** 50 años, 22 años de antigüedad y 41 horas. 31 % en gobierno. Mediana Q3,800 y media Q4,683. |
+#
+# Los grupos se separan por edad, antigüedad y jornada, no por salario. La mediana es Q3,000 en tres de
+# los cuatro perfiles. Solo el de trayectoria estable gana claramente más, y ahí pesa el empleo público.
+# Esto concuerda con las correlaciones bajas de la sección 3. Los perfiles describen la muestra, no la
+# población, y el cluster no se usa como predictor.
 
 # %% [markdown]
 # ---
