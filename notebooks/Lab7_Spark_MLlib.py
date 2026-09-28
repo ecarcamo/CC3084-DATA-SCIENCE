@@ -823,24 +823,118 @@ plt.show()
 
 # %% [markdown]
 # ---
-# ## MODELADO SUPERVISADO PARA PREDICCIÓN (75 pts)
-# Splits acordados (ver `docs/PLAN_FINAL.md`):
-# - Desarrollo: train = 2025 T1-T3, validación = 2025 T4.
-# - Selección: menor RMSE de validación por algoritmo.
-# - Final: reentrenar con todo 2025, evaluar en 2026 T1.
-# - 6 predictores exactos: edad, antiguedad, horas_semanales, nivel_educativo,
-#   categoria_ocupacional, dominio.
+# # Modelado supervisado
+#
+# Objetivo: `salario_mensual` en quetzales, sin transformar. Predictores: edad, antigüedad, horas
+# semanales, nivel educativo, categoría ocupacional y dominio.
+#
+# - Entrenamiento de desarrollo: 2025 T1–T3.
+# - Validación: 2025 T4. Se elige la configuración con menor RMSE de validación.
+# - Entrenamiento final: todo 2025 con la configuración elegida.
+# - Prueba final: 2026 T1.
+#
+# Todas las etapas del pipeline se ajustan solo con los datos de entrenamiento. Las métricas no se ponderan.
 
 # %%
+from pyspark.ml.feature import StringIndexer, OneHotEncoder
+from pyspark.ml.regression import LinearRegression, RandomForestRegressor
+from pyspark.ml.evaluation import RegressionEvaluator
+
+TARGET = "salario_mensual"
+NUM_FEATS = ["edad", "antiguedad", "horas_semanales"]
+CAT_FEATS = ["nivel_educativo", "categoria_ocupacional", "dominio"]
+
+train = df_2025.filter(F.col("trimestre_calendario").isin(1, 2, 3)).select(TARGET, *NUM_FEATS, *CAT_FEATS).cache()
+valid = df_2025.filter(F.col("trimestre_calendario") == 4).select(TARGET, *NUM_FEATS, *CAT_FEATS).cache()
+print(f"Entrenamiento (2025 T1-T3): {train.count():,} | Validación (2025 T4): {valid.count():,}")
+
+
+def etapas_preparacion():
+    indexers = [StringIndexer(inputCol=c, outputCol=f"{c}_idx", handleInvalid="keep") for c in CAT_FEATS]
+    encoder = OneHotEncoder(inputCols=[f"{c}_idx" for c in CAT_FEATS], outputCols=[f"{c}_ohe" for c in CAT_FEATS])
+    assembler = VectorAssembler(inputCols=NUM_FEATS + [f"{c}_ohe" for c in CAT_FEATS], outputCol="features")
+    return indexers + [encoder, assembler]
+
+
+def metricas(pred, pred_col="prediction"):
+    ev = RegressionEvaluator(labelCol=TARGET, predictionCol=pred_col)
+    return {m.upper() if m != "r2" else "R2": ev.evaluate(pred, {ev.metricName: m}) for m in ["mae", "rmse", "r2"]}
+
+
+def nombres_features(df_transformado):
+    attrs = df_transformado.schema["features"].metadata["ml_attr"]["attrs"]
+    return [a["name"] for a in sorted(sum(attrs.values(), []), key=lambda a: a["idx"])]
+
 
 # %% [markdown]
-# ## S5 — Baseline + Pipeline de regresión lineal (dueño: P1, Ej.5 — 20 pts)
+# ## 5. Regresión lineal
+#
+# Modelo de referencia: predecir siempre la media del salario de entrenamiento.
 
 # %%
-# TODO(P1): baseline = media de salario_mensual en train. MAE/RMSE/R² en validación.
+media_train = train.agg(F.mean(TARGET)).first()[0]
+metricas_baseline_val = metricas(valid.withColumn("prediction", F.lit(media_train)))
+print(f"Media de entrenamiento: Q{media_train:,.2f}")
+display(pd.DataFrame([metricas_baseline_val], index=["referencia (media)"]))
 
+# %% [markdown]
+# Pipeline: `StringIndexer` + `OneHotEncoder` para las categóricas, `VectorAssembler` y
+# `LinearRegression` con `standardization=True` (estandarización interna, sin `StandardScaler`).
+# Se prueban ocho configuraciones de regularización.
 
 # %%
+CONFIG_LR = [
+    dict(regParam=0.0, elasticNetParam=0.0),
+    dict(regParam=0.01, elasticNetParam=0.0),
+    dict(regParam=0.1, elasticNetParam=0.0),
+    dict(regParam=1.0, elasticNetParam=0.0),
+    dict(regParam=0.01, elasticNetParam=1.0),
+    dict(regParam=0.1, elasticNetParam=1.0),
+    dict(regParam=1.0, elasticNetParam=1.0),
+    dict(regParam=0.1, elasticNetParam=0.5),
+]
+
+
+def pipeline_lr(regParam, elasticNetParam):
+    lr = LinearRegression(featuresCol="features", labelCol=TARGET, regParam=regParam,
+                          elasticNetParam=elasticNetParam, standardization=True, maxIter=200)
+    return Pipeline(stages=etapas_preparacion() + [lr])
+
+
+filas_lr, modelos_lr = [], []
+for cfg in CONFIG_LR:
+    modelo = pipeline_lr(**cfg).fit(train)
+    filas_lr.append(dict(**cfg, **metricas(modelo.transform(valid))))
+    modelos_lr.append(modelo)
+
+resultados_lr = pd.DataFrame(filas_lr)
+display(resultados_lr)
+
+mejor_lr_idx = int(resultados_lr["RMSE"].idxmin())
+MEJOR_CONFIG_LR = CONFIG_LR[mejor_lr_idx]
+mejor_lr = modelos_lr[mejor_lr_idx]
+mejor_lr.write().overwrite().save(str(MODELS_DIR / "lr_best"))
+metricas_lr_val = metricas(mejor_lr.transform(valid))
+print("Mejor configuración LR:", MEJOR_CONFIG_LR, "-> guardada en models/lr_best")
+
+# %%
+_coef = pd.DataFrame({
+    "variable": nombres_features(mejor_lr.transform(valid.limit(1))),
+    "coeficiente": mejor_lr.stages[-1].coefficients.toArray(),
+})
+print(f"Intercepto: {mejor_lr.stages[-1].intercept:,.2f}")
+display(_coef)
+display(pd.DataFrame([metricas_baseline_val, metricas_lr_val], index=["referencia (media)", "regresión lineal"]))
+
+# %% [markdown]
+# - La regresión lineal baja el MAE de Q1,673 a Q1,210 y el RMSE de Q2,890 a Q2,186 frente a la
+#   referencia. Explica 43 % de la varianza del salario en validación (R² = 0.43). La referencia tiene R² ≈ 0.
+# - Las ocho configuraciones dan casi el mismo RMSE (diferencias menores a Q0.10). Con 40 mil registros y
+#   pocas variables, la regularización casi no mueve los coeficientes. Gana `regParam = 0`, sin penalización.
+# - Los coeficientes tienen la dirección esperada. Con lo demás igual, maestría suma unos Q7,600 más que
+#   primaria y gobierno unos Q2,800 más que servicio doméstico. Cada año de edad suma unos Q20, cada año de
+#   antigüedad Q23 y cada hora semanal Q16.
+# - El error sigue siendo alto: el RMSE es cerca de Q2,200. Los salarios extremos pesan mucho en esa métrica.
 
 # %% [markdown]
 # ## S6 — Pipeline de Random Forest (dueño: P2, Ej.6 — 20 pts)
