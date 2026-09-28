@@ -1057,21 +1057,150 @@ plt.show()
 #   captura la ocupación, la rama de actividad ni el tamaño de la empresa.
 
 # %% [markdown]
-# ## S8 — Visualización y análisis de errores (dueño: P3, Ej.8 — 15 pts)
-# Requiere las predicciones de prueba de S7.
+# ## 8. Visualización y análisis de errores
+#
+# Residuo = salario real − salario predicho. Positivo: el modelo subestima. Negativo: sobreestima.
+# Las gráficas usan la misma muestra de 5,000 registros de 2026 T1 para ambos modelos. Las tablas por
+# grupo usan todos los registros de prueba.
 
 # %%
+muestra_test = pred_test.sample(fraction=min(1.0, 6000 / n_test), seed=SEED).limit(5000).toPandas()
+_lim = max(muestra_test[TARGET].max(), muestra_test[["pred_lr", "pred_rf"]].max().max()) * 1.05
 
-
-# %%
-
-
-# %%
+fig, axes = plt.subplots(2, 2, figsize=(13, 10))
+for j, (modelo, col) in enumerate([("Regresión lineal", "lr"), ("Random forest", "rf")]):
+    ax = axes[0, j]
+    ax.scatter(muestra_test[f"pred_{col}"], muestra_test[TARGET], s=6, alpha=0.4)
+    ax.plot([0, _lim], [0, _lim], color="crimson", label="y = x")
+    ax.set_xlim(0, _lim)
+    ax.set_ylim(0, _lim)
+    ax.set_xlabel("Salario predicho (Q)")
+    ax.set_ylabel("Salario real (Q)")
+    ax.set_title(f"{modelo}: real vs. predicho")
+    ax.legend()
+    ax = axes[1, j]
+    ax.scatter(muestra_test[f"pred_{col}"], muestra_test[f"residuo_{col}"], s=6, alpha=0.4)
+    ax.axhline(0, color="crimson")
+    ax.set_xlabel("Salario predicho (Q)")
+    ax.set_ylabel("Residuo (Q)")
+    ax.set_title(f"{modelo}: residuos vs. predicho")
+plt.tight_layout()
+guardar(fig, "09_real_predicho_residuos")
+plt.show()
 
 # %% [markdown]
-# ### Discusión final (P3, con insumos de todo el equipo)
-# Integrar perfiles de KMeans, correlaciones, comparación LR vs. RF y patrón
-# de errores. Recordar: las asociaciones encontradas no son causales.
+# ### MAE y error medio por grupo (todos los registros de prueba)
+
+# %%
+def errores_por(col, orden):
+    return (
+        pred_test.groupBy(col).agg(
+            F.count("*").alias("n"),
+            F.mean(TARGET).alias("salario_medio"),
+            F.mean(F.abs("residuo_lr")).alias("MAE_lr"),
+            F.mean("residuo_lr").alias("error_medio_lr"),
+            F.mean(F.abs("residuo_rf")).alias("MAE_rf"),
+            F.mean("residuo_rf").alias("error_medio_rf"),
+        ).toPandas().set_index(col).reindex(orden).dropna(how="all")
+    )
+
+
+errores_educacion = errores_por("nivel_educativo", ORDEN_EDUCACION)
+errores_dominio = errores_por("dominio", ORDEN_DOMINIO)
+display(errores_educacion)
+display(errores_dominio)
+
+# %% [markdown]
+# **Gráficas.** Los puntos se alejan de la línea y = x cuando sube el salario real. Los salarios reales
+# altos quedan muy por encima de lo predicho. Los residuos se abren en abanico: el error crece con el salario
+# predicho. La regresión lineal forma un grupo aparte cerca de Q11,000–12,000: son maestría y doctorado,
+# donde el coeficiente educativo pesa mucho. También da algunas predicciones cercanas a cero. Random forest
+# reparte mejor las predicciones y queda más cerca de la diagonal.
+#
+# **Nivel educativo.** El MAE crece con el nivel porque también crece el salario: entre Q640 y Q900 en
+# ninguno, preprimaria, primaria y básico; unos Q2,300–2,570 en superior y Q4,600–5,550 en maestría. En la
+# mayoría de niveles el error medio es pequeño (entre −Q280 y +Q300). En doctorado los modelos subestiman
+# unos Q6,000, pero solo hay 12 registros. Random forest tiene menor MAE en todos los niveles.
+#
+# **Dominio.** Urbano metropolitano tiene el mayor MAE (Q1,446 LR, Q1,321 RF) y rural nacional el menor
+# (Q914, Q774). El error medio es positivo en los tres: en 2026 los modelos subestiman un poco, más en la
+# zona metropolitana (+Q136 a +Q160) que en la rural (+Q9 a +Q65).
+
+# %% [markdown]
+# ### Errores por percentil de salario
+# Se comparan los percentiles del salario real con los de cada predicción, y luego el error por decil
+# del salario real. Todo sobre los registros completos de prueba.
+
+# %%
+_q = [0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
+_qs = "array(" + ", ".join(str(q) for q in _q) + ")"
+_r = pred_test.agg(*[F.expr(f"percentile({c}, {_qs})").alias(c) for c in [TARGET, "pred_lr", "pred_rf"]]).first()
+percentiles_test = pd.DataFrame({"real": _r[TARGET], "pred_lr": _r["pred_lr"], "pred_rf": _r["pred_rf"]},
+                                index=[f"p{int(q * 100)}" for q in _q])
+display(percentiles_test)
+
+_cortes = pred_test.agg(F.expr(f"percentile({TARGET}, array({', '.join(str(i / 10) for i in range(1, 10))}))")).first()[0]
+_decil = F.lit(10)
+for i, corte in reversed(list(enumerate(_cortes, start=1))):
+    _decil = F.when(F.col(TARGET) <= corte, F.lit(i)).otherwise(_decil)
+errores_decil = (
+    pred_test.withColumn("decil", _decil).groupBy("decil").agg(
+        F.count("*").alias("n"), F.min(TARGET).alias("salario_min"), F.max(TARGET).alias("salario_max"),
+        F.mean(TARGET).alias("salario_medio"), F.mean("pred_lr").alias("pred_media_lr"), F.mean("pred_rf").alias("pred_media_rf"),
+        F.mean(F.abs("residuo_lr")).alias("MAE_lr"), F.mean("residuo_lr").alias("error_medio_lr"),
+        F.mean(F.abs("residuo_rf")).alias("MAE_rf"), F.mean("residuo_rf").alias("error_medio_rf"),
+    ).orderBy("decil").toPandas().set_index("decil")
+)
+display(errores_decil)
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
+axes[0].plot(errores_decil.index, errores_decil["error_medio_lr"], marker="o", label="Regresión lineal")
+axes[0].plot(errores_decil.index, errores_decil["error_medio_rf"], marker="o", label="Random forest")
+axes[0].axhline(0, color="black", linewidth=1)
+axes[0].set_title("Error medio por decil del salario real (+ = subestima)")
+axes[0].set_xlabel("Decil del salario real")
+axes[0].set_ylabel("Residuo medio (Q)")
+axes[0].legend()
+axes[1].plot(percentiles_test.index, percentiles_test["real"], marker="o", label="Real")
+axes[1].plot(percentiles_test.index, percentiles_test["pred_lr"], marker="o", label="Regresión lineal")
+axes[1].plot(percentiles_test.index, percentiles_test["pred_rf"], marker="o", label="Random forest")
+axes[1].set_yscale("log")
+axes[1].set_title("Percentiles del salario real y predicho (escala log)")
+axes[1].set_ylabel("Quetzales")
+axes[1].legend()
+plt.tight_layout()
+guardar(fig, "10_errores_percentiles")
+plt.show()
+
+# %% [markdown]
+# - Las predicciones están más concentradas que los salarios reales. El p5 real es Q720 y los modelos
+#   predicen cerca de Q1,090. El p99 real es Q15,000 y los modelos cerca de Q11,000.
+# - En el decil 1 (hasta Q1,000) los modelos sobreestiman en promedio Q987 (LR) y Q884 (RF). En los deciles
+#   5 a 7 el error medio es casi cero. En el decil 10 (desde Q6,045) subestiman Q3,696 (LR) y Q3,249 (RF).
+# - Los errores no son parejos. Hay una tendencia clara a sobreestimar salarios bajos y subestimar salarios
+#   altos. Con pocas variables, los modelos empujan las predicciones hacia el centro. Random forest reduce
+#   un poco ese sesgo, pero no lo elimina.
+# - Los salarios extremos no se quitaron. Son pocos, pero concentran los errores grandes y elevan el RMSE.
+
+# %% [markdown]
+# ## Discusión final
+#
+# - Los asalariados analizados trabajan sobre todo en empresa privada, tienen primaria o diversificado y
+#   viven en zonas urbanas. El salario es muy asimétrico: mediana Q3,000, media Q3,422 y una cola que llega
+#   a Q99,000.
+# - La educación y la categoría ocupacional son lo que más separa salarios. Las variables numéricas tienen
+#   correlaciones bajas con el salario (máximo 0.18). Edad y antigüedad sí están relacionadas (0.49).
+# - KMeans encontró cuatro perfiles: jóvenes que empiezan, jornada extendida, adultos con poca antigüedad y
+#   trayectoria estable. El salario mediano casi no cambia entre ellos, salvo en el de trayectoria estable.
+# - Random forest fue el mejor modelo en validación y en prueba (R² 0.53 contra 0.43 de la regresión
+#   lineal). Su ventaja viene de captar relaciones no lineales e interacciones entre educación, categoría,
+#   edad y horas.
+# - Los dos modelos mantienen su desempeño en 2026, pero comparten el mismo patrón: sobreestiman salarios
+#   bajos y subestiman salarios altos. Los errores más grandes están en maestría, doctorado y la zona
+#   metropolitana.
+# - Limitaciones: los resultados no están ponderados con `FACTOR` y describen la muestra, no al país. Seis
+#   predictores dejan fuera la ocupación, la rama de actividad y el tamaño de la empresa. Las asociaciones no
+#   son causales ni indican cuánto debería ganar una persona.
 
 # %%
 spark.stop()
