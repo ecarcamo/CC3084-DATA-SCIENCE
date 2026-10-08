@@ -133,7 +133,51 @@ Gapminder es el mismo conjunto de datos que usaremos en la demo.
 ---
 
 <!-- ============ APLICACIÓN · Hugo ============ -->
-<!-- TODO Hugo: slides de demo (descripción, pasos para construirla, capturas) -->
+
+# Demo: la misma data, dos formas
+
+**Datos:** Gapminder (`px.data.gapminder()`): 142 países, 1952–2007, 1 704 filas.
+Variables: `country, continent, year, lifeExp, pop, gdpPercap`.
+
+**Herramienta:** Streamlit + Plotly (Python).
+
+| Versión | Archivo | Qué ofrece |
+|---|---|---|
+| Estática | `demo/static.py` | Imagen fija: 2007 + tendencia |
+| Dinámica | `demo/app.py` | Filtros, pestañas, animación, detalle |
+
+---
+
+# Demo estática: lo que se ve
+
+![w:900](img/dashboard_estatico.png)
+
+Responde **una** pregunta fija. Para otro continente o años distintos hay que volver a programar.
+
+---
+
+# Demo dinámica: qué incluye
+
+- **Filtros (sidebar):** continente (multiselección) y rango de años.
+- **KPIs:** esperanza de vida media, PIB mediano, número de países.
+- **Pestañas:** *Overview* (burbujas animadas) · *Comparar* (líneas por continente) · *Detalle* (país elegido + tabla).
+- **Botón «Actualizar datos»:** limpia la caché y recarga.
+
+Preguntas que responde: ¿el ingreso explica la salud? ¿qué continente mejoró más? ¿cómo evolucionó un país concreto?
+
+---
+
+# Cómo se construye (pasos)
+
+1. `pip install -r demo/requirements.txt`
+2. Cargar datos con `@st.cache_data(ttl=300)`.
+3. Crear controles: `st.sidebar.multiselect`, `st.sidebar.slider`.
+4. Filtrar el `DataFrame` con esos valores.
+5. Dibujar con `px.scatter(animation_frame="year")` y `px.line`.
+6. Organizar con `st.tabs` y `st.metric`.
+7. Ejecutar: `streamlit run demo/app.py`
+
+Flujo de Streamlit: **cada interacción vuelve a ejecutar el script** de arriba abajo.
 
 ---
 
