@@ -264,7 +264,7 @@ CLAVE (no mostrar):
 
 # Referencias
 
-<div class="small">
+<style scoped>section { font-size: 15px; } section li { margin: 0; line-height: 1.2; }</style>
 
 - Dong, E., Du, H., & Gardner, L. (2020). An interactive web-based dashboard to track COVID-19 in real time. *The Lancet Infectious Diseases, 20*(5), 533–534. https://pubmed.ncbi.nlm.nih.gov/32087114/
 - Few, S. (2006). *Information Dashboard Design: The Effective Visual Communication of Data*. O'Reilly Media.
@@ -273,9 +273,9 @@ CLAVE (no mostrar):
 - Microsoft. (s. f.). Drillthrough en Power BI Desktop. https://learn.microsoft.com/en-us/power-bi/create-reports/desktop-drillthrough
 - Streamlit. (s. f.). `st.cache_data`. https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data
 - QuantHub. (s. f.). What is the difference between a static dashboard and an interactive dashboard? https://quanthub.com/what-is-the-difference-between-a-static-dashboard-and-an-interactive-dashboard
+- Qrvey. (s. f.). Interactive dashboards. https://qrvey.com/blog/interactive-dashboard/
 - insightsoftware. (s. f.). Dynamic dashboards. https://www.insightsoftware.com/encyclopedia/dynamic-dashboards
+- Plotly. (s. f.). `plotly.express.data.gapminder` (datos de Gapminder, 1952–2007). https://plotly.com/python-api-reference/generated/plotly.express.data.html
 - Our World in Data. https://ourworldindata.org/
 - Gapminder. Gapminder Tools. https://www.gapminder.org/tools
 - Johns Hopkins University. COVID-19 Map FAQ. https://coronavirus.jhu.edu/map-faq
-
-</div>
