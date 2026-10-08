@@ -182,7 +182,83 @@ Flujo de Streamlit: **cada interacción vuelve a ejecutar el script** de arriba 
 ---
 
 <!-- ============ COMPLEJIDAD Y PARTICIPACIÓN · Esteban ============ -->
-<!-- TODO Esteban: slides de complejidad, cuándo no usar dinámico, herramientas y actividad de clase -->
+
+# Complejidad de implementación
+
+| Qué se necesita | Estático | Dinámico |
+|---|---|---|
+| Conocimientos | Python/Excel + gráficos | + estado, eventos, filtrado de `DataFrame` |
+| Recursos | Un script, una imagen | Servidor o servicio donde correr la app |
+| Pasos | Cargar → graficar → exportar | Cargar → controles → filtrar → graficar → desplegar |
+| Mantenimiento | Casi nulo | Dependencias, versiones, datos al día |
+
+El modelo mental cambia: de **un resultado** a **una app que reacciona**.
+
+---
+
+# Dificultades que encontramos
+
+- **Cada interacción re-ejecuta el script:** hay que cachear (`st.cache_data`) o la app se vuelve lenta.
+- **Caché vs. frescura:** con `ttl` el dato puede estar viejo; hizo falta un botón para forzar la recarga.
+- **API que cambia:** `use_container_width` quedó obsoleto y generó avisos; se migró a `width="stretch"`.
+- **Supuestos sobre los datos:** se asumió 1998–2007 y el rango real es 1952–2007; **se verificó antes de graficar**.
+- **Casos límite:** sin continentes seleccionados no hay datos; hubo que mostrar un aviso.
+
+---
+
+# ¿Cuándo NO conviene un dashboard dinámico?
+
+- El mensaje es **único y ya conocido** (informe de cierre, presentación a directivos).
+- Se imprime o se envía en PDF: la interactividad se pierde.
+- Nadie mantendrá la app ni los datos.
+- Demasiados filtros: **sobrecarga cognitiva** y riesgo de conclusiones erróneas por filtros mal combinados.
+- Audiencia sin tiempo ni hábito de explorar.
+
+> Regla práctica: si no hay preguntas de seguimiento, el estático alcanza.
+
+---
+
+# Herramientas para dashboards dinámicos
+
+| Herramienta | Enfoque | Lenguaje |
+|---|---|---|
+| Streamlit | App de datos con pocas líneas | Python |
+| Plotly + Dash | Callbacks explícitos, más control | Python |
+| Panel | Componentes y controles enlazados | Python |
+| R Shiny | Entradas reactivas → resultados | R |
+| Power BI / Tableau | Sin código, segmentadores y *drill-through* | Visual |
+
+Más control = más código. Menos código = menos personalización.
+
+---
+
+# Actividad de clase (5 min)
+
+Dos grupos: **A** solo ve la imagen estática · **B** usa la app dinámica.
+
+1. ¿Qué país de **las Américas** tuvo la menor esperanza de vida en 2007?
+2. ¿Qué país de **Asia** ganó más años de esperanza de vida entre 1952 y 2007?
+3. ¿Qué pasó con la esperanza de vida de **Rwanda** en 1992?
+4. ¿Qué periodo mostró la mayor **caída** de la media en **África**?
+
+Midan: ¿quién respondió primero? ¿qué preguntas no se pudo responder?
+
+<!--
+CLAVE (no mostrar):
+1. Haití, 60.9 años (2007) — responde el estático.
+2. Omán, +38.1 años (de 1952 a 2007); Vietnam +33.8, Indonesia +33.2 — el estático no tiene 1952.
+3. Cayó a 23.6 años (vs 44.0 en 1987) — pestaña Detalle.
+4. 1997→2002, −0.27 años en la media africana — pestaña Comparar.
+-->
+
+---
+
+# Discusión
+
+- ¿Qué preguntas solo respondió el grupo B? ¿Alguna le tomó **más** tiempo?
+- ¿Cuándo el estático fue suficiente?
+- ¿Qué filtro **faltó** en la app?
+- ¿Elegirían dinámico para su próximo reporte? ¿Por qué?
 
 ---
 
