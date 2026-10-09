@@ -34,16 +34,7 @@ style: |
 
 Ernesto Ascencio (23009) · Hugo Barillas (23556) · Esteban Carcamo (23016)
 
----
-
-# Agenda (15–20 min)
-
-1. **Investigación** — qué es un dashboard dinámico y qué aporta
-2. **Aplicación** — demo en Streamlit con Gapminder
-3. **Complejidad** — qué se necesita y cuándo no vale la pena
-4. **Participación** — actividad: dashboard estático vs. dinámico
-
-> Pregunta guía: ¿qué preguntas **no** podemos responder con una imagen fija?
+Pregunta guía: ¿qué preguntas **no** podemos responder con una imagen fija?
 
 ---
 
@@ -59,76 +50,37 @@ Ernesto Ascencio (23009) · Hugo Barillas (23556) · Esteban Carcamo (23016)
 | Costo | Menor desarrollo | Mayor desarrollo y mantenimiento |
 | Límite | No permite preguntas de seguimiento | Requiere cierta pericia del usuario |
 
+> Cambia la exploración: de **leer** un resultado a **hacer preguntas** a los datos.
+
 <span class="small">Fuentes: QuantHub; insightsoftware; Qrvey (ver referencias).</span>
 
 ---
 
-# Qué aporta la interactividad
+# Qué aporta cada recurso: el mantra de Shneiderman
 
-- **Filtros / segmentadores:** acotar por categoría, región o periodo.
-- **Navegación:** pestañas, páginas y *drill-through* hacia el detalle.
-- **Resaltado cruzado:** seleccionar en un gráfico actualiza los demás.
-- **Actualización:** los indicadores reflejan datos recientes.
+> **Overview first, zoom and filter, then details-on-demand.** — Shneiderman (1996)
 
-> Cambia la exploración: de **leer** un resultado a **hacer preguntas** a los datos.
-
----
-
-# Base teórica: el mantra de Shneiderman
-
-> **Overview first, zoom and filter, then details-on-demand.**
-> — Shneiderman (1996)
-
-| Paso | En un dashboard |
-|---|---|
-| Overview | KPIs y vista global |
-| Zoom + filter | Segmentadores, rangos de fecha |
-| Details-on-demand | Tooltip, drill-through, tabla |
-
-Siete tareas: overview, zoom, filter, details-on-demand, relate, history, extract.
+| Paso | Recurso del dashboard | Ejemplo |
+|---|---|---|
+| Overview | KPIs y vista global | Resumen del periodo |
+| Zoom + filter | Filtros, segmentadores, resaltado cruzado | Power BI: *cross-filtering* quita los datos que no aplican; *cross-highlighting* los atenúa |
+| Details-on-demand | Pestañas, *drill-through*, marcadores | Clic derecho en un dato → página de detalle |
 
 ---
 
-# Filtros y resaltado cruzado
-
-Ejemplo en Power BI (Microsoft Learn): clic en **2023** en un gráfico de ventas por año.
-
-- **Cross-filtering:** las otras visuales **quitan** los datos que no aplican.
-- **Cross-highlighting:** las otras visuales **atenúan** lo que no aplica y mantienen el total.
-
-El diseñador del reporte decide qué visuales interactúan entre sí.
-
----
-
-# Navegación
-
-- **Pestañas / páginas:** separar resumen, comparación y detalle.
-- **Drill-through:** clic derecho en un punto → página enfocada en ese dato.
-- **Marcadores (bookmarks):** guardan una vista con sus filtros y estado.
-
-Regla de diseño (Few, 2006): una pantalla, lo esencial a la vista; el detalle, a un clic.
-
----
-
-# Actualización de datos
+# Actualización de datos y ejemplos reales
 
 | Modo | Idea | Cuándo |
 |---|---|---|
 | Estático | Una sola carga | Informe de cierre |
 | Programada | Recarga cada N min/horas | Ventas diarias |
-| Tiempo real | Flujo continuo | Monitoreo de brotes, operaciones |
+| Tiempo real | Flujo continuo | Monitoreo de brotes |
 
-En Streamlit: `st.cache_data(ttl=...)` define cuánto vive el dato en caché; al vencer, se recarga.
+En Streamlit: `st.cache_data(ttl=...)` define cuánto vive el dato en caché.
 
----
-
-# Dashboards dinámicos reales
-
-- **Johns Hopkins COVID-19** (Dong, Du & Gardner, 2020): mapa en tiempo real, lanzado el 22-ene-2020.
-- **Our World in Data:** más de 14 000 gráficos interactivos, reutilizables bajo licencia Creative Commons.
-- **Gapminder Tools:** gráfico de burbujas con 5 variables (ejes, tamaño, color, tiempo).
-
-Gapminder es el mismo conjunto de datos que usaremos en la demo.
+- **Johns Hopkins COVID-19** (2020): mapa en tiempo real.
+- **Our World in Data:** más de 14 000 gráficos interactivos.
+- **Gapminder Tools:** burbujas con 5 variables, los mismos datos de nuestra demo.
 
 ---
 
@@ -179,6 +131,17 @@ Preguntas que responde: ¿el ingreso explica la salud? ¿qué continente mejoró
 7. Ejecutar: `streamlit run demo/app.py`
 
 Flujo de Streamlit: **cada interacción vuelve a ejecutar el script** de arriba abajo.
+
+---
+
+# Demo en vivo: qué probar
+
+1. Dejar solo **Asia** → cambian KPIs y gráficos.
+2. Rango de años **1952–1972** → los KPIs usan el último año del rango.
+3. *Overview* → pulsar ▶ en la animación.
+4. *Detalle* → elegir un país (Rwanda) y ver su tabla.
+5. **Actualizar datos** → cambia la hora de carga.
+6. Quitar todos los continentes → aparece el aviso.
 
 ---
 
@@ -234,7 +197,7 @@ Más control = más código. Menos código = menos personalización.
 
 ---
 
-# Actividad de clase (5 min)
+# Actividad y discusión (5 min)
 
 Dos grupos: **A** solo ve la imagen estática · **B** usa la app dinámica.
 
@@ -245,6 +208,8 @@ Dos grupos: **A** solo ve la imagen estática · **B** usa la app dinámica.
 
 Midan: ¿quién respondió primero? ¿qué preguntas no se pudo responder?
 
+**Discusión:** ¿cuándo bastó el estático? ¿qué filtro faltó en la app?
+
 <!--
 CLAVE (no mostrar):
 1. Haití, 60.9 años (2007) — responde el estático.
@@ -252,15 +217,6 @@ CLAVE (no mostrar):
 3. Cayó a 23.6 años (vs 44.0 en 1987) — pestaña Detalle.
 4. 1997→2002, −0.27 años en la media africana — pestaña Comparar.
 -->
-
----
-
-# Discusión
-
-- ¿Qué preguntas solo respondió el grupo B? ¿Alguna le tomó **más** tiempo?
-- ¿Cuándo el estático fue suficiente?
-- ¿Qué filtro **faltó** en la app?
-- ¿Elegirían dinámico para su próximo reporte? ¿Por qué?
 
 ---
 
