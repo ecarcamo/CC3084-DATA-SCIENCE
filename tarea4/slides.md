@@ -3,14 +3,13 @@ marp: true
 theme: default
 paginate: true
 size: 16:9
-footer: 'CC3084 Data Science · Tarea 4 · Grupo 3 · Dashboards dinámicos'
 style: |
   :root { --verde: #1b5e20; --verde-claro: #e8f5e9; --acento: #43a047; }
   section { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; color: #1f2933; font-size: 26px; }
   section h1 { color: var(--verde); border-bottom: 4px solid var(--acento); padding-bottom: 6px; }
   section h2 { color: var(--verde); }
   section::after { color: var(--verde); font-weight: 700; }
-  footer { color: #6b7280; font-size: 14px; }
+  footer { left: 30px; right: 85px; text-align: right; color: var(--verde); font-size: 20px; font-weight: 600; }
   section.portada { background: var(--verde); color: #fff; justify-content: center; }
   section.portada h1, section.portada h2 { color: #fff; border: none; }
   section.portada footer, section.portada::after { color: #c8e6c9; }
@@ -25,6 +24,7 @@ style: |
 
 <!-- _class: portada -->
 <!-- _paginate: false -->
+<!-- footer: "Presenta: Ernesto" -->
 
 # Dashboards dinámicos
 
@@ -38,10 +38,10 @@ Ernesto Ascencio (23009) · Hugo Barillas (23556) · Esteban Carcamo (23016)
 
 # Agenda (15–20 min)
 
-1. **Investigación** — qué es un dashboard dinámico y qué aporta *(Ernesto)*
-2. **Aplicación** — demo en Streamlit con Gapminder *(Hugo)*
-3. **Complejidad** — qué se necesita y cuándo no vale la pena *(Esteban)*
-4. **Participación** — actividad: dashboard estático vs. dinámico *(Esteban)*
+1. **Investigación** — qué es un dashboard dinámico y qué aporta
+2. **Aplicación** — demo en Streamlit con Gapminder
+3. **Complejidad** — qué se necesita y cuándo no vale la pena
+4. **Participación** — actividad: dashboard estático vs. dinámico
 
 > Pregunta guía: ¿qué preguntas **no** podemos responder con una imagen fija?
 
@@ -133,6 +133,7 @@ Gapminder es el mismo conjunto de datos que usaremos en la demo.
 ---
 
 <!-- ============ APLICACIÓN · Hugo ============ -->
+<!-- footer: "Presenta: Hugo" -->
 
 # Demo: la misma data, dos formas
 
@@ -182,6 +183,7 @@ Flujo de Streamlit: **cada interacción vuelve a ejecutar el script** de arriba 
 ---
 
 <!-- ============ COMPLEJIDAD Y PARTICIPACIÓN · Esteban ============ -->
+<!-- footer: "Presenta: Esteban" -->
 
 # Complejidad de implementación
 
@@ -261,6 +263,8 @@ CLAVE (no mostrar):
 - ¿Elegirían dinámico para su próximo reporte? ¿Por qué?
 
 ---
+
+<!-- footer: "Presenta: Ernesto" -->
 
 # Referencias
 
