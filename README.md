@@ -10,6 +10,13 @@ Infografía de una página que comunica a un directivo de INGUAT los hallazgos d
 ```
 instructions/
 └── Laboratorio 09. Visualización Estática. 2026.pdf
+documento/
+├── Avance_Lab9_Decisiones_de_Diseno.pdf   (avance: decisiones de diseño, APA)
+├── Avance_Lab9_Decisiones_de_Diseno.docx  (versión editable para Google Docs)
+├── figuras/boceto_paleta.png
+└── scripts/
+    ├── draw_wireframe.py    (boceto de la página y paleta)
+    └── build_document.py    (genera el .docx; el PDF se exporta con LibreOffice)
 insumos/
 ├── series/          (las 7 series mensuales completas del Lab 1: fecha, viajeros)
 └── resultados/
