@@ -200,4 +200,33 @@ paragraph("El titular usa una serifa editorial (Source Serif 4) y el resto una s
           "ambas gratuitas en Google Fonts. Las cifras de los KPI van a 44 pt o más y ningún texto baja de "
           "10 pt en el formato impreso. Se rotula directo sobre los puntos clave en lugar de usar leyendas.")
 
+heading("Gráfico por bloque")
+table(2, "Selección de cada gráfico según el tipo de dato",
+      ["Bloque", "Gráfico", "Tipo de dato y motivo"],
+      [["1. Titular y KPI", "Cuatro tarjetas: 52.3 M viajeros, récord de 4.69 M (2019), −97.5 % (2020), 61 % por tierra",
+        "Magnitudes únicas: una cifra grande se lee más rápido que un gráfico"],
+       ["2. Panorama", "Línea mensual 2009–2026 con anotaciones",
+        "Serie temporal continua; las notas marcan el cierre de 2020, el rebote de 2022, el cambio de método de 2023 y 2026 parcial"],
+       ["3a. Estacionalidad", "Barras del índice mensual alrededor de 1.0",
+        "Ciclo de 12 meses; muestra el pico de diciembre (×1.37), Semana Santa, julio y el valle de septiembre (×0.80)"],
+       ["3b. Cuadrante", "Cuatro barras horizontales ordenadas, ganador en acento",
+        "Comparación categórica: marítima es la más estacional (Fs 0.405), volátil (CV 0.79) y golpeada (−100 %); terrestre, la de mayor crecimiento (+0.97 %/mes)"],
+       ["4a. Modelos", "Barras horizontales de MAE y RMSE de los cinco modelos (serie total)",
+        "Métrica cuantitativa por categoría; SES gana (MAE 175,088) y lo hace en 6 de 7 series"],
+       ["4b. Pronóstico", "Línea real frente a SES con bandas de 80 % y 95 % rotuladas «Estimación»",
+        "Incertidumbre explícita; deja ver que el modelo no anticipó la recuperación"],
+       ["5. Recomendaciones", "Tres a cinco tarjetas numeradas", "Texto accionable derivado de la evidencia"]],
+      [1.55, 2.2, 2.75])
+
+heading("Integridad de los gráficos")
+paragraph("Para que los gráficos no mientan (García, 2026): las barras parten de cero y comparten escala, "
+          "no hay 3D, doble eje ni gráficos acumulados, se muestra la serie completa sin recortar la "
+          "pandemia, y el error del pronóstico (MAPE de 58 % en la serie total) se presenta tal cual.")
+
+heading("Herramientas")
+paragraph("Las gráficas se generan con Python y matplotlib (script versionado en GitHub), la maquetación se "
+          "hace en Figma y este documento en Google Docs; las tres herramientas guardan historial y tienen a "
+          "la catedrática y los auxiliares como colaboradores. La entrega final es un PNG de al menos "
+          "1200 × 2400 px y un PDF de una página de 11 × 17 in.")
+
 doc.save(output_path)
