@@ -177,4 +177,27 @@ p = paragraph(align=WD_ALIGN_PARAGRAPH.LEFT, indent=False, spacing=1.0)
 add_runs(p, "*Nota.* La flecha indica el recorrido de lectura. Elaboración propia.", size=SMALL_SIZE)
 p.paragraph_format.space_after = Pt(12)
 
+heading("Paleta de color")
+paragraph("Se usa una armonía de tres colores (dominante, mediador y tónico) en esquema complementario "
+          "(García, 2026). El jade, frío y sereno, transmite confianza y profesionalismo y remite al jade "
+          "maya; el achiote, cálido, atrae la atención y llama a la acción, por lo que se reserva para lo que "
+          "debe saltar a la vista: la caída de 2020, los ganadores de cada comparación y la banda de "
+          "«Estimación». El fondo hueso, en lugar de blanco puro, reduce la fatiga visual.")
+table(1, "Roles de la paleta",
+      ["Rol", "Color", "Uso", "Contraste sobre fondo"],
+      [["Fondo", "#F4F0E6 hueso", "Lienzo de toda la página", "—"],
+       ["Dominante", "#1E4D45 jade profundo", "Series históricas, titular, cifras", "8.4 : 1"],
+       ["Mediador", "#8DA197 salvia gris", "Series secundarias, rejillas y bordes", "2.4 : 1 (sin texto)"],
+       ["Texto", "#26292B grafito", "Cuerpo y etiquetas", "12.9 : 1"],
+       ["Acento", "#C4552D achiote", "Pandemia, ganadores, «Estimación»", "3.9 : 1 (solo texto grande)"]],
+      [1.0, 1.75, 2.25, 1.5],
+      "Contraste calculado con la fórmula WCAG 2.1. El jade y el achiote difieren en luminancia "
+      "(0.06 frente a 0.18), así que se distinguen aun con deuteranopia o protanopia; no se usan pares "
+      "rojo/verde. El PNG se exporta en RGB y el PDF se revisa impreso por el cambio a CMYK.")
+
+heading("Tipografía")
+paragraph("El titular usa una serifa editorial (Source Serif 4) y el resto una sans legible (Source Sans 3), "
+          "ambas gratuitas en Google Fonts. Las cifras de los KPI van a 44 pt o más y ningún texto baja de "
+          "10 pt en el formato impreso. Se rotula directo sobre los puntos clave en lugar de usar leyendas.")
+
 doc.save(output_path)
