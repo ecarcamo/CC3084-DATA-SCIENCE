@@ -7,10 +7,10 @@ from docx.oxml.ns import qn
 from docx.shared import Inches, Pt
 
 output_path, figure_path = sys.argv[1], sys.argv[2]
-FONT = "Times New Roman"
-BODY_SIZE = 12
-TITLE_SIZE = 12
-SMALL_SIZE = 10.5
+FONT = "Arial"
+BODY_SIZE = 11
+TITLE_SIZE = 16
+SMALL_SIZE = 10
 TITLE = "Resiliencia y futuro del turismo en Guatemala: decisiones de diseño de la infografía"
 
 doc = Document()
@@ -77,9 +77,9 @@ def heading(text):
 
 
 def title(text):
-    p = paragraph(text, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=TITLE_SIZE, spacing=2.0)
+    p = paragraph(text, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER, size=TITLE_SIZE, spacing=1.15)
     p.paragraph_format.keep_with_next = True
-    p.paragraph_format.space_after = Pt(0)
+    p.paragraph_format.space_after = Pt(12)
     return p
 
 
@@ -228,5 +228,21 @@ paragraph("Las gráficas se generan con Python y matplotlib (script versionado e
           "hace en Figma y este documento en Google Docs; las tres herramientas guardan historial y tienen a "
           "la catedrática y los auxiliares como colaboradores. La entrega final es un PNG de al menos "
           "1200 × 2400 px y un PDF de una página de 11 × 17 in.")
+
+doc.paragraphs[-1].add_run().add_break(WD_BREAK.PAGE)
+heading("Referencias")
+references = [
+    "Barillas, H. D., Cárcamo, E. y Ascencio, E. (2026). *Laboratorio 1: Series de tiempo del ingreso de viajeros internacionales a Guatemala* [Informe no publicado]. Universidad del Valle de Guatemala.",
+    "Cairo, A. (2016). *The truthful art: Data, charts, and maps for communication*. New Riders.",
+    "García, L. (2026). *Visualización* [Diapositivas de clase]. CC3084 Data Science, Universidad del Valle de Guatemala.",
+    "Instituto Guatemalteco de Turismo e Instituto Guatemalteco de Migración. (2026). *Base de migración 2009–2026* [Conjunto de datos con fines académicos].",
+    "Ware, C. (2012). *Information visualization: Perception for design* (3.ª ed.). Morgan Kaufmann.",
+    "World Wide Web Consortium. (2018). *Web content accessibility guidelines (WCAG) 2.1*. https://www.w3.org/TR/WCAG21/",
+]
+for reference in references:
+    p = paragraph(align=WD_ALIGN_PARAGRAPH.LEFT, indent=False)
+    p.paragraph_format.left_indent = Inches(0.5)
+    p.paragraph_format.first_line_indent = Inches(-0.5)
+    add_runs(p, reference)
 
 doc.save(output_path)
