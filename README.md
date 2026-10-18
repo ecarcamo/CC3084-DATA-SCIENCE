@@ -26,11 +26,36 @@ insumos/
     ├── modelos_arima.csv        (rejilla SARIMA seleccionada)
     ├── maritima_anual.csv
     └── predicciones/            (predicción sobre el test de cada modelo y serie)
+scripts/
+├── build_infographic_charts.py       (genera las cinco gráficas)
+└── test_build_infographic_charts.py  (verifica cifras y exportaciones)
 ```
 
 Los archivos de `insumos/` son copia literal de la rama `lab1`
 (`data/processed/series/` y `resultados/`). Las cifras de la infografía deben salir de ahí para
 que coincidan con el informe del Lab 1.
+
+### Gráficas de la infografía
+
+Desde la raíz, con `pandas`, `numpy`, `matplotlib` y `statsmodels` instalados:
+
+```powershell
+python scripts/build_infographic_charts.py
+python -m unittest discover -s scripts -p "test_*.py" -v
+```
+
+El script guarda cinco PNG a 300 dpi en `infografia/graficas/`, al tamaño de los
+marcos de Canva, sin recortes y con texto de al menos 11 pt. Usa Source Sans 3 si
+está instalada; de lo contrario, DejaVu Sans. Las imágenes permanecen fuera de Git.
+
+Los factores estacionales usan 2009–2019. El SES usa enero de 2009 a marzo de 2021
+para entrenar y abril de 2021 a junio de 2026 para evaluar. Verificamos que su
+pronóstico coincida con el del Lab 1. Calculamos los intervalos de 80 % y 95 % en
+escala logarítmica con la varianza de los residuos y los transformamos con `expm1`.
+El eje del pronóstico llega a 700 mil para conservar la legibilidad. Una nota
+advierte que la banda continúa: en junio de 2026, el intervalo del 95 % alcanza
+aproximadamente de 0.6 mil a 17 millones de viajeros al mes. No constituye un
+pronóstico operativo fiable.
 
 ### Entregables
 
