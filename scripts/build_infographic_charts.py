@@ -111,9 +111,9 @@ def panorama(series):
     ax.axvline(pd.Timestamp("2023-01-01"), color=SAGE, linestyle=":", linewidth=1.2)
     arrow = {"arrowstyle": "-", "color": TEXT, "linewidth": 0.7}
     ax.scatter(pd.Timestamp("2019-12-01"), series.loc["2019-12-01"], color=JADE, s=13)
-    ax.annotate("Récord: 515,820 (dic. 2019)",
+    ax.annotate("Pico prepandemia: 515,820 (dic. 2019)",
                 xy=(pd.Timestamp("2019-12-01"), series.loc["2019-12-01"]),
-                xytext=(pd.Timestamp("2013-10-01"), 690000), arrowprops=arrow)
+                xytext=(pd.Timestamp("2012-03-01"), 690000), arrowprops=arrow)
     ax.text(pd.Timestamp("2020-06-01"), 770000, "Cierre de fronteras",
             ha="center", va="top")
     ax.scatter(pd.Timestamp("2020-05-01"), series.loc["2020-05-01"], color=ACCENT, s=16)
