@@ -1,8 +1,9 @@
 from dash import Dash, html
 
-from app.components import time_series
+from app.components import ranking, time_series
 
 app = Dash(__name__, title="Observatorio de turismo - Guatemala")
+app.index_string = app.index_string.replace("<html>", '<html lang="es">')
 app.layout = html.Div(
     className="page",
     children=[
@@ -10,13 +11,19 @@ app.layout = html.Div(
             className="header",
             children=[
                 html.H1("Observatorio de turismo sostenible de Guatemala"),
-                html.P("Tablero para explorar el ingreso de viajeros y consultar las predicciones con sus límites."),
+                html.P("Avance: explore el ingreso de viajeros. Las predicciones se incorporarán en la entrega final."),
+                html.Nav(
+                    [html.A("Evolución temporal", href="#evolution", className="section-link"), " | ",
+                     html.A("Comparación por grupo", href="#ranking", className="section-link")],
+                    **{"aria-label": "Secciones del tablero"},
+                ),
             ],
         ),
-        html.Main(children=[time_series.layout()]),
+        html.Main(children=[time_series.layout(), ranking.layout()]),
     ],
 )
 time_series.register(app)
+ranking.register(app)
 server = app.server
 
 if __name__ == "__main__":
