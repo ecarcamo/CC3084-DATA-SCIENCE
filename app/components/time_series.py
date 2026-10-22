@@ -3,7 +3,7 @@ import plotly.graph_objects as go
 from dash import Input, Output, dcc, html
 
 from app import data
-from app.theme import COLORS, build_template
+from app.theme import COLORS, GRAPH_CONFIG, build_template
 
 LABELS = data.load_labels()
 SERIES_OPTIONS = [
@@ -18,8 +18,8 @@ EMPTY_MESSAGE = "No hay datos para esta selección. Amplíe el rango de fechas o
 
 
 def build_figure(series_key, granularity, start, end):
-    series = data.aggregate(data.load_series(series_key), granularity)
-    series = data.slice_range(series, start, end)
+    series = data.slice_range(data.load_series(series_key), start, end)
+    series = data.aggregate(series, granularity)
     label = LABELS.loc[series_key, "etiqueta"]
     figure = go.Figure(layout={"template": TEMPLATE, "height": 420})
     if series.empty:
@@ -46,6 +46,7 @@ def build_figure(series_key, granularity, start, end):
 
 def layout():
     return html.Section(
+        id="evolution",
         className="card",
         children=[
             html.H2("¿Cómo ha evolucionado el ingreso de viajeros?", className="card-title"),
@@ -72,13 +73,14 @@ def layout():
                         html.Label("Rango de fechas", htmlFor="date-range"),
                         dcc.DatePickerRange(
                             id="date-range", min_date_allowed="2009-01-01", max_date_allowed="2026-06-30",
-                            start_date="2009-01-01", end_date="2026-06-30", display_format="MMM YYYY",
+                            start_date="2009-01-01", end_date="2026-06-30", display_format="DD/MM/YYYY",
+                            start_date_placeholder_text="Fecha inicial", end_date_placeholder_text="Fecha final",
                             minimum_nights=0,
                         ),
                     ]),
                 ],
             ),
-            dcc.Graph(id="time-series-graph", config={"displaylogo": False, "locale": "es"}),
+            dcc.Graph(id="time-series-graph", config=GRAPH_CONFIG, responsive=True, style={"height": "420px"}),
             html.P(id="granularity-note", className="note"),
         ],
     )
@@ -96,5 +98,8 @@ def register(app):
     def update(series_key, granularity, start, end):
         note = ""
         if granularity != "month":
-            note = "Solo se muestran periodos completos; el año 2026 aún no aparece porque llega hasta junio."
+            note = (
+                "Solo se muestran periodos completos dentro del rango seleccionado. "
+                "El detalle anual excluye 2026 porque los datos llegan hasta junio."
+            )
         return build_figure(series_key, granularity, start or "2009-01-01", end or "2026-06-30"), note

@@ -33,6 +33,17 @@ def test_every_series_builds_a_figure():
         assert len(figure.data) == 1
 
 
+def test_yearly_selection_excludes_months_outside_the_date_range():
+    figure = time_series.build_figure("total", "year", "2025-01-01", "2025-06-30")
+    assert not figure.data
+    assert figure.layout.annotations[0].text == time_series.EMPTY_MESSAGE
+
+
+def test_quarterly_selection_keeps_only_complete_selected_quarters():
+    figure = time_series.build_figure("total", "quarter", "2025-02-01", "2025-08-31")
+    assert list(figure.data[0].x) == [pd.Timestamp("2025-04-01")]
+
+
 if __name__ == "__main__":
     for name, function in list(globals().items()):
         if name.startswith("test_"):
