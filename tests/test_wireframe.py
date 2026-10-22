@@ -12,10 +12,10 @@ def test_wireframe_is_saved_with_the_dashboard_palette():
         output = Path(folder) / "figuras" / "boceto.png"
         assert draw_wireframe(output) == output
         with Image.open(output) as image:
-            assert image.size == (1440, 1500)
+            assert image.size == (1800, 2170)
             assert image.mode == "RGB"
             assert image.getpixel((0, 0)) == ImageColor.getrgb(COLORS["background"])
-            assert image.getpixel((300, 1120)) == ImageColor.getrgb(COLORS["highlight"])
+            assert image.getpixel((200, 1250)) == ImageColor.getrgb(COLORS["highlight"])
 
 
 if __name__ == "__main__":

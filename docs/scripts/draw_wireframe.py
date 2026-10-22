@@ -1,64 +1,97 @@
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT.parent))
+
 from app.theme import COLORS
 
-OUTPUT = Path(__file__).resolve().parents[1] / "figuras" / "boceto_tablero.png"
+OUTPUT = ROOT / 'figuras' / 'boceto_tablero.png'
+FONT_ROOT = Path('C:/Windows/Fonts')
 
 
 def draw_wireframe(output=OUTPUT):
-    image = Image.new("RGB", (1440, 1500), COLORS["background"])
+    image = Image.new('RGB', (1800, 2170), COLORS['background'])
     draw = ImageDraw.Draw(image)
-    fonts = {size: ImageFont.truetype("arial.ttf", size) for size in [20, 24, 30, 38]}
 
-    def text(position, value, size=24, color="text"):
-        draw.text(position, value, fill=COLORS[color], font=fonts[size])
+    def font(size, bold=False):
+        candidates = [
+            str(FONT_ROOT / ('arialbd.ttf' if bold else 'arial.ttf')),
+            'Arial Bold.ttf' if bold else 'Arial.ttf',
+            'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf',
+            '/System/Library/Fonts/Supplemental/' + ('Arial Bold.ttf' if bold else 'Arial.ttf'),
+        ]
+        for candidate in candidates:
+            try:
+                return ImageFont.truetype(candidate, size)
+            except OSError:
+                pass
+        return ImageFont.load_default(size=size)
 
-    def box(bounds, label):
-        draw.rounded_rectangle(bounds, radius=6, fill=COLORS["surface"], outline=COLORS["muted"], width=2)
-        text((bounds[0] + 12, bounds[1] + 12), label, 20)
+    def text(x, y, value, size=34, color='text', bold=False):
+        draw.text((x, y), value, font=font(size, bold), fill=COLORS.get(color, color))
 
-    text((50, 28), "Observatorio de turismo sostenible de Guatemala", 38)
-    text((50, 84), "Avance: exploración de datos observados. No incluye predicciones.", 24, "muted")
-    text((50, 128), "Evolución temporal   |   Comparación por grupo", 24, "observed")
-    for bounds in [(40, 190, 1400, 785), (40, 815, 1400, 1380)]:
-        draw.rounded_rectangle(bounds, radius=10, fill=COLORS["surface"], outline=COLORS["grid"], width=2)
-    text((65, 210), "1. ¿Cómo ha evolucionado el ingreso de viajeros?", 30)
-    text((65, 258), "Serie, fechas y nivel de detalle. Arrastre sobre la gráfica para acercarse.", 24, "muted")
-    box((65, 310, 435, 365), "Serie: Total  v")
-    box((460, 310, 825, 365), "Mensual | Trimestral | Anual")
-    box((850, 310, 1370, 365), "Rango: ene. 2009 — jun. 2026")
-    draw.line([(165, 410), (165, 680), (1310, 680)], fill=COLORS["muted"], width=2)
-    draw.line(
-        [(165, 625), (290, 580), (415, 610), (540, 520), (665, 585),
-         (790, 660), (915, 590), (1040, 500), (1165, 450), (1310, 425)],
-        fill=COLORS["observed"], width=5,
-    )
-    text((70, 390), "Viajeros", 20, "muted")
-    text((570, 700), "Tiempo", 20, "muted")
-    text((65, 745), "Nota: agregaciones completas y mensajes cuando no hay datos.", 20, "muted")
-    text((65, 835), "2. ¿Qué vías o países concentran más viajeros?", 30)
-    text((65, 883), "Compare dentro de un grupo. El clic en una barra selecciona la serie de arriba.", 24, "muted")
-    box((65, 935, 650, 990), "Grupo: Vía de ingreso / País de residencia  v")
-    box((675, 935, 1020, 990), "Año: 2025  v")
-    for y, width, label, selected in [
-        (1040, 850, "Vía Terrestre", False),
-        (1110, 560, "Vía Aérea", True),
-        (1180, 230, "Vía Marítima", False),
-    ]:
-        text((70, y + 8), label, 24)
-        draw.rectangle(
-            (280, y, 280 + width, y + 48),
-            fill=COLORS["highlight"] if selected else COLORS["observed"],
-            outline=COLORS["text"] if selected else COLORS["observed"],
-            width=4 if selected else 1,
-        )
-    text((65, 1255), "Selección: Vía Aérea, en verde y con borde. El rango temporal se conserva.", 20, "muted")
-    text((65, 1300), "Ver la evolución de la serie seleccionada ↑", 24, "observed")
-    text((50, 1420), "Bosquejo del avance. Las formas ilustran la navegación, no resultados numéricos.", 20, "muted")
+    def box(bounds, fill='surface', outline='grid', width=3):
+        draw.rounded_rectangle(bounds, radius=12, fill=COLORS.get(fill, fill), outline=COLORS.get(outline, outline), width=width)
+
+    def panel(y, title, active, controls, note):
+        box((50, y, 1750, y + 610))
+        text(85, y + 20, title, 43, bold=True)
+        tabs = [('Panorama', 85, 445), ('Detalle por vía y país', 460, 1020), ('Predicciones y modelos', 1035, 1715)]
+        for index, (label, left, right) in enumerate(tabs):
+            selected = index == active
+            box((left, y + 85, right, y + 149), 'observed' if selected else 'background')
+            text(left + 18, y + 100, label, 32, 'surface' if selected else 'muted', selected)
+        count = len(controls)
+        step = 1630 / count
+        for index, label in enumerate(controls):
+            left = int(85 + index * step)
+            box((left, y + 175, int(left + step - 16), y + 244), 'background')
+            text(left + 15, y + 194, label, 31)
+        text(85, y + 555, note, 29, 'muted')
+
+    def chart(bounds, label, subtitle=None):
+        box(bounds, 'background')
+        left, top, right, bottom = bounds
+        text(left + 20, top + 14, label, 33, bold=True)
+        if subtitle:
+            text(left + 20, top + 58, subtitle, 27, 'muted')
+        return left, top, right, bottom
+
+    text(60, 28, 'Tablero de viajeros de Guatemala', 54, bold=True)
+    text(60, 100, 'Boceto de navegación · espacios ilustrativos sin datos reales', 32, 'muted')
+
+    panel(175, 'Panorama · vista de entrada', 0, ['Serie: total', 'Fechas: desde / hasta', 'Nivel: mensual'], 'Cambiar la serie, el periodo o el nivel temporal para explorar los datos.')
+    chart((85, 445, 1715, 705), 'Serie temporal observada', 'Nivel mensual, trimestral o anual')
+    draw.line([(150, 650), (1650, 650)], fill=COLORS['grid'], width=3)
+    draw.line([(150, 540), (150, 650)], fill=COLORS['grid'], width=3)
+    text(630, 595, 'Espacio de la gráfica', 35, 'observed')
+
+    panel(820, 'Detalle por vía y país · selección enlazada', 1, ['Grupo: vías / países', 'Año: todos o uno'], 'Elegir una barra cambia la serie temporal; el rango de fechas se conserva.')
+    chart((85, 1090, 805, 1350), 'Ranking del grupo', 'Vías y países se comparan por separado')
+    for offset, width, color in [(0, 400, 'observed'), (1, 310, 'highlight'), (2, 220, 'observed')]:
+        draw.rectangle((125, 1205 + offset * 42, 125 + width, 1230 + offset * 42), fill=COLORS[color], outline=COLORS['text'] if color == 'highlight' else None, width=3)
+    text(550, 1241, 'Selección', 26, 'highlight')
+    chart((840, 1090, 1715, 1350), 'Serie temporal enlazada', 'La selección se identifica por nombre y borde')
+    text(1040, 1230, 'Espacio de la gráfica', 35, 'observed')
+
+    panel(1465, 'Predicciones y modelos · propuesta para la entrega final', 2, ['Serie: seleccionar', 'Modelo: seleccionar', 'Fechas: desde / hasta'], 'Sin datos: “No hay datos para esta selección”. Ajustar o limpiar los filtros.')
+    chart((85, 1735, 1060, 1995), 'Observado y predicción', 'Comparación en fechas coincidentes')
+    draw.line((125, 1870, 315, 1870), fill=COLORS['observed'], width=6)
+    text(340, 1850, 'Observado', 30, 'observed')
+    for x in range(125, 315, 38):
+        draw.line((x, 1930, x + 20, 1930), fill=COLORS['forecast'], width=6)
+    text(340, 1910, 'Predicción', 30, 'forecast')
+    chart((1095, 1735, 1715, 1995), 'Error de los modelos', 'Indicador y explicación breve')
+    text(1150, 1850, 'Espacio de comparación', 31, 'muted')
+    text(1150, 1900, 'de errores', 31, 'muted')
+
+    text(60, 2120, 'Cada vista conserva el menú y usa la misma paleta, tipografía y etiquetas.', 31, 'muted')
+    output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    image.save(output)
+    image.save(output, dpi=(240, 240))
     return output
 
 
