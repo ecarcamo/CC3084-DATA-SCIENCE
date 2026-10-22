@@ -1,0 +1,12 @@
+body { margin: 0; background: #F4F6F8; color: #1B2733; font-family: Arial, Helvetica, sans-serif; font-size: 16px; }
+.page { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.header h1 { margin: 0 0 4px; font-size: 28px; }
+.header p { margin: 0 0 20px; color: #5B6B7A; }
+.card { background: #FFFFFF; border: 1px solid #DDE3E9; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+.card-title { margin: 0 0 6px; font-size: 20px; }
+.card-text { margin: 0 0 16px; color: #5B6B7A; }
+.controls { display: flex; flex-wrap: wrap; gap: 24px; margin-bottom: 12px; align-items: flex-end; }
+.controls label { display: block; font-weight: bold; margin-bottom: 6px; }
+.controls > div:first-child { min-width: 300px; }
+.radio label { display: inline-block; margin-right: 16px; font-weight: normal; }
+.note { margin: 8px 0 0; color: #5B6B7A; font-size: 14px; }
