@@ -63,6 +63,16 @@ def test_complete_year_is_labeled_and_excludes_unrelated_selection():
     assert set(figure.data[0].marker.color) == {COLORS["observed"]}
 
 
+def test_all_years_sums_the_whole_period():
+    frame = ranking.build_ranking("País de residencia", ranking.ALL_YEARS).set_index("key")
+    source = data.load_series("pais_honduras")
+    assert frame.loc["pais_honduras", "travelers"] == source.sum()
+    assert frame["months"].eq(len(source)).all()
+    figure, note = ranking.build_figure("País de residencia", ranking.ALL_YEARS, "pais_honduras")
+    assert len(figure.data[0].y) == 3
+    assert note.startswith(f"Todos los años: de enero de 2009 a junio de 2026, {len(source)} meses.")
+
+
 def test_all_available_years_build_both_groups():
     for year in ranking.YEARS:
         for category in ranking.CATEGORIES:

@@ -10,6 +10,11 @@ CATEGORIES = ["Vía de ingreso", "País de residencia"]
 REFERENCE = data.load_series("total")
 YEARS = sorted(REFERENCE.index.year.unique(), reverse=True)
 DEFAULT_YEAR = int(data.aggregate(REFERENCE, "year").index.year.max())
+ALL_YEARS = "all"
+MONTHS = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto",
+          "septiembre", "octubre", "noviembre", "diciembre"]
+FIRST, LAST = REFERENCE.index.min(), REFERENCE.index.max()
+FULL_SPAN = f"{MONTHS[FIRST.month - 1]} de {FIRST.year} a {MONTHS[LAST.month - 1]} de {LAST.year}"
 EMPTY_MESSAGE = "No hay datos para este año y grupo. Seleccione otra opción."
 TEMPLATE = build_template()
 
@@ -18,7 +23,7 @@ def build_ranking(category, year):
     rows = []
     for key, row in LABELS[LABELS["categoria"] == category].iterrows():
         series = data.load_series(key)
-        selected = series[series.index.year == int(year)].dropna()
+        selected = (series if year == ALL_YEARS else series[series.index.year == int(year)]).dropna()
         if not selected.empty:
             rows.append({
                 "key": key,
@@ -54,13 +59,20 @@ def build_figure(category, year, selected_key):
         },
         hovertemplate="%{y}<br><b>%{x:,.0f}</b> viajeros<extra></extra>",
     ))
-    figure.update_xaxes(title_text="Viajeros en el año", tickformat=",", nticks=3, automargin=True)
+    every_year = year == ALL_YEARS
+    figure.update_xaxes(
+        title_text="Viajeros en todo el periodo" if every_year else "Viajeros en el año",
+        tickformat=",", nticks=3, automargin=True,
+    )
     figure.update_yaxes(autorange="reversed", automargin=True)
     figure.update_layout(showlegend=False, clickmode="event", margin={"l": 120, "r": 20, "t": 20, "b": 60})
     months = int(frame["months"].min())
-    period = f"{year}: año completo, 12 meses." if months == 12 else (
-        f"{year}: periodo parcial, {months} meses disponibles. No equivale a un año completo."
-    )
+    if every_year:
+        period = f"Todos los años: de {FULL_SPAN}, {months} meses."
+    elif months == 12:
+        period = f"{year}: año completo, 12 meses."
+    else:
+        period = f"{year}: periodo parcial, {months} meses disponibles. No equivale a un año completo."
     selection = (
         f" Selección: {LABELS.loc[selected_key, 'etiqueta']}, indicada en verde y con borde."
         if selected.any() else ""
@@ -107,7 +119,8 @@ def layout():
                         html.Label("Año", htmlFor="ranking-year"),
                         dcc.Dropdown(
                             id="ranking-year",
-                            options=[{"label": str(year), "value": int(year)} for year in YEARS],
+                            options=[{"label": "Todos los años", "value": ALL_YEARS}]
+                            + [{"label": str(year), "value": int(year)} for year in YEARS],
                             value=DEFAULT_YEAR, clearable=False,
                         ),
                     ]),
