@@ -98,7 +98,7 @@ def layout():
         id="ranking",
         className="card",
         children=[
-            html.H2("¿Qué vías o países concentran más viajeros?", className="card-title"),
+            html.H2("G2 · ¿Qué vías o países concentran más viajeros?", className="card-title"),
             html.P(
                 "Compare las vías de ingreso o los países de residencia disponibles. "
                 "Haga clic en una barra para explorar esa serie en la gráfica temporal.",
@@ -128,7 +128,12 @@ def layout():
             ),
             dcc.Graph(id="ranking-graph", config=GRAPH_CONFIG, responsive=True, style={"height": "360px"}),
             html.P(id="ranking-note", className="note", role="status"),
-            html.A("Ver la evolución de la serie seleccionada", href="#evolution", className="series-link"),
+            html.A("Ver la evolución de la serie seleccionada", href="#evolution", id="ranking-series-link",
+                   className="series-link"),
+            html.Div(id="ranking-series-hidden", className="note", style={"display": "none"}, children=[
+                "La serie temporal (G1), donde se refleja la barra elegida, está oculta. ",
+                html.Button("Mostrar la serie temporal", id="ranking-show-series", className="inline-button"),
+            ]),
         ],
     )
 

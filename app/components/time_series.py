@@ -83,7 +83,7 @@ def layout():
         id="evolution",
         className="card",
         children=[
-            html.H2("¿Cómo ha evolucionado el ingreso de viajeros?", className="card-title"),
+            html.H2("G1 · ¿Cómo ha evolucionado el ingreso de viajeros?", className="card-title"),
             html.P(
                 "Datos observados de ingreso de viajeros internacionales a Guatemala (enero 2009 a junio 2026). "
                 "Elija la serie y el nivel de detalle; arrastre sobre la gráfica para acercarse a un periodo.",

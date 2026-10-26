@@ -67,7 +67,7 @@ def layout():
     return html.Section(
         id="annual-comparison", className="card",
         children=[
-            html.H2("¿Cómo cambia el total de viajeros entre años completos?", className="card-title"),
+            html.H2("G4 · ¿Cómo cambia el total de viajeros entre años completos?", className="card-title"),
             html.P(
                 "Compare totales anuales de una misma serie. Solo aparecen años con sus doce meses válidos; "
                 "la nota identifica los años excluidos.",

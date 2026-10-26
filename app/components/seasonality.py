@@ -78,7 +78,7 @@ def layout():
     return html.Section(
         id="seasonality", className="card",
         children=[
-            html.H2("¿En qué meses se concentra el ingreso de viajeros?", className="card-title"),
+            html.H2("G3 · ¿En qué meses se concentra el ingreso de viajeros?", className="card-title"),
             html.P(
                 "Compare los meses de cada año. Pase el cursor sobre una celda para consultar su valor; "
                 "los meses sin dato se marcan con una ×.",

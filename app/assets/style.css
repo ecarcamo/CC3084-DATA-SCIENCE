@@ -30,6 +30,16 @@ body { margin: 0; background: var(--background); color: var(--text); font-family
 .dash-graph { width: 100%; min-width: 0; }
 .series-link { display: inline-block; margin: 4px 12px 4px 0; color: var(--observed); font-size: 14px; }
 .section-link { color: var(--observed); }
+.nav-group { margin: 0 0 8px; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.nav-title { font-weight: bold; margin-right: 4px; }
+.picker-group { margin-bottom: 8px; }
+.picker-group .nav-title { display: block; margin-bottom: 4px; }
+.picker-group .radio label { margin-bottom: 4px; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--observed); }
+.inline-button {
+    font: inherit; font-size: 14px; color: var(--surface); background: var(--observed);
+    border: 0; border-radius: 4px; padding: 4px 10px; cursor: pointer;
+}
 :focus-visible { outline: 3px solid var(--observed); outline-offset: 3px; }
 @media (max-width: 600px) {
     .page { padding: 12px; }

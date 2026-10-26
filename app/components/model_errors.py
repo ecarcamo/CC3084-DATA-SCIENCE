@@ -63,7 +63,7 @@ def layout():
     return html.Section(
         id="model-errors", className="card",
         children=[
-            html.H2("¿Qué modelo se equivoca menos para esta serie?", className="card-title"),
+            html.H2("G7 · ¿Qué modelo se equivoca menos para esta serie?", className="card-title"),
             html.P("Compare el tamaño del error de los modelos en un mismo periodo observado.", className="card-text"),
             html.Div(className="controls", children=[
                 html.Div([

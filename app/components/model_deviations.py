@@ -65,7 +65,7 @@ def layout():
     return html.Section(
         id="model-deviations", className="card",
         children=[
-            html.H2("¿En qué meses se alejó el modelo de lo observado?", className="card-title"),
+            html.H2("G8 · ¿En qué meses se alejó el modelo de lo observado?", className="card-title"),
             html.P("Explore cuándo la estimación quedó por encima o por debajo de los datos registrados.", className="card-text"),
             html.Div(className="controls", children=[
                 html.Div([

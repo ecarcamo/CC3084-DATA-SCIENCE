@@ -136,7 +136,7 @@ def layout():
     return html.Section(
         id="predictions", className="card",
         children=[
-            html.H2("¿Qué estimaron los modelos frente a lo que se registró?", className="card-title"),
+            html.H2("G6 · ¿Qué estimaron los modelos frente a lo que se registró?", className="card-title"),
             html.P(
                 "La línea azul continua muestra los viajeros registrados; cada línea naranja discontinua, lo que "
                 "estimó un modelo para esos mismos meses. Elija la serie, los modelos y el periodo; pase el cursor "
