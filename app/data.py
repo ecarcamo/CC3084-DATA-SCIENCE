@@ -1,3 +1,4 @@
+from math import isfinite
 from pathlib import Path
 
 import pandas as pd
@@ -43,3 +44,32 @@ def incomplete_periods(series, granularity):
 
 def slice_range(series, start, end):
     return series.loc[pd.Timestamp(start):pd.Timestamp(end)]
+
+
+def monthly_series(key):
+    if key not in load_labels().index:
+        raise ValueError("Seleccione una serie disponible.")
+    try:
+        series = load_series(key)
+    except (OSError, ValueError, KeyError) as error:
+        raise ValueError("No se pudo leer la serie mensual seleccionada.") from error
+    if not isinstance(series.index, pd.DatetimeIndex) or series.index.hasnans:
+        raise ValueError("La serie contiene fechas inválidas.")
+    if series.index.to_period("M").has_duplicates:
+        raise ValueError("La serie contiene meses repetidos; deben revisarse antes de comparar.")
+    if not series.index.is_month_start.all():
+        raise ValueError("Las fechas deben identificar el inicio de cada mes.")
+    if series.empty:
+        raise ValueError("La serie no contiene observaciones mensuales.")
+    values = pd.to_numeric(series, errors="coerce")
+    return values.where(values.map(isfinite) & values.ge(0)).sort_index()
+
+
+def select_years(series, years):
+    if not years or len(years) != 2 or any(not isinstance(year, int) for year in years):
+        raise ValueError("Seleccione un rango de años válido.")
+    first, last = years
+    if first > last or first < series.index.year.min() or last > series.index.year.max():
+        raise ValueError("Seleccione años dentro de la cobertura de la serie, en orden.")
+    months = pd.date_range(f"{first}-01-01", f"{last}-12-01", freq="MS")
+    return series.reindex(months)
