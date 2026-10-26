@@ -10,10 +10,24 @@ from app.theme import COLORS
 
 OUTPUT = ROOT / 'figuras' / 'boceto_tablero.png'
 FONT_ROOT = Path('C:/Windows/Fonts')
+SIZE = (1800, 2720)
+CARD_HEIGHT = 230
+CARD_GAP = 18
+OBSERVED_TOP = 600
+MODELS_TOP = 1890
+
+
+def card_top(index):
+    start, position = (OBSERVED_TOP, index) if index < 5 else (MODELS_TOP, index - 5)
+    return start + position * (CARD_HEIGHT + CARD_GAP)
+
+
+def selected_bar_point():
+    return 200, card_top(1) + 118 + 53
 
 
 def draw_wireframe(output=OUTPUT):
-    image = Image.new('RGB', (1800, 2170), COLORS['background'])
+    image = Image.new('RGB', SIZE, COLORS['background'])
     draw = ImageDraw.Draw(image)
 
     def font(size, bold=False):
@@ -33,62 +47,106 @@ def draw_wireframe(output=OUTPUT):
     def text(x, y, value, size=34, color='text', bold=False):
         draw.text((x, y), value, font=font(size, bold), fill=COLORS.get(color, color))
 
-    def box(bounds, fill='surface', outline='grid', width=3):
-        draw.rounded_rectangle(bounds, radius=12, fill=COLORS.get(fill, fill), outline=COLORS.get(outline, outline), width=width)
+    def box(bounds, fill='surface', outline='grid', width=3, radius=12):
+        draw.rounded_rectangle(bounds, radius=radius, fill=COLORS.get(fill, fill), outline=COLORS.get(outline, outline), width=width)
 
-    def panel(y, title, active, controls, note):
-        box((50, y, 1750, y + 610))
-        text(85, y + 20, title, 43, bold=True)
-        tabs = [('Panorama', 85, 445), ('Detalle por vía y país', 460, 1020), ('Predicciones y modelos', 1035, 1715)]
-        for index, (label, left, right) in enumerate(tabs):
-            selected = index == active
-            box((left, y + 85, right, y + 149), 'observed' if selected else 'background')
-            text(left + 18, y + 100, label, 32, 'surface' if selected else 'muted', selected)
-        count = len(controls)
-        step = 1630 / count
-        for index, label in enumerate(controls):
-            left = int(85 + index * step)
-            box((left, y + 175, int(left + step - 16), y + 244), 'background')
-            text(left + 15, y + 194, label, 31)
-        text(85, y + 555, note, 29, 'muted')
+    def dashed(start, end, y, color, width=4, step=34):
+        for x in range(start, end, step):
+            draw.line((x, y, min(x + step // 2, end), y), fill=COLORS[color], width=width)
 
-    def chart(bounds, label, subtitle=None):
-        box(bounds, 'background')
-        left, top, right, bottom = bounds
-        text(left + 20, top + 14, label, 33, bold=True)
-        if subtitle:
-            text(left + 20, top + 58, subtitle, 27, 'muted')
-        return left, top, right, bottom
+    def checkbox(x, y, label):
+        box((x, y, x + 30, y + 30), 'observed', 'observed', radius=4)
+        draw.line((x + 7, y + 15, x + 13, y + 22, x + 24, y + 8), fill=COLORS['surface'], width=4)
+        text(x + 42, y - 1, label, 28)
 
-    text(60, 28, 'Tablero de viajeros de Guatemala', 54, bold=True)
-    text(60, 100, 'Boceto de navegación · espacios ilustrativos sin datos reales', 32, 'muted')
+    def card(index, title, controls):
+        top = card_top(index)
+        box((50, top, 1750, top + CARD_HEIGHT))
+        text(85, top + 14, title, 34, bold=True)
+        step = 1630 / len(controls)
+        for position, label in enumerate(controls):
+            left = int(85 + position * step)
+            box((left, top + 62, int(left + step - 16), top + 108), 'background', radius=8)
+            text(left + 14, top + 71, label, 26)
+        box((85, top + 118, 1715, top + CARD_HEIGHT - 14), 'background', radius=8)
+        return top + 118, top + CARD_HEIGHT - 14
 
-    panel(175, 'Panorama · vista de entrada', 0, ['Serie: total', 'Fechas: desde / hasta', 'Nivel: mensual'], 'Cambiar la serie, el periodo o el nivel temporal para explorar los datos.')
-    chart((85, 445, 1715, 705), 'Serie temporal observada', 'Nivel mensual, trimestral o anual')
-    draw.line([(150, 650), (1650, 650)], fill=COLORS['grid'], width=3)
-    draw.line([(150, 540), (150, 650)], fill=COLORS['grid'], width=3)
-    text(630, 595, 'Espacio de la gráfica', 35, 'observed')
+    text(60, 28, 'Observatorio de turismo sostenible de Guatemala', 52, bold=True)
+    text(60, 98, 'Boceto de la distribución final · espacios ilustrativos sin datos reales', 32, 'muted')
 
-    panel(820, 'Detalle por vía y país · selección enlazada', 1, ['Grupo: vías / países', 'Año: todos o uno'], 'Elegir una barra cambia la serie temporal; el rango de fechas se conserva.')
-    chart((85, 1090, 805, 1350), 'Ranking del grupo', 'Vías y países se comparan por separado')
-    for offset, width, color in [(0, 400, 'observed'), (1, 310, 'highlight'), (2, 220, 'observed')]:
-        draw.rectangle((125, 1205 + offset * 42, 125 + width, 1230 + offset * 42), fill=COLORS[color], outline=COLORS['text'] if color == 'highlight' else None, width=3)
-    text(550, 1241, 'Selección', 26, 'highlight')
-    chart((840, 1090, 1715, 1350), 'Serie temporal enlazada', 'La selección se identifica por nombre y borde')
-    text(1040, 1230, 'Espacio de la gráfica', 35, 'observed')
+    box((50, 160, 1750, 300))
+    text(85, 175, 'Menú de secciones (enlaces a cada gráfica visible)', 30, 'muted', True)
+    text(85, 215, 'Datos observados:  G1 Evolución · G2 Vía o país · G3 Meses · G4 Totales anuales · G5 Variación', 28, 'observed')
+    text(85, 255, 'Predicciones y modelos:  G6 Observado y estimado · G7 Error · G8 Desviación por mes', 28, 'observed')
 
-    panel(1465, 'Predicciones y modelos · propuesta para la entrega final', 2, ['Serie: seleccionar', 'Modelo: seleccionar', 'Fechas: desde / hasta'], 'Sin datos: “No hay datos para esta selección”. Ajustar o limpiar los filtros.')
-    chart((85, 1735, 1060, 1995), 'Observado y predicción', 'Comparación en fechas coincidentes')
-    draw.line((125, 1870, 315, 1870), fill=COLORS['observed'], width=6)
-    text(340, 1850, 'Observado', 30, 'observed')
-    for x in range(125, 315, 38):
-        draw.line((x, 1930, x + 20, 1930), fill=COLORS['forecast'], width=6)
-    text(340, 1910, 'Predicción', 30, 'forecast')
-    chart((1095, 1735, 1715, 1995), 'Error de los modelos', 'Indicador y explicación breve')
-    text(1150, 1850, 'Espacio de comparación', 31, 'muted')
-    text(1150, 1900, 'de errores', 31, 'muted')
+    box((50, 320, 1750, 540))
+    text(85, 334, 'Gráficas visibles', 36, bold=True)
+    text(85, 382, 'Datos observados', 26, 'muted', True)
+    for position, label in enumerate(['G1', 'G2', 'G3', 'G4', 'G5']):
+        checkbox(330 + position * 150, 380, label)
+    text(85, 440, 'Predicciones y modelos', 26, 'muted', True)
+    for position, label in enumerate(['G6', 'G7', 'G8']):
+        checkbox(410 + position * 150, 438, label)
+    text(85, 492, 'Ocultar una gráfica conserva sus selecciones y callbacks.', 26, 'muted')
 
-    text(60, 2120, 'Cada vista conserva el menú y usa la misma paleta, tipografía y etiquetas.', 31, 'muted')
+    text(60, 556, 'Datos observados', 32, 'muted', True)
+    top, bottom = card(0, 'G1 · ¿Cómo ha evolucionado el ingreso de viajeros?', ['Serie', 'Nivel: mes / trimestre / año', 'Fechas: desde / hasta'])
+    draw.line([(130 + x * 60, bottom - 20 - (x * 37 % 55)) for x in range(26)], fill=COLORS['observed'], width=5)
+
+    top, bottom = card(1, 'G2 · ¿Qué vías o países concentran más viajeros?', ['Grupo: vías / países', 'Año: todos o uno'])
+    for row, width in enumerate([480, 330, 160]):
+        selected = row == 1
+        draw.rectangle(
+            (125, top + 12 + row * 30, 125 + width, top + 34 + row * 30),
+            fill=COLORS['highlight' if selected else 'observed'], outline=COLORS['text'] if selected else None, width=3,
+        )
+    text(700, top + 18, 'Clic en una barra: G1 muestra esa serie y conserva sus fechas.', 28, 'highlight', True)
+    text(700, top + 56, 'Si G1 está oculta: aviso y botón «Mostrar la serie temporal».', 26, 'muted')
+    arrow_x = 1775
+    draw.line((arrow_x, top + 40, arrow_x, card_top(0) + 160), fill=COLORS['highlight'], width=5)
+    draw.polygon([(arrow_x - 12, card_top(0) + 178), (arrow_x + 12, card_top(0) + 178), (arrow_x, card_top(0) + 156)], fill=COLORS['highlight'])
+
+    top, bottom = card(2, 'G3 · ¿En qué meses se concentra el ingreso de viajeros?', ['Serie', 'Rango de años'])
+    shades = ['#E7EFF6', '#B9CDE0', '#7FA3C4', COLORS['observed']]
+    for row in range(3):
+        for column in range(12):
+            left = 125 + column * 70
+            draw.rectangle((left, top + 10 + row * 24, left + 64, top + 30 + row * 24), fill=shades[(row + column * 2) % 4])
+    text(1000, top + 30, '× = mes sin dato; el cero real conserva el azul claro.', 26, 'muted')
+
+    top, bottom = card(3, 'G4 · ¿Cómo cambia el total de viajeros entre años completos?', ['Serie', 'Rango de años'])
+    for column in range(17):
+        height = 20 + (column * 23 % 55)
+        draw.rectangle((125 + column * 50, bottom - 10 - height, 160 + column * 50, bottom - 10), fill=COLORS['observed'])
+    text(1000, top + 30, 'Solo años con doce meses válidos; la nota lista los excluidos.', 26, 'muted')
+
+    top, bottom = card(4, 'G5 · ¿Cuánto cambió cada mes frente al mismo mes del año anterior?', ['Serie', 'Fechas: desde / hasta'])
+    zero = (top + bottom) // 2
+    dashed(125, 940, zero, 'muted', 3)
+    for column in range(26):
+        change = ((column * 17) % 31) - 12
+        draw.rectangle((130 + column * 30, min(zero, zero - change), 150 + column * 30, max(zero, zero - change)), fill=COLORS['observed'])
+    text(1000, top + 18, '(mes ÷ mismo mes del año anterior − 1) × 100', 26, 'observed', True)
+    text(1000, top + 54, 'Sin base válida o con base cero: ×, nunca 0 %.', 26, 'muted')
+
+    text(60, MODELS_TOP - 44, 'Predicciones y modelos (resultados existentes, sin reentrenar)', 32, 'muted', True)
+    top, bottom = card(5, 'G6 · ¿Qué estimaron los modelos frente a lo que se registró?', ['Serie', 'Modelos: casillas', 'Periodo'])
+    draw.line([(130 + x * 60, bottom - 25 - (x * 29 % 45)) for x in range(14)], fill=COLORS['observed'], width=5)
+    dashed(130, 910, bottom - 40, 'forecast', 5)
+    text(1000, top + 30, 'Azul continua: observado · naranja discontinua: estimado', 26, 'muted')
+
+    top, bottom = card(6, 'G7 · ¿Qué modelo se equivoca menos para esta serie?', ['Serie', 'Medida: MAE / RMSE / MAPE'])
+    for row, width in enumerate([220, 330, 450]):
+        draw.rectangle((125, top + 12 + row * 26, 125 + width, top + 30 + row * 26), fill=COLORS['forecast'])
+    text(1000, top + 30, 'Mismos meses coincidentes para todos los modelos.', 26, 'muted')
+
+    top, bottom = card(7, 'G8 · ¿En qué meses se alejó el modelo de lo observado?', ['Serie', 'Modelo', 'Fechas'])
+    zero = (top + bottom) // 2
+    dashed(125, 940, zero, 'muted', 3)
+    draw.line([(130 + x * 60, zero - ((x * 19) % 37) + 14) for x in range(14)], fill=COLORS['forecast'], width=5)
+    text(1000, top + 30, 'Positivo: estimó menos; negativo: estimó más.', 26, 'muted')
+
+    text(60, 2650, 'Una sola página: el menú lleva a cada gráfica y «Gráficas visibles» decide cuáles se muestran.', 30, 'muted')
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     image.save(output, dpi=(240, 240))
