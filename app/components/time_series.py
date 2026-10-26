@@ -15,6 +15,39 @@ GRANULARITY_OPTIONS = [
 ]
 TEMPLATE = build_template()
 EMPTY_MESSAGE = "No hay datos para esta selección. Amplíe el rango de fechas o elija otro nivel de detalle."
+SHORT_MONTHS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+UNITS = {"month": ("mes", "meses"), "quarter": ("trimestre", "trimestres"), "year": ("año", "años")}
+LISTED_PERIODS = 4
+
+
+def period_label(date, granularity):
+    if granularity == "year":
+        return str(date.year)
+    if granularity == "quarter":
+        return f"T{date.quarter} {date.year} ({SHORT_MONTHS[date.month - 1]}–{SHORT_MONTHS[date.month + 1]})"
+    return f"{SHORT_MONTHS[date.month - 1]} {date.year}"
+
+
+def build_note(series_key, granularity, start, end):
+    if granularity == "month":
+        return "Cada punto es el número de viajeros registrados en un mes."
+    singular, plural = UNITS[granularity]
+    series = data.slice_range(data.load_series(series_key), start, end)
+    incomplete = data.incomplete_periods(series, granularity)
+    months = data.GRANULARITY[granularity]["months"]
+    note = f"Cada punto suma los viajeros de un {singular} completo ({months} meses con dato)."
+    if incomplete.empty:
+        return f"{note} Todos los {plural} del rango elegido están completos."
+    listed = [f"{period_label(date, granularity)}, {count} de {months} meses" for date, count in incomplete.items()]
+    if len(listed) > LISTED_PERIODS:
+        listed = listed[:LISTED_PERIODS] + [f"y {len(incomplete) - LISTED_PERIODS} más"]
+    noun = singular if len(incomplete) == 1 else plural
+    omitted = "Se omitió" if len(incomplete) == 1 else "Se omitieron"
+    adjective = "incompleto" if len(incomplete) == 1 else "incompletos"
+    return (
+        f"{note} {omitted} {len(incomplete)} {noun} {adjective} para no presentar un total parcial como completo: "
+        f"{'; '.join(listed)}."
+    )
 
 
 def build_figure(series_key, granularity, start, end):
@@ -30,15 +63,16 @@ def build_figure(series_key, granularity, start, end):
         figure.update_xaxes(visible=False)
         figure.update_yaxes(visible=False)
         return figure
-    unit = {"month": "mes", "quarter": "trimestre", "year": "año"}[granularity]
+    unit = UNITS[granularity][0]
     figure.add_trace(
         go.Scatter(
             x=series.index, y=series.values, mode="lines+markers" if granularity == "year" else "lines",
             name=label, line={"color": COLORS["observed"], "width": 2.5},
-            hovertemplate=f"%{{x|%b %Y}}<br><b>%{{y:,.0f}}</b> viajeros por {unit}<extra></extra>",
+            customdata=[period_label(date, granularity) for date in series.index],
+            hovertemplate=f"%{{customdata}}<br><b>%{{y:,.0f}}</b> viajeros por {unit}<extra></extra>",
         )
     )
-    figure.update_yaxes(title_text=f"Viajeros por {unit}", tickformat=",")
+    figure.update_yaxes(title_text=f"Viajeros por {unit}", tickformat=",", automargin=True)
     figure.update_xaxes(title_text=None)
     figure.update_layout(showlegend=False)
     return figure
@@ -96,10 +130,5 @@ def register(app):
         Input("date-range", "end_date"),
     )
     def update(series_key, granularity, start, end):
-        note = ""
-        if granularity != "month":
-            note = (
-                "Solo se muestran periodos completos dentro del rango seleccionado. "
-                "El detalle anual excluye 2026 porque los datos llegan hasta junio."
-            )
-        return build_figure(series_key, granularity, start or "2009-01-01", end or "2026-06-30"), note
+        start, end = start or "2009-01-01", end or "2026-06-30"
+        return build_figure(series_key, granularity, start, end), build_note(series_key, granularity, start, end)

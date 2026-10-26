@@ -33,5 +33,13 @@ def aggregate(series, granularity):
     return totals[counts == spec["months"]]
 
 
+def incomplete_periods(series, granularity):
+    spec = GRANULARITY[granularity]
+    if spec["rule"] is None or series.empty:
+        return pd.Series(dtype=int)
+    counts = series.resample(spec["rule"]).count()
+    return counts[counts < spec["months"]]
+
+
 def slice_range(series, start, end):
     return series.loc[pd.Timestamp(start):pd.Timestamp(end)]
