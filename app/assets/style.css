@@ -21,6 +21,10 @@ body { margin: 0; background: var(--background); color: var(--text); font-family
 .controls label { display: block; font-weight: bold; margin-bottom: 6px; }
 .controls > div { min-width: 180px; max-width: 100%; }
 .controls > div:first-child { width: 320px; }
+.controls > .year-range { flex: 1 1 280px; padding-bottom: 20px; }
+.year-range .dash-slider-root[data-included="true"] .dash-slider-range { background: var(--observed); }
+.year-range .dash-slider-root .dash-slider-thumb { background: var(--observed); border-color: var(--observed); }
+.year-range .dash-input-container:focus { border-color: var(--observed); outline: 2px solid var(--observed); outline-offset: 2px; }
 .radio label { display: inline-block; margin-right: 16px; font-weight: normal; }
 .note { margin: 8px 0 0; color: var(--muted); font-size: 14px; }
 .dash-graph { width: 100%; min-width: 0; }
