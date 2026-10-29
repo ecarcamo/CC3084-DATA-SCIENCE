@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pandas as pd
 
-from pipeline.checks import run_checks
+from pipeline.checks import STOP, has_stop, run_checks, serialize_results, write_quality_report
 from pipeline.config import ROOT, load_config
 from pipeline.stages import prepare_series, read_source, source_fingerprint
 
@@ -38,12 +38,13 @@ def run_pipeline(config_path):
         metadata["source_fingerprint"] = source_fingerprint(config["source"]["path"])
         metadata["completed_stages"].append("read_source")
         checks = run_checks(frame, config)
-        metadata["checks"] = checks
-        if checks:
-            metadata["checks_status"] = "executed"
-            metadata["completed_stages"].append("run_checks")
-        else:
-            metadata["warnings"].append("Los seis controles de calidad están pendientes de integración.")
+        metadata["checks"] = serialize_results(checks)
+        metadata["checks_status"] = "executed"
+        metadata["completed_stages"].append("run_checks")
+        write_quality_report(checks, candidate_dir / config["outputs"]["quality_report_file"], run_id)
+        if has_stop(checks):
+            stopped = ", ".join(result.name for result in checks if result.status == STOP)
+            raise ValueError(f"Los controles de calidad detuvieron el flujo: {stopped}.")
         series = prepare_series(frame, config)
         metadata["completed_stages"].append("prepare_series")
         observed = pd.DataFrame({

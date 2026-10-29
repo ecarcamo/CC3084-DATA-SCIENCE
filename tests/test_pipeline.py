@@ -16,11 +16,13 @@ import yaml
 from pipeline.config import ROOT, load_config
 from pipeline.run import main, run_pipeline
 from pipeline.stages import prepare_series, read_source, source_fingerprint
+from tests.synthetic_source import build_source
 
 
 class PipelineTests(unittest.TestCase):
     def setUp(self):
         self.config = load_config("config/pipeline.yaml")
+        self.source = build_source(self.config)
         self.frame = pd.DataFrame({
             "Año": [2023] * 7,
             "Mes cod": [1, 1, 1, 2, 3, 3, 3],
@@ -31,7 +33,7 @@ class PipelineTests(unittest.TestCase):
             "Viajero": [100, 30, 900, 800, 200, 60, 700],
         })
 
-    def write_config(self, folder, with_source=True):
+    def write_config(self, folder, source=None, with_source=True):
         config = yaml.safe_load((ROOT / "config/pipeline.yaml").read_text(encoding="utf-8"))
         config["source"]["path"] = str(folder / "source.xlsx")
         for key in ("candidates_dir", "approved_dir", "history_dir", "run_log_dir"):
@@ -39,8 +41,16 @@ class PipelineTests(unittest.TestCase):
         config_path = folder / "pipeline.yaml"
         config_path.write_text(yaml.safe_dump(config, allow_unicode=True), encoding="utf-8")
         if with_source:
-            self.frame.to_excel(config["source"]["path"], sheet_name=config["source"]["sheet"], index=False)
+            frame = self.frame if source is None else source
+            frame.to_excel(config["source"]["path"], sheet_name=config["source"]["sheet"], index=False)
         return config_path, config
+
+    def write_approved(self, config):
+        approved = Path(config["outputs"]["approved_dir"])
+        approved.mkdir()
+        previous = approved / "estimates.csv"
+        previous.write_bytes(b"version aprobada")
+        return previous
 
     def test_series_preserves_missing_month_and_excludes_other_travelers(self):
         series = prepare_series(self.frame, self.config)
@@ -90,31 +100,33 @@ class PipelineTests(unittest.TestCase):
             source = Path(raw_config["source"]["path"])
             self.assertEqual(source_fingerprint(source), hashlib.sha256(source.read_bytes()).hexdigest())
 
-    def test_pipeline_writes_candidate_and_pending_validation_without_publication(self):
+    def test_pipeline_writes_candidate_and_quality_report_without_publication(self):
         with TemporaryDirectory(dir=ROOT) as folder:
-            config_path, config = self.write_config(Path(folder))
-            approved = Path(config["outputs"]["approved_dir"])
-            approved.mkdir()
-            previous = approved / "estimates.csv"
-            previous.write_bytes(b"version aprobada")
+            config_path, config = self.write_config(Path(folder), self.source)
+            previous = self.write_approved(config)
             candidate = run_pipeline(config_path)
             observed = pd.read_csv(candidate / "observed.csv")
             metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
             self.assertEqual(list(observed.columns), config["outputs"]["estimate_columns"])
-            self.assertEqual(observed["value"].iloc[0], 130)
-            self.assertTrue(pd.isna(observed["value"].iloc[1]))
+            self.assertEqual(len(observed), len(self.source) // 2)
+            self.assertEqual(observed["value"].iloc[0], 200)
+            self.assertFalse(observed["value"].isna().any())
             self.assertEqual(set(observed["kind"]), {"observado"})
             self.assertEqual(set(observed["destination"]), {"guatemala"})
             self.assertEqual(set(observed["run_id"]), {candidate.name})
             self.assertEqual(metadata["run_id"], candidate.name)
             self.assertEqual(metadata["status"], "prepared")
-            self.assertEqual(metadata["checks_status"], "pending")
-            self.assertEqual(metadata["checks"], [])
-            self.assertTrue(metadata["warnings"])
+            self.assertEqual(metadata["checks_status"], "executed")
+            self.assertEqual({check["status"] for check in metadata["checks"]}, {"ok"})
+            self.assertEqual(metadata["warnings"], [])
             self.assertEqual(metadata["publication"], "not_attempted")
             self.assertEqual(
-                metadata["completed_stages"], ["read_source", "prepare_series", "write_observed"]
+                metadata["completed_stages"], ["read_source", "run_checks", "prepare_series", "write_observed"]
             )
+            self.assertEqual(report["run_id"], candidate.name)
+            self.assertEqual(report["status"], "ok")
+            self.assertEqual(report["checks"], metadata["checks"])
             self.assertLessEqual(metadata["started_at"], metadata["finished_at"])
             self.assertEqual(metadata["source_fingerprint"], source_fingerprint(config["source"]["path"]))
             log_path = Path(config["outputs"]["run_log_dir"]) / f"{candidate.name}.json"
@@ -140,13 +152,25 @@ class PipelineTests(unittest.TestCase):
             self.assertFalse((candidate / "observed.csv").exists())
             self.assertFalse(Path(config["outputs"]["approved_dir"]).exists())
 
+    def test_quality_stop_halts_preparation_and_preserves_approved_version(self):
+        with TemporaryDirectory(dir=ROOT) as folder:
+            config_path, config = self.write_config(Path(folder), self.source.drop(columns="Frontera"))
+            previous = self.write_approved(config)
+            with self.assertRaisesRegex(ValueError, "check_columns_and_types"):
+                run_pipeline(config_path)
+            candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
+            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
+            self.assertEqual(metadata["status"], "failed")
+            self.assertEqual(metadata["completed_stages"], ["read_source", "run_checks"])
+            self.assertEqual(report["status"], "stop")
+            self.assertFalse((candidate / "observed.csv").exists())
+            self.assertEqual(previous.read_bytes(), b"version aprobada")
+
     def test_check_exception_stops_preparation_and_preserves_approved_version(self):
         with TemporaryDirectory(dir=ROOT) as folder:
             config_path, config = self.write_config(Path(folder))
-            approved = Path(config["outputs"]["approved_dir"])
-            approved.mkdir()
-            previous = approved / "estimates.csv"
-            previous.write_bytes(b"version aprobada")
+            previous = self.write_approved(config)
             with patch("pipeline.run.run_checks", side_effect=ValueError("Control crítico fallido")):
                 with self.assertRaisesRegex(ValueError, "Control crítico"):
                     run_pipeline(config_path)
@@ -159,7 +183,7 @@ class PipelineTests(unittest.TestCase):
 
     def test_command_executes_with_synthetic_excel(self):
         with TemporaryDirectory(dir=ROOT) as folder:
-            config_path, config = self.write_config(Path(folder))
+            config_path, config = self.write_config(Path(folder), self.source)
             result = subprocess.run(
                 [sys.executable, "-m", "pipeline.run", "--config", str(config_path)],
                 cwd=ROOT,
