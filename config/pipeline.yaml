@@ -1,0 +1,119 @@
+destination:
+  key: guatemala
+  name: Guatemala
+  allocation_factor: 1.0
+
+target:
+  name: visitantes
+  description: Visitantes internacionales que ingresan a Guatemala (turistas más excursionistas)
+  unit: visitantes por mes
+  frequency: monthly
+  aggregation: national
+  visitor_types:
+    - Turista
+    - Excursionista
+  excluded_types:
+    - Viajero
+    - Cruceristas
+
+source:
+  name: Base de Migración 2009 a junio de 2026 (INGUAT e IGM)
+  path: data/raw/base_migracion_2009_2026jun.xlsx
+  sheet: Datos
+  required_columns:
+    Año: integer
+    Mes cod: integer
+    Vía: string
+    Frontera: string
+    País: string
+    Agrupación Residencia: string
+    Tipo de Viajero: string
+    Viajero: number
+  optional_columns:
+    - Mes
+    - Región
+    - Región dos
+    - Regiones OMT
+    - MCEO
+  unique_key:
+    - Año
+    - Mes cod
+    - Vía
+    - Frontera
+    - País
+    - Agrupación Residencia
+    - Tipo de Viajero
+  value_column: Viajero
+
+periods:
+  source_start: 2009-01
+  fit_start: 2023-01
+  expected_last_period: 2026-06
+  evaluation_start: 2025-07
+  evaluation_end: 2026-06
+  forecast_start: 2026-07
+  forecast_end: 2026-12
+
+model:
+  procedure: holt_winters
+  procedure_version: hw-1.0
+  trend: add
+  damped_trend: true
+  seasonal: mul
+  seasonal_periods: 12
+  initialization_method: estimated
+  evaluation_horizon: 1
+  seed: 42
+
+baseline:
+  procedure: seasonal_naive
+  lag_months: 12
+
+quality:
+  allowed_missing_columns:
+    - Mes
+    - Región
+    - Región dos
+    - Regiones OMT
+    - MCEO
+  warn_missing_months_before_fit: true
+  stop_on_missing_months_in_fit: true
+  stop_on_duplicate_key: true
+  stop_on_negative_values: true
+  stop_on_non_finite_values: true
+  warn_zero_denominators: true
+  fit_types_allowed_from: 2023-01
+
+acceptance:
+  max_mape_pct: 10.0
+  max_mae_ratio_to_baseline: 1.5
+  expected_forecast_months: 6
+  require_non_negative_estimates: true
+  require_finite_estimates: true
+
+monitoring:
+  max_abs_year_over_year_change_pct: 30.0
+  max_missing_rows_increase: 0
+  max_duplicate_rows_increase: 0
+
+outputs:
+  candidates_dir: results/candidates
+  approved_dir: results/approved/current
+  history_dir: results/approved/history
+  estimates_file: estimates.csv
+  quality_report_file: quality_report.json
+  run_log_dir: logs
+  estimate_columns:
+    - destination
+    - period
+    - value
+    - unit
+    - kind
+    - run_id
+    - generated_at
+    - procedure_version
+
+mlflow:
+  tracking_uri: sqlite:///mlflow/mlflow.db
+  artifact_root: mlflow/artifacts
+  experiment_name: observatorio-guatemala-visitantes
