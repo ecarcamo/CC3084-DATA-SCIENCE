@@ -34,3 +34,29 @@ docs/                        (enunciado, entregables, figuras y scripts de revis
 Para añadir una visualización: crear `app/components/<nombre>.py` con `layout()` y `register(app)`,
 y agregarla a `OBSERVED` o `MODELS` en `app/main.py`; el menú y «Gráficas visibles» la incluyen. Para
 enlazar una gráfica con la serie temporal, su callback escribe en `Output("series-selector", "value")`.
+
+## Laboratorio 11: pipeline (avance)
+
+Requisitos: Python 3.12 y las dependencias del proyecto.
+
+```bash
+pip install -r requirements.txt
+```
+
+La base institucional no se sube al repositorio. Colóquela en
+`data/raw/base_migracion_2009_2026jun.xlsx` (hoja `Datos`); la ruta, los períodos y los umbrales
+están en `config/pipeline.yaml`.
+
+```bash
+python -m pipeline.run --config config/pipeline.yaml
+```
+
+Cada ejecución crea `results/candidates/<run_id>/` con `quality_report.json` (resultado de los seis
+controles de calidad), `run.json` (etapas, advertencias, errores y estado de la publicación) y, si
+ningún control la detiene, `observed.csv` con la serie mensual de visitantes. El mismo registro se
+copia en `logs/<run_id>.json`. Si un control crítico falla, el comando termina con código 1, marca
+la ejecución como `failed` con la causa y no modifica `results/approved/`.
+
+```bash
+python -m unittest tests.test_checks tests.test_pipeline
+```
