@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -165,6 +165,34 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(metadata["completed_stages"], ["read_source", "run_checks"])
             self.assertEqual(report["status"], "stop")
             self.assertFalse((candidate / "observed.csv").exists())
+            self.assertEqual(previous.read_bytes(), b"version aprobada")
+
+    def test_controlled_failure_blocks_publication_and_recovers_after_fix(self):
+        with TemporaryDirectory(dir=ROOT) as folder:
+            duplicated = pd.concat([self.source, self.source.iloc[[0]]], ignore_index=True)
+            config_path, config = self.write_config(Path(folder), duplicated)
+            previous = self.write_approved(config)
+            candidates = Path(config["outputs"]["candidates_dir"])
+            error_output = io.StringIO()
+            with redirect_stderr(error_output):
+                self.assertEqual(main(["--config", str(config_path)]), 1)
+            self.assertIn("check_uniqueness", error_output.getvalue())
+            candidate = next(candidates.iterdir())
+            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
+            self.assertEqual(metadata["status"], "failed")
+            self.assertEqual(metadata["publication"], "blocked")
+            self.assertIn("check_uniqueness: Hay 1 claves repetidas.", metadata["errors"][0])
+            self.assertEqual(report["status"], "stop")
+            self.assertEqual([check["name"] for check in report["checks"] if check["status"] == "stop"], ["check_uniqueness"])
+            self.assertFalse((candidate / "observed.csv").exists())
+            self.assertEqual(list(previous.parent.iterdir()), [previous])
+            self.assertEqual(previous.read_bytes(), b"version aprobada")
+            self.source.to_excel(config["source"]["path"], sheet_name=config["source"]["sheet"], index=False)
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--config", str(config_path)]), 0)
+            self.assertEqual(len(list(candidates.iterdir())), 2)
+            self.assertEqual(len(list(candidates.glob("*/observed.csv"))), 1)
             self.assertEqual(previous.read_bytes(), b"version aprobada")
 
     def test_check_exception_stops_preparation_and_preserves_approved_version(self):

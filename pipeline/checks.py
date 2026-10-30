@@ -3,13 +3,18 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from pandas.api import types
+
+from pipeline.stages import prepare_series
 
 OK = "ok"
 WARNING = "warning"
 STOP = "stop"
 MAX_EXAMPLES = 5
+METHOD_VISITOR_TYPES = ("Turista", "Excursionista")
+CRUISE_TYPE = "Cruceristas"
 
 TYPE_VALIDATORS = {
     "integer": lambda column: types.is_integer_dtype(column) and not types.is_bool_dtype(column),
@@ -104,7 +109,105 @@ def check_uniqueness(df, config):
     return CheckResult(name, status, f"Hay {len(keys)} claves repetidas.", details)
 
 
-CHECKS = (check_columns_and_types, check_dates_and_coverage, check_uniqueness)
+def check_missing_values(df, config):
+    source = config["source"]
+    allowed = config["quality"]["allowed_missing_columns"]
+    counts = df.isna().sum()
+    blocking = {
+        column: int(counts[column])
+        for column in source["required_columns"]
+        if column in df.columns and column not in allowed and counts[column]
+    }
+    tolerated = {column: int(counts[column]) for column in allowed if column in df.columns and counts[column]}
+    details = {"missing_blocking": blocking, "missing_allowed": tolerated}
+    name = "check_missing_values"
+    if blocking:
+        return CheckResult(name, STOP, f"Hay faltantes en columnas indispensables: {', '.join(blocking)}.", details)
+    if tolerated:
+        return CheckResult(name, WARNING, f"Hay faltantes permitidos en: {', '.join(tolerated)}.", details)
+    return CheckResult(name, OK, "No hay faltantes en las columnas revisadas.", details)
+
+
+def check_values_and_denominators(df, config):
+    quality = config["quality"]
+    value_column = config["source"]["value_column"]
+    values = pd.to_numeric(df[value_column], errors="coerce")
+    negative = int(values.lt(0).sum())
+    non_finite = int((~np.isfinite(values)).sum())
+    invalid = df.loc[values.lt(0) | ~np.isfinite(values), ["Año", "Mes cod", "Tipo de Viajero", value_column]]
+    totals = _monthly_totals(df, config["target"]["visitor_types"], value_column)
+    zero_periods = [f"{year}-{month:02d}" for year, month in totals.index[totals.eq(0)]]
+    details = {
+        "negative_rows": negative,
+        "non_finite_rows": non_finite,
+        "zero_total_periods": zero_periods,
+        "examples": _records(invalid),
+    }
+    name = "check_values_and_denominators"
+    stop_reasons = []
+    warning_reasons = []
+    if negative:
+        reason = f"Hay {negative} valores negativos en {value_column}."
+        (stop_reasons if quality["stop_on_negative_values"] else warning_reasons).append(reason)
+    if non_finite:
+        reason = f"Hay {non_finite} valores vacíos o no finitos en {value_column}."
+        (stop_reasons if quality["stop_on_non_finite_values"] else warning_reasons).append(reason)
+    if zero_periods and quality["warn_zero_denominators"]:
+        warning_reasons.append(
+            f"Hay {len(zero_periods)} meses con total cero; se excluyen de MAPE y de la variación interanual."
+        )
+    if stop_reasons:
+        return CheckResult(name, STOP, " ".join(stop_reasons + warning_reasons), details)
+    if warning_reasons:
+        return CheckResult(name, WARNING, " ".join(warning_reasons), details)
+    return CheckResult(name, OK, "Los valores son finitos, no negativos y ningún mes suma cero.", details)
+
+
+def check_methodological_rule(df, config):
+    target = config["target"]
+    value_column = config["source"]["value_column"]
+    configured = set(target["visitor_types"])
+    excluded_in_total = sorted(configured & set(target["excluded_types"]))
+    fit_from = pd.Period(config["quality"]["fit_types_allowed_from"], freq="M")
+    periods = pd.to_datetime({"year": df["Año"], "month": df["Mes cod"], "day": 1}).dt.to_period("M")
+    cruise = df.loc[df["Tipo de Viajero"].eq(CRUISE_TYPE) & periods.ge(fit_from), ["Año", "Mes cod"]]
+    expected = _monthly_totals(df, METHOD_VISITOR_TYPES, value_column) * config["destination"]["allocation_factor"]
+    prepared = prepare_series(df, config).dropna()
+    prepared.index = pd.MultiIndex.from_arrays([prepared.index.year, prepared.index.month])
+    expected = expected.dropna()
+    mismatched = expected.index.symmetric_difference(prepared.index).tolist()
+    common = expected.index.intersection(prepared.index)
+    differing = ~np.isclose(expected.loc[common].to_numpy(), prepared.loc[common].to_numpy())
+    mismatched += common[differing].tolist()
+    details = {
+        "visitor_types": sorted(configured),
+        "excluded_in_total": excluded_in_total,
+        "cruise_rows_since_fit": len(cruise),
+        "mismatched_periods": [f"{year}-{month:02d}" for year, month in sorted(mismatched)[:MAX_EXAMPLES]],
+    }
+    name = "check_methodological_rule"
+    reasons = []
+    if configured != set(METHOD_VISITOR_TYPES):
+        reasons.append("La serie de visitantes debe salir solo de Turista y Excursionista.")
+    if excluded_in_total:
+        reasons.append(f"Tipos excluidos dentro del total: {', '.join(excluded_in_total)}.")
+    if len(cruise):
+        reasons.append(f"Hay {len(cruise)} filas de {CRUISE_TYPE} desde {fit_from}; se contarían dos veces.")
+    if mismatched:
+        reasons.append(f"El total recalculado no coincide con la serie preparada en {len(mismatched)} meses.")
+    if reasons:
+        return CheckResult(name, STOP, " ".join(reasons), details)
+    return CheckResult(name, OK, "La serie cumple la regla metodológica de visitantes.", details)
+
+
+CHECKS = (
+    check_columns_and_types,
+    check_dates_and_coverage,
+    check_uniqueness,
+    check_missing_values,
+    check_values_and_denominators,
+    check_methodological_rule,
+)
 
 
 def run_checks(df, config):
@@ -149,6 +252,12 @@ def _target_periods(df, config):
     target = df.loc[df["Tipo de Viajero"].isin(config["target"]["visitor_types"])]
     dates = pd.to_datetime({"year": target["Año"], "month": target["Mes cod"], "day": 1})
     return set(dates.dt.to_period("M"))
+
+
+def _monthly_totals(df, visitor_types, value_column):
+    target = df.loc[df["Tipo de Viajero"].isin(visitor_types)]
+    values = pd.to_numeric(target[value_column], errors="coerce")
+    return values.groupby([target["Año"], target["Mes cod"]]).sum(min_count=1)
 
 
 def _missing_periods(present, start, end):

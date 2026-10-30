@@ -7,7 +7,7 @@ from uuid import uuid4
 
 import pandas as pd
 
-from pipeline.checks import STOP, has_stop, run_checks, serialize_results, write_quality_report
+from pipeline.checks import STOP, WARNING, has_stop, run_checks, serialize_results, write_quality_report
 from pipeline.config import ROOT, load_config
 from pipeline.stages import prepare_series, read_source, source_fingerprint
 
@@ -40,11 +40,13 @@ def run_pipeline(config_path):
         checks = run_checks(frame, config)
         metadata["checks"] = serialize_results(checks)
         metadata["checks_status"] = "executed"
+        metadata["warnings"] = [f"{result.name}: {result.message}" for result in checks if result.status == WARNING]
         metadata["completed_stages"].append("run_checks")
         write_quality_report(checks, candidate_dir / config["outputs"]["quality_report_file"], run_id)
         if has_stop(checks):
-            stopped = ", ".join(result.name for result in checks if result.status == STOP)
-            raise ValueError(f"Los controles de calidad detuvieron el flujo: {stopped}.")
+            metadata["publication"] = "blocked"
+            stopped = " ".join(f"{result.name}: {result.message}" for result in checks if result.status == STOP)
+            raise ValueError(f"Los controles de calidad detuvieron el flujo. {stopped}")
         series = prepare_series(frame, config)
         metadata["completed_stages"].append("prepare_series")
         observed = pd.DataFrame({
@@ -88,7 +90,7 @@ def main(argv=None):
         print(f"El pipeline no pudo completarse: {error}", file=sys.stderr)
         return 1
     print(f"Preparación terminada. Candidato: {candidate_dir}")
-    print("No se publicaron resultados. Los controles de calidad requieren integración.")
+    print("Los controles de calidad no detuvieron el flujo. No se publicaron resultados: la publicación se integra en la entrega final.")
     return 0
 
 
