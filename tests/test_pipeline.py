@@ -5,7 +5,7 @@ import os
 import subprocess
 import sys
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -17,6 +17,13 @@ from pipeline.config import ROOT, load_config
 from pipeline.run import main, run_pipeline
 from pipeline.stages import prepare_series, read_source, source_fingerprint
 from tests.synthetic_source import build_source
+
+SAMPLE_DIR = ROOT / "tests" / "fixtures" / "approved_sample" / "current"
+FULL_STAGES = [
+    "read_source", "run_checks", "prepare_series", "write_observed", "fit_and_forecast",
+    "evaluate", "write_estimates", "accept", "run_monitoring",
+]
+PENDING_MODEL = NotImplementedError("fit_and_forecast pendiente: persona A")
 
 
 class PipelineTests(unittest.TestCase):
@@ -38,6 +45,8 @@ class PipelineTests(unittest.TestCase):
         config["source"]["path"] = str(folder / "source.xlsx")
         for key in ("candidates_dir", "approved_dir", "history_dir", "run_log_dir"):
             config["outputs"][key] = str(folder / key)
+        config["mlflow"]["tracking_uri"] = f"sqlite:///{(folder / 'mlflow.db').as_posix()}"
+        config["mlflow"]["artifact_root"] = str(folder / "mlflow_artifacts")
         config_path = folder / "pipeline.yaml"
         config_path.write_text(yaml.safe_dump(config, allow_unicode=True), encoding="utf-8")
         if with_source:
@@ -51,6 +60,29 @@ class PipelineTests(unittest.TestCase):
         previous = approved / "estimates.csv"
         previous.write_bytes(b"version aprobada")
         return previous
+
+    def patch_stages(self, accepted=True):
+        estimates = pd.read_csv(SAMPLE_DIR / "estimates.csv")
+        metrics = json.loads((SAMPLE_DIR / "metrics.json").read_text(encoding="utf-8"))
+        decision = {"accepted": accepted, "reasons": [] if accepted else ["El MAPE supera el umbral."]}
+        results = {
+            "fit_and_forecast": estimates[["period", "value"]],
+            "model_parameters": {"procedure": "holt_winters"},
+            "evaluate": metrics,
+            "accept": decision,
+            "run_monitoring": [],
+            "publish": "version",
+            "log_run": "mlflow-run",
+        }
+        stack = ExitStack()
+        mocks = {
+            name: stack.enter_context(patch(f"pipeline.run.{name}", return_value=value))
+            for name, value in results.items()
+        }
+        return stack, mocks
+
+    def read_metadata(self, candidate):
+        return json.loads((candidate / "run.json").read_text(encoding="utf-8"))
 
     def test_series_preserves_missing_month_and_excludes_other_travelers(self):
         series = prepare_series(self.frame, self.config)
@@ -100,13 +132,19 @@ class PipelineTests(unittest.TestCase):
             source = Path(raw_config["source"]["path"])
             self.assertEqual(source_fingerprint(source), hashlib.sha256(source.read_bytes()).hexdigest())
 
-    def test_pipeline_writes_candidate_and_quality_report_without_publication(self):
+    def test_pending_model_stage_fails_after_writing_observed(self):
         with TemporaryDirectory(dir=ROOT) as folder:
             config_path, config = self.write_config(Path(folder), self.source)
             previous = self.write_approved(config)
-            candidate = run_pipeline(config_path)
+            error_output = io.StringIO()
+            with patch("pipeline.run.fit_and_forecast", side_effect=PENDING_MODEL), \
+                    patch("pipeline.run.log_run", side_effect=NotImplementedError("log_run pendiente: persona B")), \
+                    redirect_stderr(error_output):
+                self.assertEqual(main(["--config", str(config_path)]), 1)
+            self.assertIn("fit_and_forecast pendiente", error_output.getvalue())
+            candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
             observed = pd.read_csv(candidate / "observed.csv")
-            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            metadata = self.read_metadata(candidate)
             report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
             self.assertEqual(list(observed.columns), config["outputs"]["estimate_columns"])
             self.assertEqual(len(observed), len(self.source) // 2)
@@ -116,22 +154,83 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(set(observed["destination"]), {"guatemala"})
             self.assertEqual(set(observed["run_id"]), {candidate.name})
             self.assertEqual(metadata["run_id"], candidate.name)
-            self.assertEqual(metadata["status"], "prepared")
+            self.assertEqual(metadata["status"], "failed")
+            self.assertEqual(metadata["errors"], ["fit_and_forecast pendiente: persona A"])
+            self.assertEqual(metadata["completed_stages"], FULL_STAGES[:4])
+            self.assertEqual(metadata["publication"], "not_attempted")
+            self.assertIsNone(metadata["metrics"])
+            self.assertIsNone(metadata["acceptance"])
+            self.assertEqual(metadata["warnings"], ["No se registró la ejecución en MLflow: log_run pendiente: persona B"])
             self.assertEqual(metadata["checks_status"], "executed")
             self.assertEqual({check["status"] for check in metadata["checks"]}, {"ok"})
-            self.assertEqual(metadata["warnings"], [])
-            self.assertEqual(metadata["publication"], "not_attempted")
-            self.assertEqual(
-                metadata["completed_stages"], ["read_source", "run_checks", "prepare_series", "write_observed"]
-            )
             self.assertEqual(report["run_id"], candidate.name)
             self.assertEqual(report["status"], "ok")
             self.assertEqual(report["checks"], metadata["checks"])
             self.assertLessEqual(metadata["started_at"], metadata["finished_at"])
             self.assertEqual(metadata["source_fingerprint"], source_fingerprint(config["source"]["path"]))
+            self.assertFalse((candidate / config["outputs"]["estimates_file"]).exists())
+            self.assertFalse((candidate / "metrics.json").exists())
             log_path = Path(config["outputs"]["run_log_dir"]) / f"{candidate.name}.json"
             self.assertEqual(json.loads(log_path.read_text(encoding="utf-8")), metadata)
+            self.assertEqual(list(previous.parent.iterdir()), [previous])
             self.assertEqual(previous.read_bytes(), b"version aprobada")
+
+    def test_accepted_candidate_is_published_after_writing_every_file(self):
+        with TemporaryDirectory(dir=ROOT) as folder:
+            config_path, config = self.write_config(Path(folder), self.source)
+            stack, mocks = self.patch_stages(accepted=True)
+            published = {}
+            mocks["publish"].side_effect = lambda candidate, _: published.update(
+                files={path.name for path in candidate.iterdir()},
+                run=self.read_metadata(candidate),
+            )
+            with stack, redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--config", str(config_path)]), 0)
+            candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
+            metadata = self.read_metadata(candidate)
+            estimates = pd.read_csv(candidate / config["outputs"]["estimates_file"])
+            self.assertEqual(metadata["status"], "completed")
+            self.assertEqual(metadata["publication"], "published")
+            self.assertEqual(metadata["completed_stages"], FULL_STAGES + ["publish", "log_run"])
+            self.assertEqual(metadata["mlflow_run_id"], "mlflow-run")
+            self.assertEqual(metadata["acceptance"], {"accepted": True, "reasons": []})
+            self.assertEqual(
+                published["files"],
+                {"estimates.csv", "observed.csv", "metrics.json", "quality_report.json", "run.json"},
+            )
+            self.assertEqual(published["run"]["publication"], "published")
+            self.assertEqual(list(estimates.columns), config["outputs"]["estimate_columns"])
+            self.assertEqual(set(estimates["kind"]), {"estimado"})
+            self.assertEqual(set(estimates["run_id"]), {candidate.name})
+            self.assertEqual(
+                json.loads((candidate / "metrics.json").read_text(encoding="utf-8")), metadata["metrics"]
+            )
+            mocks["log_run"].assert_called_once()
+
+    def test_rejected_candidate_is_not_published(self):
+        with TemporaryDirectory(dir=ROOT) as folder:
+            config_path, config = self.write_config(Path(folder), self.source)
+            previous = self.write_approved(config)
+            stack, mocks = self.patch_stages(accepted=False)
+            with stack, redirect_stdout(io.StringIO()):
+                self.assertEqual(main(["--config", str(config_path)]), 0)
+            metadata = self.read_metadata(next(Path(config["outputs"]["candidates_dir"]).iterdir()))
+            self.assertEqual(metadata["status"], "completed")
+            self.assertEqual(metadata["publication"], "rejected")
+            self.assertEqual(metadata["completed_stages"], FULL_STAGES + ["log_run"])
+            mocks["publish"].assert_not_called()
+            self.assertEqual(previous.read_bytes(), b"version aprobada")
+
+    def test_tracking_failure_does_not_hide_original_error(self):
+        with TemporaryDirectory(dir=ROOT) as folder:
+            config_path, config = self.write_config(Path(folder), self.source)
+            with patch("pipeline.run.fit_and_forecast", side_effect=ValueError("Modelo sin convergencia")), \
+                    patch("pipeline.run.log_run", side_effect=RuntimeError("MLflow no disponible")):
+                with self.assertRaisesRegex(ValueError, "Modelo sin convergencia"):
+                    run_pipeline(config_path)
+            metadata = self.read_metadata(next(Path(config["outputs"]["candidates_dir"]).iterdir()))
+            self.assertEqual(metadata["errors"], ["Modelo sin convergencia"])
+            self.assertEqual(metadata["warnings"], ["No se registró la ejecución en MLflow: MLflow no disponible"])
 
     def test_missing_source_returns_error_and_records_failure(self):
         with TemporaryDirectory(dir=ROOT) as folder:
@@ -144,10 +243,11 @@ class PipelineTests(unittest.TestCase):
             candidates = list(Path(config["outputs"]["candidates_dir"]).iterdir())
             self.assertEqual(len(candidates), 1)
             candidate = candidates[0]
-            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            metadata = self.read_metadata(candidate)
             self.assertEqual(metadata["status"], "failed")
             self.assertEqual(metadata["completed_stages"], [])
             self.assertIsNone(metadata["source_fingerprint"])
+            self.assertIsNone(metadata["metrics"])
             self.assertTrue(metadata["errors"])
             self.assertFalse((candidate / "observed.csv").exists())
             self.assertFalse(Path(config["outputs"]["approved_dir"]).exists())
@@ -159,9 +259,10 @@ class PipelineTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "check_columns_and_types"):
                 run_pipeline(config_path)
             candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
-            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            metadata = self.read_metadata(candidate)
             report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
             self.assertEqual(metadata["status"], "failed")
+            self.assertEqual(metadata["publication"], "blocked")
             self.assertEqual(metadata["completed_stages"], ["read_source", "run_checks"])
             self.assertEqual(report["status"], "stop")
             self.assertFalse((candidate / "observed.csv").exists())
@@ -178,7 +279,7 @@ class PipelineTests(unittest.TestCase):
                 self.assertEqual(main(["--config", str(config_path)]), 1)
             self.assertIn("check_uniqueness", error_output.getvalue())
             candidate = next(candidates.iterdir())
-            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            metadata = self.read_metadata(candidate)
             report = json.loads((candidate / config["outputs"]["quality_report_file"]).read_text(encoding="utf-8"))
             self.assertEqual(metadata["status"], "failed")
             self.assertEqual(metadata["publication"], "blocked")
@@ -189,11 +290,12 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(list(previous.parent.iterdir()), [previous])
             self.assertEqual(previous.read_bytes(), b"version aprobada")
             self.source.to_excel(config["source"]["path"], sheet_name=config["source"]["sheet"], index=False)
-            with redirect_stdout(io.StringIO()):
+            stack, mocks = self.patch_stages(accepted=True)
+            with stack, redirect_stdout(io.StringIO()):
                 self.assertEqual(main(["--config", str(config_path)]), 0)
             self.assertEqual(len(list(candidates.iterdir())), 2)
             self.assertEqual(len(list(candidates.glob("*/observed.csv"))), 1)
-            self.assertEqual(previous.read_bytes(), b"version aprobada")
+            mocks["publish"].assert_called_once()
 
     def test_check_exception_stops_preparation_and_preserves_approved_version(self):
         with TemporaryDirectory(dir=ROOT) as folder:
@@ -203,7 +305,7 @@ class PipelineTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "Control crítico"):
                     run_pipeline(config_path)
             candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
-            metadata = json.loads((candidate / "run.json").read_text(encoding="utf-8"))
+            metadata = self.read_metadata(candidate)
             self.assertEqual(metadata["status"], "failed")
             self.assertEqual(metadata["completed_stages"], ["read_source"])
             self.assertFalse((candidate / "observed.csv").exists())
@@ -220,9 +322,13 @@ class PipelineTests(unittest.TestCase):
                 encoding="utf-8",
                 env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
-            self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertIn("No se publicaron resultados", result.stdout)
-            self.assertEqual(len(list(Path(config["outputs"]["candidates_dir"]).glob("*/observed.csv"))), 1)
+            candidate = next(Path(config["outputs"]["candidates_dir"]).iterdir())
+            metadata = self.read_metadata(candidate)
+            self.assertEqual(result.returncode, 0 if metadata["status"] == "completed" else 1, result.stderr)
+            self.assertIn("write_observed", metadata["completed_stages"])
+            self.assertTrue((candidate / "observed.csv").is_file())
+            if metadata["status"] == "failed":
+                self.assertIn(metadata["errors"][0], result.stderr)
 
 
 if __name__ == "__main__":
