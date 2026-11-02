@@ -2,7 +2,7 @@
 
 ## Alcance implementado
 
-El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`, pero el ajuste, la evaluación, el monitoreo, el registro en MLflow y la publicación siguen pendientes y lanzan `NotImplementedError`.
+El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`. El ajuste de Holt-Winters, la evaluación con meses ocultos y la regla de aceptación están implementados y se describen en `evaluacion.md`. El monitoreo, el registro en MLflow y la publicación siguen pendientes y lanzan `NotImplementedError`.
 
 `pipeline/checks.py` define `run_checks(df, config)`, que devuelve una lista de `CheckResult` con estado `ok`, `warning` o `stop`. Los controles se detienen en el primer `stop`. El resultado se guarda en `quality_report.json` y en `run.json`.
 
@@ -58,7 +58,7 @@ Cada ejecución genera un identificador UTC con sufijo aleatorio y una carpeta c
 | `publication: rejected` | La versión no cumplió la regla de aceptación. |
 | `publication: published` | La versión se instaló como aprobada. |
 
-Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`. Con las etapas pendientes, la ejecución falla en `fit_and_forecast` después de escribir `observed.csv`.
+Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`. Con las etapas pendientes, la ejecución falla en `run_monitoring` después de escribir `estimates.csv`, `metrics.json` y la decisión de aceptación.
 
 ## Pruebas
 

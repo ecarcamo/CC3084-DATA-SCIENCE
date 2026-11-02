@@ -93,7 +93,7 @@ load_approved(path=None) -> dict | None
 
 Al final, `run.json` se escribe en la carpeta candidata y en `logs/<run_id>.json`.
 
-Mientras las funciones de A, B y C sigan pendientes, la ejecución termina con `status: failed`, el error `fit_and_forecast pendiente: persona A`, código de salida 1 y `results/approved/` sin cambios. `observed.csv` ya queda escrito.
+Mientras las funciones de B y C sigan pendientes, la ejecución termina con `status: failed`, el error `run_monitoring pendiente: persona B`, código de salida 1 y `results/approved/` sin cambios. `observed.csv`, `estimates.csv`, `metrics.json` y la decisión de `accept` ya quedan escritos.
 
 ## Estados de `run.json`
 
