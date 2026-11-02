@@ -1,7 +1,8 @@
 TEMP/
 data/
-results/candidates/
+results/
 logs/
+mlflow/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
