@@ -2,7 +2,7 @@
 
 ## Alcance implementado
 
-El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`. El ajuste de Holt-Winters, la evaluación con meses ocultos y la regla de aceptación están implementados y se describen en `evaluacion.md`. El monitoreo, el registro en MLflow y la comparación de reproducibilidad están implementados y se describen en `seguimiento.md`. La publicación sigue pendiente y lanza `NotImplementedError`.
+El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`. El ajuste de Holt-Winters, la evaluación con meses ocultos y la regla de aceptación están implementados y se describen en `evaluacion.md`. El monitoreo, el registro en MLflow y la comparación de reproducibilidad están implementados y se describen en `seguimiento.md`. La publicación atómica y la restauración están en `pipeline/publish.py`; el tablero lee la versión aprobada con `app/approved.py`. Docker y la operación están en el `README.md` raíz.
 
 `pipeline/checks.py` define `run_checks(df, config)`, que devuelve una lista de `CheckResult` con estado `ok`, `warning` o `stop`. Los controles se detienen en el primer `stop`. El resultado se guarda en `quality_report.json` y en `run.json`.
 
@@ -59,17 +59,12 @@ Cada ejecución genera un identificador UTC con sufijo aleatorio y una carpeta c
 | `publication: published` | La versión se instaló como aprobada. |
 | `publication: failed` | La versión fue aceptada, pero la publicación falló. |
 
-Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`. Mientras `publish` siga pendiente, una versión aceptada falla en `publish` después de escribir los cinco archivos del candidato y de registrarse en MLflow.
+Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`.
 
 ## Pruebas
 
-Las pruebas utilizan un Excel sintético temporal y rutas de salida temporales dentro del repositorio. Las etapas pendientes se sustituyen por dobles de prueba para comprobar la publicación, el rechazo y el registro sin depender de su implementación. `tests/fixtures/approved_sample/` contiene una versión aprobada sintética que sirve de referencia para el tablero y la publicación. Las pruebas no reemplazan la validación con la base institucional.
+Las pruebas utilizan un Excel sintético temporal y rutas de salida temporales dentro del repositorio. Algunas etapas se sustituyen por dobles de prueba para comprobar la publicación, el rechazo y el registro sin depender de su implementación. `tests/fixtures/approved_sample/` contiene una versión aprobada sintética que sirve de referencia para el tablero y la publicación. Las pruebas no reemplazan la validación con la base institucional.
 
-## Diagrama y redacción
+## Diagrama
 
-- `flow_diagram.excalidraw`: diagrama editable.
-- `flow_diagram.svg`: diagrama vectorial.
-- `flow_diagram.png`: imagen para el informe.
-- `../../informe/lab11_aporte_hugo.md`: secciones 2 y 3 para copiar manualmente a Word.
-
-El diagrama muestra el flujo completo previsto con estilo de trazo a mano y poco texto. No se ha modificado Word ni SharePoint.
+El diagrama del flujo está en el informe técnico (sección 2).

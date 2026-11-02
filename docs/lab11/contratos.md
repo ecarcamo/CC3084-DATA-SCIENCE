@@ -1,6 +1,6 @@
 # Laboratorio 11: contratos entre etapas
 
-Este documento fija las interfaces que permiten trabajar los puntos 4 a 8 en paralelo. Cada función pendiente existe como esqueleto con su contrato en el docstring y lanza `NotImplementedError` hasta que su responsable la implementa. Las pruebas de `tests/test_stage_contracts.py` verifican que los nombres y parámetros no cambien.
+Este documento fija las interfaces que permiten trabajar los puntos 4 a 8 en paralelo. Cada función tiene su contrato en el docstring. Las pruebas de `tests/test_stage_contracts.py` verifican que los nombres y parámetros no cambien.
 
 ## Responsables y archivos
 
@@ -92,8 +92,6 @@ load_approved(path=None) -> dict | None
 11. `log_run`: se ejecuta siempre en el bloque `finally`, después de escribir `run.json` en la carpeta candidata para que MLflow lo reciba completo. Si falla, se agrega una advertencia y se conserva el error original.
 
 Al final, `run.json` se vuelve a escribir con `mlflow_run_id` en la carpeta candidata y en `logs/<run_id>.json`.
-
-Mientras `publish` siga pendiente, una versión aceptada termina con `status: failed`, `publication: failed`, el error `publish pendiente: persona C`, código de salida 1 y `results/approved/` sin cambios. Los cinco archivos del candidato y el registro en MLflow ya quedan escritos.
 
 ## Estados de `run.json`
 

@@ -24,9 +24,8 @@ app/
     ├── seasonality.py       (G3: mapa de calor por año y mes)
     ├── annual_comparison.py (G4: totales anuales)
     ├── year_over_year.py    (G5: variación interanual mensual)
-    ├── predictions.py       (G6: observado frente a predicciones)
-    ├── model_errors.py      (G7: comparación de errores entre modelos)
-    └── model_deviations.py  (G8: desviación observado menos estimado)
+    ├── predictions.py       (G6: observado y estimado de la versión aprobada)
+    └── model_errors.py      (G7: error del procedimiento frente a la referencia)
 insumos/                     (series y resultados del Lab 1, copiados de lab9)
 docs/                        (enunciado, entregables, figuras y scripts de revisión)
 ```
@@ -35,28 +34,69 @@ Para añadir una visualización: crear `app/components/<nombre>.py` con `layout(
 y agregarla a `OBSERVED` o `MODELS` en `app/main.py`; el menú y «Gráficas visibles» la incluyen. Para
 enlazar una gráfica con la serie temporal, su callback escribe en `Output("series-selector", "value")`.
 
-## Laboratorio 11: pipeline (avance)
+## Laboratorio 11: MLOps
 
-Requisitos: Python 3.12 y las dependencias del proyecto.
+Detalle técnico en `docs/lab11/` (`contratos.md`, `evaluacion.md`, `seguimiento.md`).
 
-```bash
-pip install -r requirements.txt
-```
+### Requisitos previos
 
-La base institucional no se sube al repositorio. Colóquela en
-`data/raw/base_migracion_2009_2026jun.xlsx` (hoja `Datos`); la ruta, los períodos y los umbrales
-están en `config/pipeline.yaml`.
+- Docker 24 o posterior con Docker Compose v2.
+- La base institucional, que no se sube al repositorio ni entra a la imagen. Colóquela en
+  `data/raw/base_migracion_2009_2026jun.xlsx` (hoja `Datos`) o indique otra carpeta con `DATA_DIR`.
+- Sin Docker: Python 3.12 y `pip install -r requirements.txt` (versiones fijas).
 
-```bash
-python -m pipeline.run --config config/pipeline.yaml
-```
+Rutas, períodos, parámetros, semilla y umbrales están en `config/pipeline.yaml`.
 
-Cada ejecución crea `results/candidates/<run_id>/` con `quality_report.json` (resultado de los seis
-controles de calidad), `run.json` (etapas, advertencias, errores y estado de la publicación) y, si
-ningún control la detiene, `observed.csv` con la serie mensual de visitantes. El mismo registro se
-copia en `logs/<run_id>.json`. Si un control crítico falla, el comando termina con código 1, marca
-la ejecución como `failed` con la causa y no modifica `results/approved/`.
+### Construcción e inicio
 
 ```bash
-python -m unittest tests.test_checks tests.test_pipeline
+mkdir -p results logs mlflow
+GIT_COMMIT=$(git rev-parse HEAD) docker compose build
+docker compose up -d
 ```
+
+En PowerShell: `$env:GIT_COMMIT = git rev-parse HEAD; docker compose build`.
+
+- Tablero: http://localhost:8050 (modo debug con `DASH_DEBUG=true`).
+- MLflow: http://localhost:5000, experimento `observatorio-guatemala-visitantes`.
+
+### Ejecución del pipeline
+
+```bash
+docker compose run --rm pipeline
+DATA_DIR=/otra/carpeta docker compose run --rm pipeline
+```
+
+Lee, valida (seis controles), prepara la serie, ajusta Holt-Winters, evalúa con meses ocultos, aplica la
+regla de aceptación, monitorea y, solo si la versión se acepta, la publica. Termina con código 1 si un
+control crítico falla, y en ese caso no toca la versión aprobada.
+
+### Registros y resultados
+
+| Ruta | Contenido |
+|---|---|
+| `results/candidates/<run_id>/` | Los cinco archivos de cada ejecución |
+| `results/approved/current/` | Versión aprobada que lee el tablero |
+| `results/approved/history/<run_id>/` | Versiones aprobadas anteriores |
+| `logs/<run_id>.json` | Registro de la ejecución: etapas, advertencias, errores y publicación |
+| `mlflow/` | Base SQLite y artefactos de MLflow |
+
+Las cuatro carpetas se montan desde el host: persisten al eliminar y volver a crear los contenedores.
+
+### Restauración de una versión
+
+```bash
+ls results/approved/history
+docker compose run --rm pipeline python -m pipeline.publish --restore <run_id>
+```
+
+El tablero lee la versión restaurada sin reiniciarse.
+
+### Pruebas y detención
+
+```bash
+docker compose run --rm pipeline python -m unittest discover -s tests -t . -p "test_*.py"
+docker compose down
+```
+
+`docker compose down` detiene y elimina los contenedores; los resultados y MLflow quedan en el host.
