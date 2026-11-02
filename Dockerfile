@@ -16,6 +16,8 @@ COPY pipeline pipeline
 COPY config config
 COPY insumos insumos
 COPY tests tests
+COPY docs/scripts docs/scripts
+RUN chmod -R a+rwX /app
 
 ARG GIT_COMMIT=desconocido
 ENV GIT_COMMIT=${GIT_COMMIT}

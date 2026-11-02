@@ -10,7 +10,8 @@ TEMP
 models
 infografia
 planes_lab11
-docs
+docs/*
+!docs/scripts
 src
 **/__pycache__
 *.pyc
