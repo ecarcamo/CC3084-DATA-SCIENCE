@@ -22,3 +22,9 @@ Sobre los meses evaluados se calculan tres métricas con la diferencia entre est
 - MAPE: error absoluto medio como porcentaje del observado.
 
 Los meses con observado igual a cero se excluyen del MAPE porque el error porcentual no está definido, pero siguen en MAE y RMSE. Si todos los observados son cero, `mape_pct` vale `null`. Esta regla se guarda en `mape_zero_rule` dentro de `metrics.json`. Sin meses evaluados, las tres métricas valen `null`.
+
+## 5.3 Referencia
+
+La referencia es el estacional ingenuo con rezago de 12 meses, definido en `baseline`: estima cada mes con el valor observado del mismo mes del año anterior. Ese valor siempre es anterior al mes evaluado y sale del mismo historial truncado que recibe Holt-Winters.
+
+Ambos procedimientos se evalúan sobre los mismos meses. Si falta el observado o el valor de referencia de un mes, ese mes se excluye para los dos. `metrics.json` guarda las métricas de cada uno en `procedure` y `baseline`.

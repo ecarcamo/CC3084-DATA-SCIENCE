@@ -29,6 +29,10 @@ def evaluate(series, config):
             "name": config["model"]["procedure"],
             **error_metrics(forecasts["observed"], forecasts["procedure"]),
         },
+        "baseline": {
+            "name": config["baseline"]["procedure"],
+            **error_metrics(forecasts["observed"], forecasts["baseline"]),
+        },
         "evaluated_periods": list(forecasts.index),
         "mape_zero_rule": MAPE_ZERO_RULE,
     }
@@ -50,16 +54,24 @@ def error_metrics(observed, estimated):
 def hidden_month_forecasts(series, config):
     periods = config["periods"]
     horizon = config["model"]["evaluation_horizon"]
+    lag = config["baseline"]["lag_months"]
     rows = []
     for month in pd.date_range(periods["evaluation_start"], periods["evaluation_end"], freq="MS"):
         observed = series.get(month)
-        if pd.isna(observed):
-            continue
         last_known = month - pd.DateOffset(months=horizon)
         history = series.loc[:last_known]
+        baseline = history.get(month - pd.DateOffset(months=lag))
+        if pd.isna(observed) or pd.isna(baseline):
+            continue
         estimate = fit_model(history, config, last_known).forecast(horizon).iloc[-1]
-        rows.append({"period": month.strftime("%Y-%m"), "observed": observed, "procedure": estimate})
-    return pd.DataFrame(rows, columns=["period", "observed", "procedure"]).set_index("period").astype(float)
+        rows.append({
+            "period": month.strftime("%Y-%m"),
+            "observed": observed,
+            "procedure": estimate,
+            "baseline": baseline,
+        })
+    columns = ["period", "observed", "procedure", "baseline"]
+    return pd.DataFrame(rows, columns=columns).set_index("period").astype(float)
 
 
 def accept(checks, estimates, metrics, config):

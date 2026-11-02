@@ -60,5 +60,30 @@ class MetricTests(unittest.TestCase):
         self.assertEqual(metrics["mape_zero_rule"], MAPE_ZERO_RULE)
 
 
+class BaselineTests(unittest.TestCase):
+    def setUp(self):
+        self.config = load_config("config/pipeline.yaml")
+        self.series = prepare_series(build_source(self.config), self.config)
+
+    def test_baseline_repeats_value_from_twelve_months_before(self):
+        forecasts = hidden_month_forecasts(self.series, self.config)
+        expected = self.series.shift(12).loc["2025-07-01":"2026-06-01"].to_numpy()
+        np.testing.assert_allclose(forecasts["baseline"].to_numpy(), expected)
+
+    def test_month_without_baseline_is_excluded_for_both_procedures(self):
+        self.series.loc["2022-08-01"] = np.nan
+        self.config["baseline"]["lag_months"] = 36
+        forecasts = hidden_month_forecasts(self.series, self.config)
+        self.assertEqual(list(forecasts.index), [period for period in EVALUATION_PERIODS if period != "2025-08"])
+        self.assertFalse(forecasts.isna().any().any())
+
+    def test_metrics_compare_both_procedures_on_same_months(self):
+        metrics = evaluate(self.series, self.config)
+        self.assertEqual(list(metrics), ["procedure", "baseline", "evaluated_periods", "mape_zero_rule"])
+        self.assertEqual(metrics["baseline"]["name"], "seasonal_naive")
+        self.assertAlmostEqual(metrics["baseline"]["mae"], 24.0)
+        self.assertAlmostEqual(metrics["baseline"]["rmse"], 24.0)
+
+
 if __name__ == "__main__":
     unittest.main()
