@@ -84,10 +84,24 @@ class TrackingTests(unittest.TestCase):
         self.assertTrue(any(Path(self.config["mlflow"]["artifact_root"]).rglob("run.json")))
 
     def test_missing_git_is_recorded_as_unknown(self):
-        with patch("pipeline.tracking.subprocess.run", side_effect=FileNotFoundError("git")):
+        with patch("pipeline.tracking.subprocess.run", side_effect=FileNotFoundError("git")), \
+                patch.dict(os.environ, {"GIT_COMMIT": ""}):
             run = self.client.get_run(log_run(self.metadata, self.config, self.candidate))
         self.assertEqual(run.data.tags["git_commit"], "desconocido")
         self.assertEqual(run.data.tags["git_dirty"], "desconocido")
+
+    def test_commit_from_environment_is_used_without_git(self):
+        with patch("pipeline.tracking.subprocess.run", side_effect=FileNotFoundError("git")), \
+                patch.dict(os.environ, {"GIT_COMMIT": "abc123"}):
+            run = self.client.get_run(log_run(self.metadata, self.config, self.candidate))
+        self.assertEqual(run.data.tags["git_commit"], "abc123")
+        self.assertEqual(run.data.tags["git_dirty"], "desconocido")
+
+    def test_dependency_versions_are_recorded(self):
+        tags = self.client.get_run(log_run(self.metadata, self.config, self.candidate)).data.tags
+        self.assertTrue(tags["version.python"])
+        self.assertNotEqual(tags["version.statsmodels"], "desconocido")
+        self.assertNotEqual(tags["version.pandas"], "desconocido")
 
 
 if __name__ == "__main__":

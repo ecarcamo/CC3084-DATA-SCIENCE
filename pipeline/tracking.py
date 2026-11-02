@@ -1,6 +1,9 @@
 import json
+import os
+import platform
 import subprocess
 import time
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from mlflow.entities import Metric, Param, RunTag
@@ -11,6 +14,8 @@ from pipeline.config import ROOT
 SQLITE_PREFIX = "sqlite:///"
 RUN_STATUS = {"completed": "FINISHED", "failed": "FAILED"}
 UNKNOWN = "desconocido"
+GIT_COMMIT_VARIABLE = "GIT_COMMIT"
+TRACKED_PACKAGES = ("pandas", "numpy", "scipy", "statsmodels", "openpyxl", "PyYAML", "mlflow")
 MAX_TAG_LENGTH = 5000
 PERIOD_KEYS = (
     "fit_start",
@@ -110,6 +115,7 @@ def _tags(metadata):
         "git_dirty": dirty,
         **{f"check.{check['name']}": check["status"] for check in metadata["checks"]},
         **{f"monitor.{check['name']}": check["status"] for check in metadata["monitoring"]},
+        **_dependency_versions(),
     }
     if metadata["acceptance"] is not None:
         tags["accepted"] = metadata["acceptance"]["accepted"]
@@ -120,8 +126,20 @@ def _tags(metadata):
 
 def _git_state():
     commit = _git("rev-parse", "HEAD")
+    if commit is None:
+        return os.environ.get(GIT_COMMIT_VARIABLE) or UNKNOWN, UNKNOWN
     changes = _git("status", "--porcelain", "--untracked-files=no")
     return commit or UNKNOWN, UNKNOWN if changes is None else str(bool(changes)).lower()
+
+
+def _dependency_versions():
+    versions = {"version.python": platform.python_version()}
+    for package in TRACKED_PACKAGES:
+        try:
+            versions[f"version.{package}"] = version(package)
+        except PackageNotFoundError:
+            versions[f"version.{package}"] = UNKNOWN
+    return versions
 
 
 def _git(*args):

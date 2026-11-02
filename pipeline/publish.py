@@ -55,7 +55,6 @@ def _install(source, config):
     current = latest_approved(config)
     if approved.exists() and current is None:
         raise ValueError(f"La versión aprobada en {approved} está incompleta; revísela antes de reemplazarla.")
-    # ponytail: sin bloqueo entre procesos; dos publicaciones simultáneas pueden competir por approved_dir.
     staged = _stage(source, approved)
     try:
         if current is None:
