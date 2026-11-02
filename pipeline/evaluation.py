@@ -1,3 +1,8 @@
+import pandas as pd
+
+from pipeline.model import fit_model
+
+
 def evaluate(series, config):
     """Evalúa el procedimiento y la referencia sobre los mismos meses ocultos.
 
@@ -12,7 +17,26 @@ def evaluate(series, config):
         mape_zero_rule: texto que explica cómo se tratan los observados iguales a cero
     Se guarda como `metrics.json`.
     """
-    raise NotImplementedError("evaluate pendiente: persona A")
+    forecasts = hidden_month_forecasts(series, config)
+    return {
+        "procedure": {"name": config["model"]["procedure"]},
+        "evaluated_periods": list(forecasts.index),
+    }
+
+
+def hidden_month_forecasts(series, config):
+    periods = config["periods"]
+    horizon = config["model"]["evaluation_horizon"]
+    rows = []
+    for month in pd.date_range(periods["evaluation_start"], periods["evaluation_end"], freq="MS"):
+        observed = series.get(month)
+        if pd.isna(observed):
+            continue
+        last_known = month - pd.DateOffset(months=horizon)
+        history = series.loc[:last_known]
+        estimate = fit_model(history, config, last_known).forecast(horizon).iloc[-1]
+        rows.append({"period": month.strftime("%Y-%m"), "observed": observed, "procedure": estimate})
+    return pd.DataFrame(rows, columns=["period", "observed", "procedure"]).set_index("period").astype(float)
 
 
 def accept(checks, estimates, metrics, config):
