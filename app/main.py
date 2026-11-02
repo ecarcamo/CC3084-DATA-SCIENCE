@@ -1,8 +1,7 @@
 from dash import Dash, Input, Output, State, dcc, html
 
 from app.components import (
-    annual_comparison, model_deviations, model_errors, predictions, ranking, seasonality, time_series,
-    year_over_year,
+    annual_comparison, model_errors, predictions, ranking, seasonality, time_series, year_over_year,
 )
 
 OBSERVED = [
@@ -14,8 +13,7 @@ OBSERVED = [
 ]
 MODELS = [
     ("predictions", "G6 · Observado y estimado", predictions),
-    ("model-errors", "G7 · Error de los modelos", model_errors),
-    ("model-deviations", "G8 · Desviación por mes", model_deviations),
+    ("model-errors", "G7 · Precisión de la validación", model_errors),
 ]
 CHARTS = OBSERVED + MODELS
 SECTIONS = [section for section, _, _ in CHARTS]
@@ -60,10 +58,10 @@ app.layout = html.Div(
                 html.H1("Observatorio de turismo sostenible de Guatemala"),
                 html.P(
                     "Explore el ingreso de viajeros internacionales registrado de enero de 2009 a junio de 2026 y "
-                    "compare lo que estimaron cinco modelos existentes con lo que se registró."
+                    "consulte las estimaciones de visitantes de la versión aprobada vigente."
                 ),
                 html.Nav(
-                    [nav_group("Datos observados", OBSERVED), nav_group("Predicciones y modelos", MODELS)],
+                    [nav_group("Datos observados", OBSERVED), nav_group("Estimaciones aprobadas", MODELS)],
                     **{"aria-label": "Secciones del tablero"},
                 ),
             ],
@@ -78,7 +76,7 @@ app.layout = html.Div(
                     className="card-text",
                 ),
                 picker_group("Datos observados", OBSERVED, "visible-observed"),
-                picker_group("Predicciones y modelos", MODELS, "visible-models"),
+                picker_group("Estimaciones aprobadas", MODELS, "visible-models"),
             ],
         ),
         html.Main(children=[

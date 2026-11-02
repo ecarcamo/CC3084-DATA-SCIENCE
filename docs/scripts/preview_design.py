@@ -6,9 +6,9 @@ sys.path.insert(0, str(ROOT))
 
 from dash import Dash, html
 
-from app.components import annual_comparison, model_deviations, model_errors, predictions, ranking, seasonality, time_series
+from app.components import annual_comparison, model_errors, predictions, ranking, seasonality, time_series
 
-COMPONENTS = [time_series, ranking, seasonality, annual_comparison, predictions, model_errors, model_deviations]
+COMPONENTS = [time_series, ranking, seasonality, annual_comparison, predictions, model_errors]
 
 
 def build_app():

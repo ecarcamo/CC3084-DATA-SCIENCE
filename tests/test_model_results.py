@@ -1,4 +1,5 @@
-import math
+import os
+import shutil
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -6,100 +7,87 @@ from unittest.mock import patch
 
 import pandas as pd
 
-from app import model_results
+from app import approved, model_results
+from app.approved import APPROVED_DIR_VARIABLE
+from pipeline.config import ROOT, load_config
+from pipeline.publish import publish, restore
+from tests.test_approved_contract import SAMPLE_DIR
+
+OLD_ID = "20260701T120000000000Z_a1b2c3d4"
+NEW_ID = "20260801T120000000000Z_e5f6a7b8"
 
 
-class ModelResultsTests(unittest.TestCase):
-    def test_real_sources_offer_five_models_on_the_same_dates(self):
-        for series_key in model_results.data.load_labels().index:
-            frame = model_results.align_models(series_key)
-            self.assertEqual(len(frame), 63)
-            self.assertEqual(len(frame.attrs["models"]), 5)
-            self.assertEqual(frame.index.min(), pd.Timestamp("2021-04-01"))
-            self.assertEqual(frame.index.max(), pd.Timestamp("2026-06-01"))
+def use_folder(test, folder):
+    test.enterContext(patch.dict(os.environ, {APPROVED_DIR_VARIABLE: str(folder)}))
+    model_results._cache.update(key=None, version=None)
 
-    def test_errors_use_only_the_shared_valid_dates(self):
-        observed = pd.Series([100.0, 200.0, 0.0, 400.0], index=pd.date_range("2024-01-01", periods=4, freq="MS"), name="observed")
-        forecasts = {
-            "ses": pd.Series([90.0, 180.0, 10.0], index=observed.index[:3], name="predicted"),
-            "sarima": pd.Series([150.0, 20.0, 999.0], index=observed.index[1:], name="predicted"),
-        }
-        with patch.object(model_results, "load_observations", return_value=observed), patch.object(
-            model_results, "load_predictions", side_effect=lambda series, model: forecasts[model]
-        ):
-            errors = model_results.calculate_errors("total", ["ses", "sarima"])
-        self.assertEqual(errors.loc["ses", "count"], 2)
-        self.assertEqual(errors.loc["sarima", "count"], 2)
-        self.assertAlmostEqual(errors.loc["ses", "mae"], 15)
-        self.assertAlmostEqual(errors.loc["ses", "rmse"], math.sqrt(250))
-        self.assertAlmostEqual(errors.loc["ses", "mape"], 10)
-        self.assertAlmostEqual(errors.loc["sarima", "mae"], 35)
-        self.assertAlmostEqual(errors.loc["sarima", "mape"], 25)
-        self.assertEqual(errors.loc["ses", "mape_excluded"], 1)
 
-    def test_all_zero_observations_leave_mape_undefined(self):
-        dates = pd.date_range("2024-01-01", periods=2, freq="MS")
-        observed = pd.Series([0.0, 0.0], index=dates, name="observed")
-        predicted = pd.Series([10.0, 20.0], index=dates, name="predicted")
-        with patch.object(model_results, "load_observations", return_value=observed), patch.object(
-            model_results, "load_predictions", return_value=predicted
-        ):
-            errors = model_results.calculate_errors("total", ["ses"])
-        self.assertTrue(pd.isna(errors.loc["ses", "mape"]))
-        self.assertEqual(errors.loc["ses", "mae"], 15)
-        self.assertEqual(errors.loc["ses", "mape_excluded"], 2)
+class CurrentVersionTests(unittest.TestCase):
+    def setUp(self):
+        self.folder = Path(self.enterContext(TemporaryDirectory()))
+        self.config = load_config("config/pipeline.yaml")
+        self.config["outputs"]["approved_dir"] = self.folder / "current"
+        self.config["outputs"]["history_dir"] = self.folder / "history"
+        use_folder(self, self.config["outputs"]["approved_dir"])
 
-    def test_missing_values_are_removed_without_becoming_zero(self):
-        dates = pd.date_range("2024-01-01", periods=3, freq="MS")
-        observed = pd.Series([100.0, float("nan"), 300.0], index=dates, name="observed")
-        predicted = pd.Series([80.0, 120.0, float("nan")], index=dates, name="predicted")
-        with patch.object(model_results, "load_observations", return_value=observed), patch.object(
-            model_results, "load_predictions", return_value=predicted
-        ):
-            frame = model_results.align_observations("total", "ses")
-        self.assertEqual(len(frame), 1)
-        self.assertEqual(frame.iloc[0]["error"], 20)
+    def test_missing_version_is_unavailable_until_one_is_published(self):
+        self.assertIsNone(model_results.current_version())
+        publish(SAMPLE_DIR / "current", self.config)
+        self.assertEqual(model_results.current_version()["run"]["run_id"], NEW_ID)
 
-    def test_duplicate_dates_and_nonfinite_values_are_rejected(self):
-        cases = [
-            "fecha,prediccion\n2024-01-01,10\n2024-01-01,20\n",
-            "fecha,prediccion\n2024-01-01,inf\n",
-            "fecha,prediccion\n2024-01-01,texto\n",
-            "fecha,prediccion\nfecha_invalida,10\n",
-            "fecha,prediccion\n2024-01-15,10\n",
-        ]
-        with TemporaryDirectory() as folder, patch.object(model_results, "PREDICTIONS_DIR", Path(folder)):
-            path = Path(folder) / "total_ses.csv"
-            for content in cases:
-                with self.subTest(content=content):
-                    path.write_text(content, encoding="utf-8")
-                    with self.assertRaises(model_results.ModelDataError):
-                        model_results.load_predictions("total", "ses")
+    def test_version_is_read_once_and_reread_only_after_publication_or_restore(self):
+        shutil.copytree(SAMPLE_DIR / "history" / OLD_ID, self.config["outputs"]["approved_dir"])
+        with patch.object(model_results.approved, "load_approved", wraps=approved.load_approved) as loader:
+            for _ in range(3):
+                self.assertEqual(model_results.current_version()["run"]["run_id"], OLD_ID)
+            self.assertEqual(loader.call_count, 1)
+            publish(SAMPLE_DIR / "current", self.config)
+            self.assertEqual(model_results.current_version()["run"]["run_id"], NEW_ID)
+            restore(OLD_ID, self.config)
+            self.assertEqual(model_results.current_version()["run"]["run_id"], OLD_ID)
+            self.assertEqual(loader.call_count, 3)
 
-    def test_metric_keys_must_be_unique(self):
-        with TemporaryDirectory() as folder:
-            path = Path(folder) / "metrics.csv"
-            path.write_text("serie,modelo,mae,rmse,mape\ntotal,ses,1,1,1\ntotal,ses,2,2,2\n", encoding="utf-8")
-            with patch.object(model_results, "METRICS_FILE", path), self.assertRaises(model_results.ModelDataError):
-                model_results.load_metrics()
+    def test_unreadable_version_is_reported_as_unavailable(self):
+        current = self.config["outputs"]["approved_dir"]
+        shutil.copytree(SAMPLE_DIR / "current", current)
+        (current / "run.json").write_text("{", encoding="utf-8")
+        with self.assertLogs("app.model_results", level="ERROR"):
+            self.assertIsNone(model_results.current_version())
 
-    def test_real_sample_matches_independent_scalar_arithmetic(self):
-        observed = pd.read_csv(model_results.data.SERIES_DIR / "serie_total.csv").set_index("fecha")["viajeros"]
-        predicted = pd.read_csv(model_results.PREDICTIONS_DIR / "total_ses.csv").set_index("fecha")["prediccion"]
-        dates = sorted(set(observed.index) & set(predicted.index))
-        distances = [abs(float(observed[date]) - float(predicted[date])) for date in dates]
-        errors = model_results.calculate_errors("total", ["ses"])
-        self.assertAlmostEqual(errors.loc["ses", "mae"], sum(distances) / len(distances))
-        self.assertAlmostEqual(errors.loc["ses", "rmse"], math.sqrt(sum(value * value for value in distances) / len(distances)))
 
-    def test_invalid_keys_and_empty_or_reversed_periods(self):
-        self.assertTrue(model_results.align_observations("total", "ses", "2009-01-01", "2010-01-01").empty)
-        for series, model, start, end in [
-            ("../total", "ses", None, None), ("total", "../ses", None, None),
-            ("total", "ses", "2026-01-01", "2025-01-01"), ("total", "ses", "incorrecta", None),
-        ]:
-            with self.subTest(series=series, model=model, start=start), self.assertRaises(model_results.ModelDataError):
-                model_results.align_observations(series, model, start, end)
+class FormattingTests(unittest.TestCase):
+    def test_monthly_values_keep_absent_months_empty_instead_of_zero(self):
+        frame = pd.DataFrame({"period": ["2024-03", "2024-01", "2024-04"], "value": [30, 10, None]})
+        series = model_results.monthly(frame)
+        self.assertEqual(list(series.index), list(pd.date_range("2024-01-01", "2024-04-01", freq="MS")))
+        self.assertEqual(series.iloc[0], 10)
+        self.assertTrue(series.iloc[[1, 3]].isna().all())
+
+    def test_spanish_labels(self):
+        self.assertEqual(model_results.number(12345.678, 1), "12.345,7")
+        self.assertEqual(model_results.number(250), "250")
+        self.assertEqual(model_results.updated_label("2026-08-01T12:00:00+00:00"), "1 de agosto de 2026, 12:00 UTC")
+        self.assertEqual(model_results.updated_label("2026-08-01T06:30:00-06:00"), "1 de agosto de 2026, 12:30 UTC")
+        self.assertEqual(
+            model_results.evaluated_label(["2026-06", "2025-07", "2025-08"]),
+            "3 meses evaluados entre julio de 2025 y junio de 2026",
+        )
+        self.assertEqual(model_results.evaluated_label([]), "ningún mes evaluado")
+        self.assertEqual(model_results.procedure_label("holt_winters"), "Holt-Winters")
+        self.assertEqual(model_results.procedure_label("otro"), "otro")
+
+
+class SourceBoundaryTests(unittest.TestCase):
+    def test_no_dashboard_module_reads_previous_lab_results(self):
+        for path in (ROOT / "app").rglob("*.py"):
+            with self.subTest(path=path.name):
+                self.assertNotIn("resultados", path.read_text(encoding="utf-8"))
+
+    def test_estimate_components_do_not_read_insumos(self):
+        for name in ["predictions.py", "model_errors.py"]:
+            text = (ROOT / "app" / "components" / name).read_text(encoding="utf-8")
+            self.assertNotIn("app import data", text)
+            self.assertNotIn("insumos", text)
 
 
 if __name__ == "__main__":

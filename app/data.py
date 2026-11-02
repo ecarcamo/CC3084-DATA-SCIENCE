@@ -5,7 +5,18 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 SERIES_DIR = ROOT / "insumos" / "series"
-RESULTS_DIR = ROOT / "insumos" / "resultados"
+LABELS = pd.DataFrame(
+    [
+        ("total", "Total", "Referencia"),
+        ("via_aerea", "Vía Aérea", "Vía de ingreso"),
+        ("via_terrestre", "Vía Terrestre", "Vía de ingreso"),
+        ("via_maritima", "Vía Marítima", "Vía de ingreso"),
+        ("pais_el_salvador", "El Salvador", "País de residencia"),
+        ("pais_estados_unidos", "Estados Unidos", "País de residencia"),
+        ("pais_honduras", "Honduras", "País de residencia"),
+    ],
+    columns=["clave", "etiqueta", "categoria"],
+).set_index("clave")
 
 GRANULARITY = {
     "month": {"label": "Mensual", "rule": None, "months": 1},
@@ -15,8 +26,7 @@ GRANULARITY = {
 
 
 def load_labels():
-    frame = pd.read_csv(RESULTS_DIR / "comparativo_series.csv", usecols=["clave", "etiqueta", "categoria"])
-    return frame.set_index("clave")
+    return LABELS.copy()
 
 
 def load_series(key):

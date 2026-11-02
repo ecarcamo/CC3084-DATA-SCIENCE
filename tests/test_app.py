@@ -97,17 +97,17 @@ def test_responsive_graphs_reserve_height_in_the_layout():
     for identifier, height in [
         ("time-series-graph", "420px"), ("ranking-graph", "360px"), ("seasonality-graph", "520px"),
         ("annual-graph", "420px"), ("yoy-graph", "420px"), ("predictions-graph", "460px"),
-        ("errors-graph", "420px"), ("deviations-graph", "420px"),
+        ("errors-graph", "420px"),
     ]:
         graph = find(app.layout, identifier)
         assert graph.responsive is True
         assert graph.style["height"] == height
 
 
-def test_eight_charts_are_integrated_once_with_unique_ids():
+def test_seven_charts_are_integrated_once_with_unique_ids():
     ids = identifiers(app.layout)
     assert len(ids) == len(set(ids))
-    assert len(main.CHARTS) == 8
+    assert len(main.CHARTS) == 7
     for section in main.SECTIONS:
         assert find(app.layout, section) is not None
         assert find(app.layout, f"nav-{section}") is not None
@@ -115,7 +115,7 @@ def test_eight_charts_are_integrated_once_with_unique_ids():
     outputs = [item["output"] for item in dependencies]
     assert len(outputs) == len(set(outputs))
     for output in ["yoy-graph.figure", "seasonality-graph.figure", "annual-graph.figure",
-                   "predictions-graph.figure", "errors-graph.figure", "deviations-graph.figure"]:
+                   "predictions-graph.figure", "errors-graph.figure"]:
         assert any(output in item for item in outputs)
 
 

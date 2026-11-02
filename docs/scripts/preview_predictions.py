@@ -15,7 +15,7 @@ def build_app():
     app.layout = html.Div(className="page", children=[
         html.Header(className="header", children=[
             html.H1("Serie temporal y predicciones"),
-            html.P("Explore lo registrado y compárelo con las estimaciones existentes de los modelos."),
+            html.P("Explore lo registrado y consulte las estimaciones de la versión aprobada."),
         ]),
         html.Main(children=[time_series.layout(), predictions.layout()]),
     ])

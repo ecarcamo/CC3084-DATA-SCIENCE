@@ -191,7 +191,7 @@ class DesignComponentTests(unittest.TestCase):
     def test_preview_has_unique_ids_and_does_not_duplicate_shared_callbacks(self):
         ids = identifiers(self.app.layout)
         self.assertEqual(len(ids), len(set(ids)))
-        for identifier in ["seasonality-graph", "annual-graph", "predictions-graph", "errors-graph", "deviations-graph"]:
+        for identifier in ["seasonality-graph", "annual-graph", "predictions-graph", "errors-graph"]:
             self.assertIn(identifier, ids)
         response = self.client.get("/_dash-layout")
         self.assertEqual(response.status_code, 200)
