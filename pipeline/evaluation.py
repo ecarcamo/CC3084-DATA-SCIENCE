@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 
+from pipeline.checks import STOP
 from pipeline.model import fit_model
 
 MAPE_ZERO_RULE = (
@@ -83,4 +84,65 @@ def accept(checks, estimates, metrics, config):
     Salida: {"accepted": bool, "reasons": [str, ...]}. `reasons` explica cada criterio incumplido y
     queda vacía cuando la versión se acepta.
     """
-    raise NotImplementedError("accept pendiente: persona A")
+    stopped = [result.name for result in checks if result.status == STOP]
+    reasons = [f"Controles de calidad con estado stop: {', '.join(stopped)}."] if stopped else []
+    reasons += _output_reasons(estimates, config)
+    reasons += _forecast_reasons(estimates, config)
+    reasons += _performance_reasons(metrics, config["acceptance"])
+    return {"accepted": not reasons, "reasons": reasons}
+
+
+def _output_reasons(estimates, config):
+    columns = config["outputs"]["estimate_columns"]
+    missing = [column for column in columns if column not in estimates.columns]
+    empty = [
+        column for column in columns
+        if column in estimates.columns
+        and (estimates[column].isna() | estimates[column].astype(str).str.strip().eq("")).any()
+    ]
+    reasons = []
+    if missing:
+        reasons.append(f"Faltan columnas en las estimaciones: {', '.join(missing)}.")
+    if empty:
+        reasons.append(f"Hay valores vacíos en las columnas: {', '.join(empty)}.")
+    return reasons
+
+
+def _forecast_reasons(estimates, config):
+    periods = config["periods"]
+    acceptance = config["acceptance"]
+    expected_months = acceptance["expected_forecast_months"]
+    expected = list(pd.period_range(periods["forecast_start"], periods["forecast_end"], freq="M").astype(str))
+    found = estimates["period"].astype(str).tolist() if "period" in estimates.columns else []
+    missing = [period for period in expected if period not in found]
+    reasons = []
+    if missing or len(found) != expected_months:
+        reasons.append(
+            f"Se esperaban {expected_months} meses de pronóstico de {expected[0]} a {expected[-1]} y hay "
+            f"{len(found)}; faltan: {', '.join(missing) or 'ninguno'}."
+        )
+    if "value" not in estimates.columns:
+        return reasons
+    values = pd.to_numeric(estimates["value"], errors="coerce")
+    if acceptance["require_finite_estimates"] and not np.isfinite(values).all():
+        reasons.append("Hay estimaciones vacías o no finitas.")
+    if acceptance["require_non_negative_estimates"] and values.lt(0).any():
+        reasons.append("Hay estimaciones negativas.")
+    return reasons
+
+
+def _performance_reasons(metrics, acceptance):
+    procedure = metrics["procedure"]
+    baseline_mae = metrics["baseline"]["mae"]
+    max_mape = acceptance["max_mape_pct"]
+    max_ratio = acceptance["max_mae_ratio_to_baseline"]
+    reasons = []
+    if procedure["mape_pct"] is None:
+        reasons.append("No hay MAPE del procedimiento para comparar con el umbral.")
+    elif procedure["mape_pct"] > max_mape:
+        reasons.append(f"El MAPE es {procedure['mape_pct']:.2f} %, mayor que el máximo de {max_mape} %.")
+    if procedure["mae"] is None or not baseline_mae:
+        reasons.append("No se puede calcular la razón de MAE frente a la referencia.")
+    elif (ratio := procedure["mae"] / baseline_mae) > max_ratio:
+        reasons.append(f"La razón de MAE frente a la referencia es {ratio:.2f}, mayor que el máximo de {max_ratio}.")
+    return reasons

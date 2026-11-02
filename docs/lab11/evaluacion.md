@@ -28,3 +28,16 @@ Los meses con observado igual a cero se excluyen del MAPE porque el error porcen
 La referencia es el estacional ingenuo con rezago de 12 meses, definido en `baseline`: estima cada mes con el valor observado del mismo mes del año anterior. Ese valor siempre es anterior al mes evaluado y sale del mismo historial truncado que recibe Holt-Winters.
 
 Ambos procedimientos se evalúan sobre los mismos meses. Si falta el observado o el valor de referencia de un mes, ese mes se excluye para los dos. `metrics.json` guarda las métricas de cada uno en `procedure` y `baseline`.
+
+## 5.4 Regla de aceptación
+
+`accept` rechaza una versión candidata si se cumple cualquiera de estas condiciones:
+
+1. Algún control de calidad tiene estado `stop`.
+2. `estimates.csv` no tiene todas las columnas de `outputs.estimate_columns` o alguna tiene valores vacíos.
+3. El pronóstico no tiene exactamente `acceptance.expected_forecast_months` meses, de `periods.forecast_start` a `periods.forecast_end`.
+4. Hay estimaciones no finitas o negativas.
+5. El MAPE del procedimiento supera `acceptance.max_mape_pct` o no puede calcularse.
+6. La razón entre el MAE del procedimiento y el de la referencia supera `acceptance.max_mae_ratio_to_baseline` o no puede calcularse.
+
+Los umbrales son inclusivos: un valor igual al máximo se acepta. La decisión es `{"accepted": bool, "reasons": [...]}`, con un motivo por cada criterio incumplido, y se guarda en `acceptance` dentro de `run.json`. Las advertencias de calidad no rechazan la versión por sí solas.
