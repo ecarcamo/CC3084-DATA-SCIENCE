@@ -1,0 +1,19 @@
+destination,period,value,unit,kind,run_id,generated_at,procedure_version
+guatemala,2025-01,10000,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-02,10100,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-03,10200,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-04,10300,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-05,10400,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-06,10500,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-07,10600,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-08,10700,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-09,10800,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-10,10900,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-11,11000,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2025-12,11100,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-01,11200,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-02,11300,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-03,11400,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-04,11500,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-05,11600,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0
+guatemala,2026-06,11700,visitantes por mes,observado,20260701T120000000000Z_a1b2c3d4,2026-07-01T12:00:00+00:00,hw-1.0

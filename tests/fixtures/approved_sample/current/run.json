@@ -1,0 +1,63 @@
+{
+  "run_id": "20260801T120000000000Z_e5f6a7b8",
+  "started_at": "2026-08-01T12:00:00+00:00",
+  "finished_at": "2026-08-01T12:00:00+00:00",
+  "status": "completed",
+  "completed_stages": [
+    "read_source",
+    "run_checks",
+    "prepare_series",
+    "write_observed",
+    "fit_and_forecast",
+    "evaluate",
+    "write_estimates",
+    "accept",
+    "run_monitoring"
+  ],
+  "source_fingerprint": "muestra-sintetica",
+  "config_path": "config/pipeline.yaml",
+  "checks_status": "executed",
+  "checks": [],
+  "model_parameters": {
+    "procedure": "holt_winters",
+    "procedure_version": "hw-1.0"
+  },
+  "metrics": {
+    "procedure": {
+      "name": "holt_winters",
+      "mae": 250.0,
+      "rmse": 300.0,
+      "mape_pct": 2.0
+    },
+    "baseline": {
+      "name": "seasonal_naive",
+      "mae": 400.0,
+      "rmse": 450.0,
+      "mape_pct": 3.5
+    },
+    "evaluated_periods": [
+      "2025-07",
+      "2025-08",
+      "2025-09",
+      "2025-10",
+      "2025-11",
+      "2025-12",
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06"
+    ],
+    "mape_zero_rule": "Los meses con valor observado igual a cero se excluyen del MAPE."
+  },
+  "acceptance": {
+    "accepted": true,
+    "reasons": []
+  },
+  "monitoring": [],
+  "warnings": [],
+  "errors": [],
+  "publication": "published",
+  "approved_version": "20260801T120000000000Z_e5f6a7b8"
+}
