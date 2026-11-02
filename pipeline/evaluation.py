@@ -1,6 +1,12 @@
+import numpy as np
 import pandas as pd
 
 from pipeline.model import fit_model
+
+MAPE_ZERO_RULE = (
+    "Los meses con valor observado igual a cero se excluyen del MAPE porque el error porcentual no está "
+    "definido; siguen incluidos en MAE y RMSE. Si todos los observados son cero, mape_pct es null."
+)
 
 
 def evaluate(series, config):
@@ -19,8 +25,25 @@ def evaluate(series, config):
     """
     forecasts = hidden_month_forecasts(series, config)
     return {
-        "procedure": {"name": config["model"]["procedure"]},
+        "procedure": {
+            "name": config["model"]["procedure"],
+            **error_metrics(forecasts["observed"], forecasts["procedure"]),
+        },
         "evaluated_periods": list(forecasts.index),
+        "mape_zero_rule": MAPE_ZERO_RULE,
+    }
+
+
+def error_metrics(observed, estimated):
+    if observed.empty:
+        return {"mae": None, "rmse": None, "mape_pct": None}
+    errors = estimated - observed
+    nonzero = observed.ne(0)
+    mape = float((errors[nonzero].abs() / observed[nonzero]).mean() * 100) if nonzero.any() else None
+    return {
+        "mae": float(errors.abs().mean()),
+        "rmse": float(np.sqrt((errors**2).mean())),
+        "mape_pct": mape,
     }
 
 

@@ -12,3 +12,13 @@ Los meses sin valor observado no se evalúan y no se convierten en cero. Si falt
 - Con horizonte de un mes, febrero de 2026 se estima con enero ya observado. Si en la situación original ambos meses faltaban a la vez, febrero requería un horizonte de dos meses y su error real tiende a ser mayor que el medido.
 - Si la base no contiene valores observados comparables para enero y febrero de 2026, con la misma definición de visitantes y la misma cobertura, esos meses quedan fuera de `evaluated_periods` y no se calculan errores para ellos.
 - El factor de reparto vale 1, de modo que la evaluación mide la serie nacional y no el error que tendría un destino con reparto.
+
+## 5.2 Métricas
+
+Sobre los meses evaluados se calculan tres métricas con la diferencia entre estimado y observado:
+
+- MAE: error absoluto medio, en visitantes por mes.
+- RMSE: raíz del error cuadrático medio, en visitantes por mes. Penaliza más los meses con errores grandes.
+- MAPE: error absoluto medio como porcentaje del observado.
+
+Los meses con observado igual a cero se excluyen del MAPE porque el error porcentual no está definido, pero siguen en MAE y RMSE. Si todos los observados son cero, `mape_pct` vale `null`. Esta regla se guarda en `mape_zero_rule` dentro de `metrics.json`. Sin meses evaluados, las tres métricas valen `null`.

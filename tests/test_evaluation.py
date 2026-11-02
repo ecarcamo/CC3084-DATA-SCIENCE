@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 
 from pipeline.config import load_config
-from pipeline.evaluation import evaluate, hidden_month_forecasts
+from pipeline.evaluation import MAPE_ZERO_RULE, error_metrics, evaluate, hidden_month_forecasts
 from pipeline.stages import prepare_series
 from tests.synthetic_source import build_source
 
@@ -33,6 +33,31 @@ class HiddenMonthTests(unittest.TestCase):
         self.series.loc["2026-06-01"] = np.nan
         self.config["periods"]["evaluation_end"] = "2026-08"
         self.assertEqual(evaluate(self.series, self.config)["evaluated_periods"], EVALUATION_PERIODS[:-1])
+
+
+class MetricTests(unittest.TestCase):
+    def test_metrics_match_manual_calculation_and_exclude_zero_from_mape(self):
+        metrics = error_metrics(pd.Series([0.0, 100.0, 200.0]), pd.Series([10.0, 110.0, 180.0]))
+        self.assertAlmostEqual(metrics["mae"], 40 / 3)
+        self.assertAlmostEqual(metrics["rmse"], np.sqrt(200))
+        self.assertAlmostEqual(metrics["mape_pct"], 10.0)
+
+    def test_mape_is_null_when_every_observed_value_is_zero(self):
+        metrics = error_metrics(pd.Series([0.0, 0.0]), pd.Series([5.0, 15.0]))
+        self.assertEqual(metrics["mae"], 10.0)
+        self.assertIsNone(metrics["mape_pct"])
+
+    def test_metrics_are_null_without_evaluated_months(self):
+        empty = pd.Series(dtype=float)
+        self.assertEqual(error_metrics(empty, empty), {"mae": None, "rmse": None, "mape_pct": None})
+
+    def test_evaluation_reports_procedure_metrics_and_zero_rule(self):
+        config = load_config("config/pipeline.yaml")
+        metrics = evaluate(prepare_series(build_source(config), config), config)
+        self.assertEqual(set(metrics["procedure"]), {"name", "mae", "rmse", "mape_pct"})
+        self.assertEqual(metrics["procedure"]["name"], "holt_winters")
+        self.assertGreaterEqual(metrics["procedure"]["rmse"], metrics["procedure"]["mae"])
+        self.assertEqual(metrics["mape_zero_rule"], MAPE_ZERO_RULE)
 
 
 if __name__ == "__main__":
