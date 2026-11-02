@@ -1,3 +1,11 @@
+import json
+import shutil
+from pathlib import Path
+from uuid import uuid4
+
+VERSION_FILES = ("estimates.csv", "observed.csv", "metrics.json", "quality_report.json", "run.json")
+
+
 def publish(candidate_dir, config):
     """Instala una versión candidata aceptada como versión aprobada.
 
@@ -9,12 +17,13 @@ def publish(candidate_dir, config):
     se copia a `history_dir/<run_id>/` antes de reemplazarla. Si algo falla, `approved_dir` conserva la
     versión anterior completa.
     """
-    raise NotImplementedError("publish pendiente: persona C")
+    return _install(Path(candidate_dir), config)
 
 
 def latest_approved(config):
     """Devuelve la carpeta de la versión aprobada vigente o `None` si todavía no existe."""
-    raise NotImplementedError("latest_approved pendiente: persona C")
+    folder = Path(config["outputs"]["approved_dir"])
+    return folder if not _missing_files(folder) else None
 
 
 def restore(version_id, config):
@@ -27,3 +36,65 @@ def restore(version_id, config):
     reemplazo.
     """
     raise NotImplementedError("restore pendiente: persona C")
+
+
+def _install(source, config):
+    missing = _missing_files(source)
+    if missing:
+        raise FileNotFoundError(f"La versión en {source} no contiene: {', '.join(missing)}.")
+    run_id = _run_id(source)
+    approved = Path(config["outputs"]["approved_dir"])
+    current = latest_approved(config)
+    if approved.exists() and current is None:
+        raise ValueError(f"La versión aprobada en {approved} está incompleta; revísela antes de reemplazarla.")
+    # ponytail: sin bloqueo entre procesos; dos publicaciones simultáneas pueden competir por approved_dir.
+    staged = _stage(source, approved)
+    try:
+        if current is None:
+            staged.rename(approved)
+            return run_id
+        _archive(current, Path(config["outputs"]["history_dir"]))
+        retired = approved.with_name(f".{approved.name}.{uuid4().hex}.old")
+        approved.rename(retired)
+        try:
+            staged.rename(approved)
+        except BaseException:
+            retired.rename(approved)
+            raise
+        shutil.rmtree(retired, ignore_errors=True)
+        return run_id
+    finally:
+        shutil.rmtree(staged, ignore_errors=True)
+
+
+def _archive(current, history):
+    target = history / _run_id(current)
+    if target.exists():
+        return
+    staged = _stage(current, target)
+    try:
+        staged.rename(target)
+    finally:
+        shutil.rmtree(staged, ignore_errors=True)
+
+
+def _stage(source, target):
+    """Copia los cinco archivos a una carpeta temporal junto a `target`, lista para renombrarse."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    staged = target.with_name(f".{target.name}.{uuid4().hex}.tmp")
+    staged.mkdir()
+    try:
+        for name in VERSION_FILES:
+            shutil.copy2(source / name, staged / name)
+    except BaseException:
+        shutil.rmtree(staged, ignore_errors=True)
+        raise
+    return staged
+
+
+def _missing_files(folder):
+    return [name for name in VERSION_FILES if not (folder / name).is_file()]
+
+
+def _run_id(folder):
+    return json.loads((folder / "run.json").read_text(encoding="utf-8"))["run_id"]
