@@ -13,7 +13,7 @@ CONTRACTS = {
         "accept": ["checks", "estimates", "metrics", "config"],
     },
     tracking: {"log_run": ["metadata", "config", "artifacts_dir"]},
-    monitoring: {"run_monitoring": ["series", "estimates", "previous_approved_dir", "config"]},
+    monitoring: {"run_monitoring": ["series", "estimates", "checks", "previous_approved_dir", "config"]},
     publish: {
         "publish": ["candidate_dir", "config"],
         "latest_approved": ["config"],

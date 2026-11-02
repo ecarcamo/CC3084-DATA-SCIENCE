@@ -95,6 +95,7 @@ monitoring:
   max_abs_year_over_year_change_pct: 30.0
   max_missing_rows_increase: 0
   max_duplicate_rows_increase: 0
+  max_missing_months_increase: 0
 
 outputs:
   candidates_dir: results/candidates

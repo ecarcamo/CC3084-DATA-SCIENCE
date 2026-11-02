@@ -76,7 +76,7 @@ def run_pipeline(config_path):
         decision = accept(checks, estimates, metrics, config)
         metadata["acceptance"] = decision
         stages.append("accept")
-        monitoring = run_monitoring(series, estimates, config["outputs"]["approved_dir"], config)
+        monitoring = run_monitoring(series, estimates, checks, config["outputs"]["approved_dir"], config)
         metadata["monitoring"] = serialize_results(monitoring)
         metadata["warnings"] += [f"{result.name}: {result.message}" for result in monitoring if result.status == WARNING]
         stages.append("run_monitoring")
@@ -92,10 +92,11 @@ def run_pipeline(config_path):
         metadata["status"] = "failed"
         metadata["errors"].append(str(error))
         if metadata["publication"] == "published":
-            metadata["publication"] = "not_attempted"
+            metadata["publication"] = "failed"
         raise
     finally:
         metadata["finished_at"] = datetime.now(timezone.utc).isoformat()
+        _write_json(candidate_dir / "run.json", metadata)
         try:
             metadata["mlflow_run_id"] = log_run(metadata, config, candidate_dir)
             stages.append("log_run")
