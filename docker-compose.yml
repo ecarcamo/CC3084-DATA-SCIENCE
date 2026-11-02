@@ -1,0 +1,46 @@
+x-common: &common
+  build:
+    context: .
+    args:
+      GIT_COMMIT: ${GIT_COMMIT:-desconocido}
+  image: observatorio-lab11
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+
+services:
+  dashboard:
+    <<: *common
+    command: ["python", "-m", "app.main"]
+    environment:
+      DASH_DEBUG: ${DASH_DEBUG:-false}
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./results:/app/results:ro
+    restart: unless-stopped
+
+  mlflow:
+    <<: *common
+    command:
+      - mlflow
+      - ui
+      - --backend-store-uri
+      - sqlite:////app/mlflow/mlflow.db
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow:/app/mlflow
+    restart: unless-stopped
+
+  pipeline:
+    <<: *common
+    profiles: ["pipeline"]
+    command: ["python", "-m", "pipeline.run", "--config", "config/pipeline.yaml"]
+    volumes:
+      - ${DATA_DIR:-./data/raw}:/app/data/raw:ro
+      - ./results:/app/results
+      - ./logs:/app/logs
+      - ./mlflow:/app/mlflow
