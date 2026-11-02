@@ -38,18 +38,22 @@ docker compose run --rm pipeline python -m pipeline.reproducibility results/cand
 
 Cuando `metrics` es `None`, la ejecución se detuvo antes de evaluar: no se registran métricas, el run queda como `FAILED` y la etiqueta `error` guarda la causa desde `errors`. Una ejecución que falla después de evaluar también queda como `FAILED`, pero conserva sus métricas.
 
-La evidencia está en `mlflow_runs.csv`, generado con `mlflow.search_runs`:
+La evidencia está en `mlflow_runs.csv`, generado con `mlflow.search_runs` dentro de Docker:
 
-```powershell
-python -m docs.scripts.export_mlflow_runs --config config/pipeline.yaml --experiment observatorio-guatemala-visitantes --experiment observatorio-guatemala-visitantes-sintetico --output docs/lab11/mlflow_runs.csv
+```bash
+docker compose run --rm -v ./docs:/app/docs -e PYTHONPATH=/app pipeline python -m docs.scripts.export_mlflow_runs --config config/pipeline.yaml --experiment observatorio-guatemala-visitantes --output docs/lab11/mlflow_runs.csv
 ```
 
-| Experimento | Estado | Publicación | Causa |
-|---|---|---|---|
-| `observatorio-guatemala-visitantes` | `FAILED` | `not_attempted` | No se encontró la fuente institucional; no hay métricas. |
-| `observatorio-guatemala-visitantes-sintetico` (2 runs) | `FAILED` | `failed` | Versión aceptada; `publish` sigue pendiente. Métricas registradas. |
+| Ejecución | Fuente | Estado | Publicación | Resultado |
+|---|---|---|---|---|
+| `20261102T052257426029Z_c7a4efa9` | Base institucional | `FINISHED` | `published` | Primera versión aprobada. |
+| `20261102T052540929295Z_bd7b3fe9` | Base institucional | `FINISHED` | `published` | Repetición idéntica (4.2). |
+| `20261102T053148655093Z_123e387b` | Copia con una clave duplicada | `FAILED` | `blocked` | `check_uniqueness` en `stop`; sin métricas. |
+| `20261102T053256229938Z_0a98251c` | Base institucional | `FINISHED` | `published` | Corrección tras el fallo. |
+| `20261102T053354747188Z_9d5b791f` | Copia con `Región` vacía en 200 filas | `FINISHED` | `published` | Advertencia de faltantes y alerta de `monitor_quality`. |
+| `20261102T053453545541Z_9772e746` | Copia con junio de 2026 triplicado | `FINISHED` | `rejected` | MAPE de 11,53 %, mayor que 10 %. |
 
-Las ejecuciones sintéticas usan un experimento separado para no mezclarse con las institucionales. El archivo no incluye `artifact_uri` y las rutas del error quedan relativas a la raíz, para no publicar rutas locales.
+Después se restauró `20261102T052257426029Z_c7a4efa9` con `python -m pipeline.publish --restore` y el tablero volvió a consultarla. El archivo no incluye `artifact_uri` y las rutas quedan relativas a la raíz, para no publicar rutas locales.
 
 ## 7.1 Registro por ejecución
 
@@ -85,8 +89,3 @@ Semana Santa, que cambia entre marzo y abril, mueve esos meses entre 13 % y 25 %
 Una variación elevada genera una advertencia en `monitoring`, en `warnings` de `run.json` y en la etiqueta `monitor.monitor_results` de MLflow. No detiene el flujo ni cambia la decisión de `accept`; la prueba `test_monitoring_warning_does_not_block_publication` lo verifica.
 
 El error predictivo solo se calcula con observaciones comparables: `evaluate` excluye los meses sin observado o sin valor de referencia. MLflow registra la lista de meses evaluados en el parámetro `evaluated_periods` y su cantidad en la métrica del mismo nombre, así cada run muestra qué meses entraron en el error.
-
-## Pendiente
-
-- Ejecutar el pipeline con `data/raw/base_migracion_2009_2026jun.xlsx`, repetir la comparación de 4.2 y revisar el umbral de variación con la serie institucional.
-- Mientras `publish` siga pendiente, las versiones aceptadas terminan con `publication: failed`.
