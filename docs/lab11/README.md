@@ -2,7 +2,7 @@
 
 ## Alcance implementado
 
-El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`. El ajuste de Holt-Winters, la evaluación con meses ocultos y la regla de aceptación están implementados y se describen en `evaluacion.md`. El monitoreo, el registro en MLflow y la publicación siguen pendientes y lanzan `NotImplementedError`.
+El paquete `pipeline/` lee la fuente, calcula su huella SHA-256, ejecuta los seis controles de calidad, prepara la serie mensual y guarda un candidato observado. El orden completo de etapas ya está conectado en `pipeline/run.py`. El ajuste de Holt-Winters, la evaluación con meses ocultos y la regla de aceptación están implementados y se describen en `evaluacion.md`. El monitoreo, el registro en MLflow y la comparación de reproducibilidad están implementados y se describen en `seguimiento.md`. La publicación sigue pendiente y lanza `NotImplementedError`.
 
 `pipeline/checks.py` define `run_checks(df, config)`, que devuelve una lista de `CheckResult` con estado `ok`, `warning` o `stop`. Los controles se detienen en el primer `stop`. El resultado se guarda en `quality_report.json` y en `run.json`.
 
@@ -57,8 +57,9 @@ Cada ejecución genera un identificador UTC con sufijo aleatorio y una carpeta c
 | `publication: blocked` | Un control crítico detuvo el flujo. |
 | `publication: rejected` | La versión no cumplió la regla de aceptación. |
 | `publication: published` | La versión se instaló como aprobada. |
+| `publication: failed` | La versión fue aceptada, pero la publicación falló. |
 
-Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`. Con las etapas pendientes, la ejecución falla en `run_monitoring` después de escribir `estimates.csv`, `metrics.json` y la decisión de aceptación.
+Cualquier error termina la ejecución con código 1, muestra la causa por la salida de error y no modifica `results/approved/`. Mientras `publish` siga pendiente, una versión aceptada falla en `publish` después de escribir los cinco archivos del candidato y de registrarse en MLflow.
 
 ## Pruebas
 

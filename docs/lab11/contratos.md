@@ -28,7 +28,7 @@ accept(checks, estimates, metrics, config) -> {"accepted": bool, "reasons": [str
 log_run(metadata, config, artifacts_dir) -> str
 
 # pipeline/monitoring.py, persona B
-run_monitoring(series, estimates, previous_approved_dir, config) -> [CheckResult]
+run_monitoring(series, estimates, checks, previous_approved_dir, config) -> [CheckResult]
 
 # pipeline/publish.py, persona C
 publish(candidate_dir, config) -> str
@@ -47,7 +47,7 @@ load_approved(path=None) -> dict | None
 - `fit_and_forecast` devuelve una fila por mes entre `periods.forecast_start` y `periods.forecast_end`, en orden. `period` usa `AAAA-MM` y `value` es finito. `run.py` agrega las demás columnas.
 - `model_parameters` incluye como mínimo `procedure`, `procedure_version`, `fit_start`, `fit_end`, `seed` y los parámetros ajustados. Debe poder serializarse en JSON.
 - `estimates` es el DataFrame que `run.py` escribe en `estimates.csv`.
-- `run_monitoring` devuelve resultados con estado `ok` o `warning`. El monitoreo alerta, pero no detiene el flujo.
+- `run_monitoring` recibe los `checks` de la ejecución para compararlos con el `quality_report.json` de la versión aprobada y devuelve resultados con estado `ok` o `warning`. El monitoreo alerta, pero no detiene el flujo.
 - `log_run` devuelve el identificador del run de MLflow. Si `metadata["metrics"]` es `None`, no registra métricas y registra la causa desde `metadata["errors"]`.
 - `publish` y `restore` devuelven el `run_id` de la versión instalada.
 - `load_approved` devuelve `None` si no existe `estimates.csv` en la carpeta aprobada. En otro caso devuelve `estimates` y `observed` como DataFrame y `metrics`, `quality_report` y `run` como diccionarios. La carpeta sale del argumento, de la variable de entorno `APPROVED_DIR` o de `outputs.approved_dir`, en ese orden.
@@ -89,11 +89,11 @@ load_approved(path=None) -> dict | None
 8. `accept`: aplica la regla de aceptación y guarda la decisión en `acceptance`.
 9. `run_monitoring`: compara con la versión aprobada vigente, antes de reemplazarla.
 10. `publish`: solo si la versión fue aceptada. Antes de publicar, `run.py` escribe `run.json` en la carpeta candidata con `publication: published`.
-11. `log_run`: se ejecuta siempre en el bloque `finally`. Si falla, se agrega una advertencia y se conserva el error original.
+11. `log_run`: se ejecuta siempre en el bloque `finally`, después de escribir `run.json` en la carpeta candidata para que MLflow lo reciba completo. Si falla, se agrega una advertencia y se conserva el error original.
 
-Al final, `run.json` se escribe en la carpeta candidata y en `logs/<run_id>.json`.
+Al final, `run.json` se vuelve a escribir con `mlflow_run_id` en la carpeta candidata y en `logs/<run_id>.json`.
 
-Mientras las funciones de B y C sigan pendientes, la ejecución termina con `status: failed`, el error `run_monitoring pendiente: persona B`, código de salida 1 y `results/approved/` sin cambios. `observed.csv`, `estimates.csv`, `metrics.json` y la decisión de `accept` ya quedan escritos.
+Mientras `publish` siga pendiente, una versión aceptada termina con `status: failed`, `publication: failed`, el error `publish pendiente: persona C`, código de salida 1 y `results/approved/` sin cambios. Los cinco archivos del candidato y el registro en MLflow ya quedan escritos.
 
 ## Estados de `run.json`
 
@@ -106,6 +106,7 @@ Mientras las funciones de B y C sigan pendientes, la ejecución termina con `sta
 | `publication` | `blocked` | Un control crítico de calidad detuvo el flujo. |
 | `publication` | `rejected` | La versión no cumplió la regla de aceptación. |
 | `publication` | `published` | La versión se instaló como aprobada. |
+| `publication` | `failed` | La versión fue aceptada, pero `publish` lanzó un error; la causa queda en `errors`. |
 
 Otros campos de `run.json`: `run_id`, `started_at`, `finished_at`, `config_path`, `source_fingerprint`, `checks_status`, `checks`, `model_parameters`, `metrics`, `acceptance`, `monitoring`, `warnings`, `errors` y `mlflow_run_id`.
 
