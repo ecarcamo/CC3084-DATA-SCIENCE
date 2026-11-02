@@ -1,7 +1,11 @@
+import argparse
 import json
 import shutil
+import sys
 from pathlib import Path
 from uuid import uuid4
+
+from pipeline.config import load_config
 
 VERSION_FILES = ("estimates.csv", "observed.csv", "metrics.json", "quality_report.json", "run.json")
 
@@ -35,7 +39,11 @@ def restore(version_id, config):
     Salida: identificador de la versión restaurada. La versión vigente pasa al historial antes del
     reemplazo.
     """
-    raise NotImplementedError("restore pendiente: persona C")
+    history = Path(config["outputs"]["history_dir"])
+    source = history / str(version_id)
+    if source.resolve().parent != history.resolve() or not source.is_dir():
+        raise ValueError(f"No existe la versión {version_id} en {history}.")
+    return _install(source, config)
 
 
 def _install(source, config):
@@ -98,3 +106,21 @@ def _missing_files(folder):
 
 def _run_id(folder):
     return json.loads((folder / "run.json").read_text(encoding="utf-8"))["run_id"]
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Restaurar una versión aprobada del historial.")
+    parser.add_argument("--restore", required=True, metavar="RUN_ID", help="Carpeta de outputs.history_dir.")
+    parser.add_argument("--config", default="config/pipeline.yaml", help="Ruta del archivo de configuración YAML.")
+    args = parser.parse_args(argv)
+    try:
+        run_id = restore(args.restore, load_config(args.config))
+    except Exception as error:
+        print(f"No se pudo restaurar la versión: {error}", file=sys.stderr)
+        return 1
+    print(f"Versión restaurada: {run_id}.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
