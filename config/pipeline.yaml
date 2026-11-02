@@ -97,6 +97,9 @@ monitoring:
   max_duplicate_rows_increase: 0
   max_missing_months_increase: 0
 
+reproducibility:
+  relative_tolerance: 1.0e-9
+
 outputs:
   candidates_dir: results/candidates
   approved_dir: results/approved/current
