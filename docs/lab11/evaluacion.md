@@ -58,15 +58,42 @@ Ambos criterios de desempeño deben cumplirse a la vez. El MAPE limita el error 
 
 ## 5.5 Aplicación de la regla
 
-La base institucional `data/raw/base_migracion_2009_2026jun.xlsx` no está disponible en esta copia del repositorio. La ejecución de `python -m pipeline.run --config config/pipeline.yaml` termina en `read_source` con el error `No se encontró la fuente institucional` y no produce métricas. Por eso el resultado de la regla con la base institucional queda pendiente y no se informan métricas para ella.
-
-La validación se hizo con la fuente sintética de `tests/synthetic_source.py`, cuya serie crece de forma lineal y no tiene estacionalidad. Con ella, el pipeline completa hasta `accept` y se detiene en `run_monitoring`, que sigue pendiente. Los resultados sintéticos no describen la serie real:
+Resultado con la base institucional `data/raw/base_migracion_2009_2026jun.xlsx` (huella SHA-256 `cdaba779…3846`), ejecutado con `docker compose run --rm pipeline`. Se evaluaron los 12 meses de julio de 2025 a junio de 2026; todos tienen valor observado y valor de referencia, y ninguno es cero.
 
 | Procedimiento | MAE | RMSE | MAPE |
 |---|---|---|---|
-| Holt-Winters | 0.02 | 0.02 | 0.003 % |
-| Estacional ingenuo | 24.00 | 24.00 | 3.95 % |
+| Holt-Winters | 16 670 | 20 068 | 6,39 % |
+| Estacional ingenuo | 12 027 | 15 232 | 4,47 % |
 
-La regla aceptó la versión sintética sin motivos de rechazo.
+Errores por mes (estimado menos observado, en visitantes):
 
-Al ejecutar con la base institucional se registran aquí `evaluated_periods`, las métricas de ambos procedimientos y la decisión de `run.json`. Si Holt-Winters no supera a la referencia, se explica el resultado y se aplica la regla con los umbrales anteriores sin cambiarlos. Si enero y febrero de 2026 no tienen observados comparables, no aparecen en `evaluated_periods` y no se calculan errores para ellos.
+| Mes | Observado | Holt-Winters | Error HW | Referencia | Error referencia |
+|---|---|---|---|---|---|
+| 2025-07 | 283 389 | 287 191 | 3 803 | 266 975 | -16 414 |
+| 2025-08 | 293 781 | 299 116 | 5 335 | 282 102 | -11 679 |
+| 2025-09 | 218 070 | 237 062 | 18 993 | 215 659 | -2 411 |
+| 2025-10 | 255 921 | 226 402 | -29 519 | 249 666 | -6 255 |
+| 2025-11 | 310 586 | 305 354 | -5 231 | 302 674 | -7 911 |
+| 2025-12 | 365 573 | 375 856 | 10 283 | 361 750 | -3 823 |
+| 2026-01 | 300 664 | 315 360 | 14 696 | 289 544 | -11 120 |
+| 2026-02 | 236 844 | 268 826 | 31 982 | 254 429 | 17 585 |
+| 2026-03 | 291 160 | 313 540 | 22 379 | 278 538 | -12 622 |
+| 2026-04 | 260 951 | 299 719 | 38 768 | 300 288 | 39 337 |
+| 2026-05 | 241 312 | 251 226 | 9 914 | 247 982 | 6 670 |
+| 2026-06 | 245 688 | 254 828 | 9 140 | 254 190 | 8 503 |
+
+Holt-Winters no supera a la referencia. Su error es menor en julio, agosto y noviembre de 2025, pero sobreestima nueve de los doce meses, sobre todo en 2026. La ventana de ajuste empieza en enero de 2023, de modo que al inicio de la evaluación solo hay 30 meses, dos años y medio, para estimar el nivel, la tendencia y doce índices estacionales. La tendencia amortiguada todavía arrastra el crecimiento de 2023 y 2024, mientras que 2026 se mantuvo cerca de 2025. El estacional ingenuo, en cambio, repite un año que ya refleja ese nivel. Abril de 2026 es el mayor error de ambos procedimientos: Semana Santa cayó en abril en 2025 y entre marzo y abril en 2026, y ninguno de los dos lo modela.
+
+Decisión de la regla, con los umbrales fijados antes de la ejecución y sin cambiarlos:
+
+| Criterio | Valor | Umbral | Cumple |
+|---|---|---|---|
+| Controles críticos | 6 de 6 en `ok` | ningún `stop` | sí |
+| Integridad de `estimates.csv` | 6 meses, de 2026-07 a 2026-12, columnas completas | 6 meses | sí |
+| Estimaciones finitas y no negativas | entre 230 737 y 371 750 | todas | sí |
+| MAPE de Holt-Winters | 6,39 % | ≤ 10 % | sí |
+| Razón de MAE frente a la referencia | 16 670 / 12 027 = 1,39 | ≤ 1,5 | sí |
+
+La versión se acepta y se publica. Como permite el punto 5.5, la regla no exige superar a la referencia: el error de Holt-Winters equivale a un 6 % del mes promedio de 264 790 visitantes desde 2023 y queda dentro del margen fijado. El resultado se informa tal cual en el tablero (G7) y se deja como mejora para una versión futura, con una nueva `model.procedure_version`, revisar la ventana de ajuste o la tendencia.
+
+La validación con la fuente sintética de `tests/synthetic_source.py`, sin estacionalidad, sigue en las pruebas automáticas y no describe la serie real.

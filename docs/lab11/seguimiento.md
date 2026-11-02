@@ -7,7 +7,8 @@
 | Dato | Registro en MLflow |
 |---|---|
 | Ejecución | Etiquetas `pipeline_run_id`, `started_at`, `finished_at`, `status`, `publication` y `accepted`. |
-| Código | Etiqueta `git_commit` con `git rev-parse HEAD` y `git_dirty`, que vale `true` si había cambios sin commit. Sin Git, por ejemplo dentro de Docker, ambas valen `desconocido`. |
+| Código | Etiqueta `git_commit` con `git rev-parse HEAD` y `git_dirty`, que vale `true` si había cambios sin commit. Dentro de Docker no hay Git: `git_commit` sale de la variable `GIT_COMMIT`, que se fija al construir la imagen, y `git_dirty` vale `desconocido`. |
+| Entorno | Etiquetas `version.python` y `version.<biblioteca>` de pandas, numpy, scipy, statsmodels, openpyxl, PyYAML y mlflow. |
 | Fuente | Parámetros `source_path`, relativo a la raíz, y `source_fingerprint`, con la huella SHA-256. |
 | Períodos | Parámetros `periods.*` de ajuste, evaluación y estimación. |
 | Procedimiento | Parámetros `model.*`, tomados de `model_parameters`. |
@@ -25,7 +26,13 @@ Consulta: `mlflow ui --backend-store-uri sqlite:///mlflow/mlflow.db`.
 
 La tolerancia es `reproducibility.relative_tolerance = 1e-9`. Con el mismo código, datos, configuración y versiones de bibliotecas, el ajuste es determinista: la inicialización estimada de Holt-Winters usa un optimizador sin componentes aleatorios y la semilla está fija. La tolerancia solo admite diferencias de redondeo de punto flotante, por ejemplo entre equipos con otra biblioteca de álgebra lineal. En una serie de cientos de miles de visitantes, 1e-9 equivale a menos de una milésima de visitante. Una diferencia mayor indica un cambio de datos, configuración o versión de `statsmodels`, y debe explicarse.
 
-Resultado con la fuente sintética de `tests/synthetic_source.py`, porque la base institucional aún no está disponible: dos ejecuciones completas dieron estimaciones y métricas idénticas, con diferencia relativa máxima de 0. `tests/test_reproducibility.py` repite esa comparación en cada corrida de pruebas. Falta repetirla con la base institucional.
+Resultado con la base institucional: las ejecuciones `20261102T052257426029Z_c7a4efa9` y `20261102T052540929295Z_bd7b3fe9` usaron la misma fuente (huella `cdaba779…3846`), la misma configuración y las mismas versiones de bibliotecas dentro de Docker. La comparación terminó con `reproducible: true` y diferencia relativa máxima de 0: las seis estimaciones, los doce meses evaluados y las métricas de ambos procedimientos son idénticos. Entre ambas solo cambió el commit, `07c10ce` frente a `1837411`, que agrega los archivos de Docker y no toca `pipeline/`.
+
+```bash
+docker compose run --rm pipeline python -m pipeline.reproducibility results/candidates/20261102T052257426029Z_c7a4efa9 results/candidates/20261102T052540929295Z_bd7b3fe9 --config config/pipeline.yaml
+```
+
+`tests/test_reproducibility.py` repite la comparación con la fuente sintética en cada corrida de pruebas.
 
 ## 4.3 Ejecuciones fallidas
 
