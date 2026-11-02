@@ -68,3 +68,13 @@ Las pruebas utilizan un Excel sintético temporal y rutas de salida temporales d
 ## Diagrama
 
 El diagrama del flujo está en el informe técnico (sección 2).
+
+## Prueba desde una copia limpia (8.4)
+
+Se clonó la rama `lab11` desde GitHub en una carpeta nueva, sin `results/`, `logs/`, `mlflow/` ni `data/`, y solo se colocó la base en `data/raw/`. `docker compose build`, `docker compose run --rm pipeline` y `docker compose up -d` construyeron la imagen, publicaron una versión aprobada con las mismas seis estimaciones que la copia de trabajo y levantaron el tablero (8050) y MLflow (5000). Las 140 pruebas pasan dentro del contenedor.
+
+## Capturas
+
+- `../figuras/lab11_g6.png`: G6 con la versión restaurada `20261102T052257426029Z_c7a4efa9`, su fecha, el MAPE y la advertencia.
+- `../figuras/lab11_g7.png`: G7, error de Holt-Winters frente a la referencia.
+- `../figuras/lab11_mlflow.png`: las seis ejecuciones del experimento en MLflow, una fallida.
