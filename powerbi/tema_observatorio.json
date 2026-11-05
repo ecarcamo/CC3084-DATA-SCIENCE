@@ -1,0 +1,21 @@
+{
+  "name": "Observatorio de turismo – Lab 10",
+  "dataColors": ["#1F4E79", "#A65E16", "#6B3A0C", "#C46A12", "#8A4B12", "#D07A1E", "#20745A", "#B3261E"],
+  "background": "#FFFFFF",
+  "foreground": "#1B2733",
+  "tableAccent": "#1F4E79",
+  "good": "#20745A",
+  "neutral": "#5B6B7A",
+  "bad": "#B3261E",
+  "minimum": "#E7EFF6",
+  "maximum": "#1F4E79",
+  "textClasses": {
+    "title": {"fontFace": "Arial", "fontSize": 14, "color": "#1B2733"},
+    "header": {"fontFace": "Arial", "fontSize": 12, "color": "#1B2733"},
+    "label": {"fontFace": "Arial", "fontSize": 10, "color": "#5B6B7A"},
+    "callout": {"fontFace": "Arial", "fontSize": 28, "color": "#1F4E79"}
+  },
+  "visualStyles": {
+    "page": {"*": {"background": [{"color": {"solid": {"color": "#F4F6F8"}}, "transparency": 0}]}}
+  }
+}
