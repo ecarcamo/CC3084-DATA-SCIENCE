@@ -1,0 +1,132 @@
+{
+  "fecha_validacion": "2026-11-05T16:08:26.453357-06:00",
+  "version_informe": "v0.2",
+  "herramienta": "Power BI Desktop 2.159.1231.0 64-bit, October 2026",
+  "reapertura_nativa": {
+    "estado": "aprobada",
+    "instancia_inicio": "2026-11-05T16:03:33.6073886-06:00",
+    "proceso": 27132,
+    "estado_inicial": {
+      "primer_punto_viajeros": 2028776,
+      "primer_punto_anio": 2009,
+      "titulo": "Viajeros: Total"
+    },
+    "seleccion": {
+      "titulo": "Viajeros: Vía Aérea",
+      "primer_punto_anio": 2009,
+      "primer_punto_viajeros": 935379,
+      "enlace_tras_reapertura": "aprobado"
+    },
+    "ranking_2025": {
+      "via_aerea": 1188971,
+      "via_maritima": 6944,
+      "via_terrestre": 2401323
+    }
+  },
+  "esquemas_definiciones_generadas": [
+    {
+      "archivo": "Report/definition/pages/lab12_datos_observados/page.json",
+      "esquema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json",
+      "resultado": "aprobado"
+    },
+    {
+      "archivo": "Report/definition/pages/lab12_datos_observados/visuals/lab12_v1_evolucion/visual.json",
+      "esquema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+      "resultado": "aprobado"
+    },
+    {
+      "archivo": "Report/definition/pages/lab12_datos_observados/visuals/lab12_v2_ranking/visual.json",
+      "esquema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+      "resultado": "aprobado"
+    },
+    {
+      "archivo": "Report/definition/pages/lab12_datos_observados/visuals/lab12_grupo/visual.json",
+      "esquema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+      "resultado": "aprobado"
+    },
+    {
+      "archivo": "Report/definition/pages/lab12_datos_observados/visuals/lab12_anio/visual.json",
+      "esquema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json",
+      "resultado": "aprobado"
+    }
+  ],
+  "contenedor_zip": "aprobado",
+  "archivos_json_validos": 12,
+  "modelo_sha256": "c620db00ab69d81760df640bda7ac05b340f85c9ced12dc80a4b3f3e1afc420a",
+  "cambio_modelo": "Medida Medidas[Titulo V1] creada en Desktop. Sin cambios intencionales en hechos, relaciones ni medidas base.",
+  "referencias_csv_2025": {
+    "total": {
+      "meses": 12,
+      "viajeros_redondeados": 3597238
+    },
+    "via_terrestre": {
+      "meses": 12,
+      "viajeros_redondeados": 2401323
+    },
+    "via_aerea": {
+      "meses": 12,
+      "viajeros_redondeados": 1188971
+    },
+    "via_maritima": {
+      "meses": 12,
+      "viajeros_redondeados": 6944
+    },
+    "pais_el_salvador": {
+      "meses": 12,
+      "viajeros_redondeados": 1738267
+    },
+    "pais_estados_unidos": {
+      "meses": 12,
+      "viajeros_redondeados": 679282
+    },
+    "pais_honduras": {
+      "meses": 12,
+      "viajeros_redondeados": 298542
+    }
+  },
+  "contraste_texto": {
+    "title": {
+      "#FFFFFF": 15.1667,
+      "#F4F6F8": 13.9999
+    },
+    "header": {
+      "#FFFFFF": 15.1667,
+      "#F4F6F8": 13.9999
+    },
+    "label": {
+      "#FFFFFF": 5.4846,
+      "#F4F6F8": 5.0626
+    },
+    "callout": {
+      "#FFFFFF": 8.663,
+      "#F4F6F8": 7.9965
+    }
+  },
+  "pruebas": {
+    "archivos": [
+      "tests/test_lab12_design.py",
+      "tests/test_wireframe.py",
+      "tests/test_theme.py"
+    ],
+    "resultado": "12 aprobadas"
+  },
+  "tiempos_declarados_por_hugo": {
+    "power_bi_minutos_reales": 30,
+    "dash_lab10_minutos_estimados": 60,
+    "fuente_estimacion_dash": "Declaración de Hugo durante esta sesión, sin medición de commits."
+  },
+  "archivos_sha256": {
+    "powerbi/observatorio_turismo.pbix": "f7a818501378d8c3e466d6fd9f9192616742b16ae64877cc66641018813a883e",
+    "powerbi/tema_observatorio.json": "7c7b6383c27777ca1419d1a4ef2745c3ddb4def5d2dfee5a201af580647fb146",
+    "docs/figuras/lab12_hugo_boceto.png": "d8de000cb81c4854e9774a7b9b8221092fde2d25920400971b58e93fb3ec66ff",
+    "docs/figuras/lab12_hugo_v1_v2_inicial.png": "57986b600e47571616dbca7d67695be2cedf714bd81f804075b974b33b1a1289",
+    "docs/figuras/lab12_hugo_v1_v2_seleccion.png": "9737ae5c5d53220d92aa4844ac89bd361669dccb947cf365cc379626f29a573f"
+  },
+  "no_comprobado": [
+    "Actualización de datos con RutaInsumos del equipo actual.",
+    "Suite completa de entrenamiento y modelos.",
+    "Prueba exhaustiva de los botones de exploración temporal.",
+    "Páginas y navegación correspondientes a la sesión 2.",
+    "Publicación remota y envío del traspaso."
+  ]
+}
