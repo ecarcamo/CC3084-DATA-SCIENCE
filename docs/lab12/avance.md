@@ -1,35 +1,37 @@
-# Laboratorio 12 · Observatorio de turismo en Power BI — Avance
+<style>
+@page { size: letter; margin: 1.5cm 1.6cm; }
+body { max-width: none; margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.3; }
+h1 { font-size: 18pt; margin: 0 0 .2em; color: #1F4E79; }
+h2 { font-size: 14pt; margin: 1em 0 .3em; padding-bottom: 2px; border-bottom: 1.5px solid #1F4E79; color: #1F4E79; }
+h3 { font-size: 11.5pt; margin: .8em 0 .25em; }
+h4 { font-size: 10.5pt; margin: .6em 0 .2em; }
+p, ul, ol { margin: .3em 0; }
+li { margin: .1em 0; }
+table { display: table; border-collapse: collapse; width: 100%; margin: .4em 0; font-size: 8.5pt; }
+th, td { border: 1px solid #5B6B7A; padding: 2px 5px; vertical-align: top; }
+th { background: #E7EFF6; text-align: left; }
+pre { margin: .4em 0; padding: 5px 7px; background: #F4F6F8; border: 1px solid #DDE3E9; font-size: 7.5pt; }
+pre, pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+figure { margin: .4em 0; text-align: center; }
+img { max-width: 100%; max-height: 10cm; }
+figcaption { font-size: 8.5pt; color: #5B6B7A; }
+</style>
 
-**Curso:** CC3066/CC3084 Data Science, UVG. **Equipo:** Diego, Esteban, Hugo, Ernesto.
-**Fecha:** 5 de noviembre de 2026. **Rama:** `lab12`. **Archivo:** `powerbi/observatorio_turismo.pbix` (v0.2).
+# Lab 12 · Observatorio de turismo en Power BI — Avance
 
-## Contenido del avance
+**Curso:** CC3066/CC3084 Data Science, UVG. **Equipo:** Diego, Esteban, Hugo, Ernesto. **Fecha:** 5 de noviembre de 2026. **Rama:** `lab12`. **Archivo:** `powerbi/observatorio_turismo.pbix` (v0.2).
 
-| Punto del avance | Responsable | Sección | Commits |
-|---|---|---|---|
-| A1 · Preguntas de gestión, público y alcance | Esteban | Parte C, §1 | `8036fb6` |
-| A2 · Paleta y justificación | Hugo | Parte B, §2 | `e668fd8`, `b47e73d` |
-| A3 · Planificación de tareas y responsables | Esteban | Parte C, §2 | `8036fb6` |
-| A4 · Boceto de interfaz y navegación | Hugo | Parte B, §3 | `b47e73d` |
-| A5 · Importación de datos y de resultados de modelos | Diego | Parte A | `f43b181`, `c147d9e` |
-| A6 · Dos visualizaciones enlazadas (V1 y V2) | Hugo | Parte B, §4–5 | `f4eb7b0` |
-| A7 · Criterios de comparación y protocolo de pruebas | Esteban | Parte C, §3 | `8036fb6` |
-
-Partes: **A** importación y modelo de datos (Diego), **B** diseño, navegación y visualizaciones enlazadas (Hugo), **C** gestión, planificación y protocolo de comparación (Esteban). Consolidación y entrega: Ernesto.
-
-<div style="page-break-before: always"></div>
-
-# Lab 12 — Importación y modelo de datos en Power BI
+## Importación y modelo de datos en Power BI
 
 **Responsable:** Diego. **Versión del informe:** v0.1. **Fecha:** 5 de noviembre de 2026.
 
-## 1. Alcance y estado
+### 1. Alcance y estado
 
 Esta entrega cubre A5 del avance y los apartados 4.4 y 4.5 del documento de diseño. Se importaron las series y resultados existentes, sin entrenar modelos ni modificar `insumos/` o `app/`. Las visualizaciones V5–V8 corresponden a la segunda sesión; V1/V2 y el diseño de navegación corresponden a Hugo.
 
 El modelo fue construido y consultado en Power BI Desktop. El usuario guardó el archivo el 5 de noviembre a las 15:22. Se reabrió desde el repositorio en una instancia nueva, iniciada a las 15:23:36; las consultas de control devolvieron los mismos resultados y las siete relaciones persistieron. La estructura ZIP del archivo pasó la comprobación de integridad y contiene el modelo, la página Control y su visual de tabla.
 
-## 2. Entorno y reproducción
+### 2. Entorno y reproducción
 
 - Windows; Power BI Desktop **2.159.1231.0 64-bit (October 2026)**, verificado en «About».
 - Rama `lab12`, actualizada antes de iniciar.
@@ -39,7 +41,7 @@ El modelo fue construido y consultado en Power BI Desktop. El usuario guardó el
 
 Abrir el `.pbix` en Power BI Desktop. Para cambiar de equipo: «Transform data > Edit parameters», cambiar `RutaInsumos` por la carpeta absoluta `insumos` terminada en `\`, aplicar los cambios y ejecutar «Refresh». Mantener las subcarpetas `series` y `resultados/predicciones`. Las fórmulas M contienen explícitamente `en-US`, independientemente del idioma de Windows.
 
-### Parámetro `RutaInsumos`
+#### Parámetro `RutaInsumos`
 
 Tipo Texto, obligatorio. Ruta utilizada:
 
@@ -47,7 +49,7 @@ Tipo Texto, obligatorio. Ruta utilizada:
 C:\Users\djlop\OneDrive\DIEGO\UVG\2026\segundo semestre\COMPARTIDOS\CC3084-DATA-SCIENCE\insumos\
 ```
 
-## 3. Fuentes y preparación (4.4)
+### 3. Fuentes y preparación (4.4)
 
 | Tabla | Fuente | Grano | Filas verificadas |
 |---|---|---|---:|
@@ -57,7 +59,7 @@ C:\Users\djlop\OneDrive\DIEGO\UVG\2026\segundo semestre\COMPARTIDOS\CC3084-DATA-
 
 Observaciones cubre enero de 2009 a junio de 2026; predicciones, abril de 2021 a junio de 2026. Los hechos mensuales se relacionan con el primer día del mes. Los archivos se leen con UTF-8 y delimitador coma. Fechas como fecha; valores como número decimal; `mape_excluidos` como entero y `mejor` como lógico. No se redondean, imputan ni agregan las filas durante la importación.
 
-### Observaciones — Power Query
+#### Observaciones — Power Query
 
 ```m
 let
@@ -70,7 +72,7 @@ in
     Tipos
 ```
 
-### Predicciones — Power Query
+#### Predicciones — Power Query
 
 ```m
 let
@@ -85,7 +87,7 @@ in
     Tipos
 ```
 
-### Metricas — Power Query
+#### Metricas — Power Query
 
 ```m
 let
@@ -99,7 +101,7 @@ in
 
 Los nombres de archivo conservan las claves originales. En Predicciones se reconoce el sufijo de uno de los cinco modelos, evitando dividir arbitrariamente por guiones bajos. Metricas conserva MAE, RMSE, MAPE, exclusiones y el indicador de mejor modelo; `order`, AIC y BIC no se incorporan ni se completan.
 
-### Dimensiones
+#### Dimensiones
 
 Se crearon como tablas constantes de Power Query, equivalentes a «Enter data». El usuario confirmó numerar según la secuencia del contexto.
 
@@ -117,7 +119,7 @@ Se crearon como tablas constantes de Power Query, equivalentes a «Enter data».
 
 `nombre` se ordena por `orden` en ambas dimensiones. Los grupos de DimSerie son Total, Vía de ingreso y País de residencia. Las tres vías suman el total; los tres países no representan todos los mercados.
 
-### Calendario
+#### Calendario
 
 ```dax
 Calendario =
@@ -132,7 +134,7 @@ ADDCOLUMNS (
 
 Tabla de fechas marcada con `Date`; calendario diario con años completos, del 01/01/2009 al 31/12/2026. `Mes` se ordena por `MesNum`; jerarquía Año > Trimestre > Mes. La cobertura del calendario no significa que existan observaciones en todos sus días o meses.
 
-## 4. Relaciones y prevención de duplicaciones (4.5)
+### 4. Relaciones y prevención de duplicaciones (4.5)
 
 | Dimensión, lado uno | Tabla, lado varios |
 |---|---|
@@ -148,7 +150,7 @@ Las siete relaciones están activas, con filtro unidireccional de la dimensión 
 
 Se verificaron cero duplicados en las claves compuestas de los tres hechos, siete series y cinco modelos. Las consultas de claves sin correspondencia devolvieron conjuntos vacíos (DAX COUNTROWS devuelve BLANK para estos conjuntos). No se unen observaciones con las cinco predicciones en una tabla plana, por lo que no se multiplica el observado por el número de modelos.
 
-## 5. Medidas DAX y finalidad
+### 5. Medidas DAX y finalidad
 
 Las cuatro medidas están en una tabla independiente `Medidas`. Se intentó ubicarlas en Observaciones, pero Power BI rechazó `Viajeros` por coincidir, sin distinguir mayúsculas, con la columna `viajeros`. Las instrucciones permiten una tabla de medidas; se mantuvieron los nombres y fórmulas originales. La columna auxiliar de Medidas está oculta y esta tabla no tiene relaciones.
 
@@ -182,7 +184,7 @@ SUMX (
 - **Estimado:** devuelve valores únicamente con una serie y un modelo; vacío en selecciones ambiguas.
 - **Diferencia:** observado menos estimado, sumado solo en fechas con ambos valores; no convierte ausencia en cero.
 
-## 6. Validación en Power BI
+### 6. Validación en Power BI
 
 Las consultas DAX se ejecutaron contra el modelo abierto mediante el MCP local. Sus resultados, consultas y huellas de los CSV están en [01_diego_validacion.json](01_diego_validacion.json).
 
@@ -204,7 +206,7 @@ Las diferencias de presentación provienen del redondeo y de la representación 
 
 Se consultaron también los siete totales por serie de 2025, los cuatro trimestres de 2020 y la variación interanual de enero de 2025; los resultados completos se conservan en la evidencia JSON.
 
-### Página Control
+#### Página Control
 
 Contiene una tabla con Indicador, Esperado y Obtenido, alimentada por `ControlDatos`, tabla calculada desconectada. Sus siete controles se recalculan al actualizar el modelo, no al mover segmentadores. Es un diagnóstico técnico, no cuenta como visualización analítica del laboratorio. Hugo deberá ocultar esta página en la versión final.
 
@@ -212,7 +214,7 @@ Contiene una tabla con Indicador, Esperado y Obtenido, alimentada por `ControlDa
 
 ![Vista Modelo](../figuras/lab12_diego_modelo.png)
 
-## 7. Limitaciones y continuación
+### 7. Limitaciones y continuación
 
 - Las predicciones se refieren a meses históricos, sin intervalos de confianza; los CSV no documentan una separación independiente entre entrenamiento y evaluación.
 - Un menor error histórico no garantiza precisión futura.
@@ -221,15 +223,13 @@ Contiene una tabla con Indicador, Esperado y Obtenido, alimentada por `ControlDa
 - Años incompletos, por ejemplo 2026, no deben compararse como si tuvieran doce meses.
 - Guardado y reapertura verificados. La actualización completa del modelo se ejecutó antes del guardado; los conteos y valores persistidos se verificaron de nuevo en la instancia reabierta.
 
-<div style="page-break-before: always"></div>
-
-# Lab 12 · Diseño, navegación y visualizaciones enlazadas
+## Diseño, navegación y visualizaciones enlazadas
 
 **Responsable:** Hugo. **Fecha:** 5 de noviembre de 2026. **Alcance:** avance A2, A4 y A6.
 
 **Estado:** v0.2 local, abierta y guardada con Power BI Desktop. La publicación remota y el envío a Esteban no se han realizado.
 
-## 1. Alcance y archivos
+### 1. Alcance y archivos
 
 La propuesta conserva las preguntas, fuentes y colores del Lab 10. La consulta histórica se realizó contra la rama `lab10`, no contra `lab11`. No se modificaron `insumos/` ni `app/`, ni se entrenaron modelos.
 
@@ -245,7 +245,7 @@ La propuesta conserva las preguntas, fuentes y colores del Lab 10. La consulta h
 
 La edición del informe fue autorizada por el usuario tras confirmar el traspaso de Diego a Hugo. Se conservan los datos importados, las relaciones y las cuatro medidas base. Se agregó únicamente la medida de presentación `Titulo V1` desde Power BI Desktop. La copia anterior permanece en `TEMP/observatorio_turismo_antes_hugo.pbix`, fuera del control de versiones.
 
-## 2. Paleta y justificación · A2
+### 2. Paleta y justificación · A2
 
 | Uso | Color | Justificación |
 |---|---|---|
@@ -276,7 +276,7 @@ Las pruebas comprueban una relación de contraste de al menos **4,5:1** para los
 
 El significado no depende únicamente del color: los modelos tendrán nombres y trazos diferentes; la página activa tendrá una etiqueta; la ausencia de datos se indicará con `×` y un mensaje. El verde de selección deberá acompañarse de un nombre visible y del cambio de contenido en V1. El resaltado verde del boceto es una especificación visual, no una prueba del estilo de selección nativo de Power BI.
 
-## 3. Boceto y navegación · A4
+### 3. Boceto y navegación · A4
 
 ![Boceto de las cinco páginas](../figuras/lab12_hugo_boceto.png)
 
@@ -292,7 +292,7 @@ El dibujo es un boceto con marcas ilustrativas, no una captura de Power BI ni un
 
 En la sesión 2 todas las páginas tendrán navegación con página activa identificada, ayuda breve y «Restablecer vista». Cada marcador de restablecimiento guardará el estado inicial de su página, sus segmentadores y sus selecciones. El regreso desde Detalle de serie volverá al origen; no reemplazará el botón de restablecimiento.
 
-### Equivalencia con Lab 10
+#### Equivalencia con Lab 10
 
 - Se conservan las ocho preguntas G1–G8, las siete series, los cinco modelos, los colores y el clic ranking → serie temporal.
 - Se sustituye la página única con casillas de visibilidad por páginas temáticas. La navegación final todavía pertenece a la sesión 2.
@@ -302,7 +302,7 @@ En la sesión 2 todas las páginas tendrán navegación con página activa ident
 
 En el avance solo se incorpora «Datos observados». La página técnica «Control» de Diego se conserva y se oculta en modo de lectura. Las otras páginas del boceto no se presentan como implementadas.
 
-## 4. V1, V2 e interacciones · A6
+### 4. V1, V2 e interacciones · A6
 
 | Aspecto | V1 · Evolución | V2 · Ranking |
 |---|---|---|
@@ -322,7 +322,7 @@ Las interacciones inversas y las interacciones entre segmentadores están desact
 
 La exploración temporal se prepara con los campos Año, Trimestre y Mes en el eje, inicialmente en Año. No se utiliza la jerarquía automática de fechas. La operación de exploración se verifica en Desktop.
 
-### Título de la serie
+#### Título de la serie
 
 La medida `Titulo V1` se creó desde Power BI Desktop y se vinculó al título de V1 mediante una expresión de formato condicional en PBIR:
 
@@ -338,7 +338,7 @@ Titulo V1 =
 
 El título debe alternar entre «Viajeros: Total» y «Viajeros: Vía Aérea» durante la prueba de selección. La pregunta de gestión se conserva en esta especificación y en el texto alternativo de la gráfica.
 
-## 5. Protocolo de comprobación en Power BI
+### 5. Protocolo de comprobación en Power BI
 
 1. Abrir el `.pbix` con Power BI Desktop 2.159.1231.0 o una versión compatible. Confirmar que no existen avisos de archivo inválido ni errores de consulta.
 2. Confirmar Arial, fondo gris, tarjetas blancas y líneas azules. El tema también puede importarse desde «Vista > Temas > Examinar temas».
@@ -358,7 +358,7 @@ Capturas requeridas:
 
 Solo se aceptan capturas reales de Power BI como evidencia de A6. El boceto y las pruebas de estructura no reemplazan la prueba gráfica → gráfica.
 
-### Comprobación realizada
+#### Comprobación realizada
 
 La prueba nativa se ejecutó con Power BI Desktop **2.159.1231.0**. El ranking mostró 2.401.323, 1.188.971 y 6.944 viajeros para las tres vías en 2025. La selección de Vía Aérea cambió el título a «Viajeros: Vía Aérea» y el primer punto anual de V1 a **935.379** viajeros de 2009. Al retirar la selección reaparecieron «Viajeros: Total» y **2.028.776** viajeros de 2009. La permanencia de 2009 confirma que el segmentador 2025 no limita la historia de V1.
 
@@ -372,7 +372,7 @@ Después de guardar y cerrar Desktop, una instancia nueva conservó el tema, los
 
 El registro de tiempo de `TEMP/CONTEXTO.md` recoge **30 minutos reales de Power BI** y **60 minutos estimados de Dash Lab 10**, ambos declarados por Hugo. La estimación de Dash se basa en su recuerdo, no en una medición de commits.
 
-## 6. Reproducción y precauciones
+### 6. Reproducción y precauciones
 
 Desde la raíz del repositorio, con el entorno Python académico existente:
 
@@ -389,11 +389,11 @@ Los esquemas oficiales PBIR se usan para comprobar la estructura de la página y
 
 No se refrescaron los datos, no se ejecutó la suite completa de modelos y no se certificaron todavía las páginas de la sesión 2. La exploración Año > Trimestre > Mes se configuró y se verificó en la estructura del eje; no se realizó una prueba exhaustiva de sus botones.
 
-## 7. Pendientes de la sesión 2
+### 7. Pendientes de la sesión 2
 
 V3, V4, navegación final, marcadores, restablecimiento, obtención de detalles y mensajes de ausencia de datos. V5–V8 corresponden a Diego con la especificación de Esteban. La entrega remota y el envío a Esteban requieren actuación expresa del equipo; no se ejecuta `git push`.
 
-## Referencias
+### Referencias
 
 - [Temas de informes de Power BI](https://learn.microsoft.com/power-bi/create-reports/desktop-report-themes)
 - [Interacciones entre visualizaciones](https://learn.microsoft.com/power-bi/create-reports/service-reports-visual-interactions)
@@ -401,21 +401,19 @@ V3, V4, navegación final, marcadores, restablecimiento, obtención de detalles 
 - [Esquema de página PBIR](https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/2.1.0/schema.json)
 - [Esquema de visual PBIR](https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.7.0/schema.json)
 
-<div style="page-break-before: always"></div>
-
-# Lab 12 · Preguntas de gestión, planificación y protocolo de comparación
+## Preguntas de gestión, planificación y protocolo de comparación
 
 **Responsable:** Esteban. **Fecha:** 5 de noviembre de 2026. **Alcance:** avance A1, A3 y A7.
 
 **Punto de partida:** `b47e73d` en `lab12`, con la importación de Diego (v0.1) y el diseño de Hugo (v0.2). La versión de referencia del Laboratorio 10 es la rama `lab10`, tablero en Dash. No se modificaron `insumos/`, `app/` ni el `.pbix`; la edición del informe sigue a cargo de Hugo.
 
-## 1. Preguntas de gestión, público y alcance · A1
+### 1. Preguntas de gestión, público y alcance · A1
 
-### Público
+#### Público
 
 Directivos y tomadores de decisiones del sector turístico que no necesariamente tienen formación en estadística. El informe debe leerse sin conocer los procedimientos de los modelos; los términos técnicos (MAE, RMSE, MAPE, estimación) se explican en la página donde aparecen.
 
-### Preguntas
+#### Preguntas
 
 Se conservan las ocho preguntas del Laboratorio 10, con el mismo texto. Cada visualización de Power BI responde a la pregunta de su gráfica equivalente.
 
@@ -432,7 +430,7 @@ Se conservan las ocho preguntas del Laboratorio 10, con el mismo texto. Cada vis
 
 Se compara contra `lab10` y no contra `lab11`, porque `lab11` cambió G6 y G7 y retiró G8.
 
-### Alcance
+#### Alcance
 
 Igual al del Laboratorio 10:
 
@@ -441,14 +439,14 @@ Igual al del Laboratorio 10:
 - **Métricas:** MAE, RMSE y MAPE de `metricas_modelos.csv`, calculadas sobre los 63 meses completos.
 - No se entrenan modelos nuevos ni se recalculan predicciones.
 
-### Decisiones que puede apoyar
+#### Decisiones que puede apoyar
 
 - Identificar las vías y los mercados que concentran más viajeros en un año, para priorizar recursos de atención.
 - Localizar las temporadas altas y bajas de cada serie para planificar personal y servicios.
 - Revisar si un año completo o un mes concreto creció o cayó frente al anterior.
 - Saber qué estimación histórica se acercó más a lo registrado en cada serie, para decidir con qué cautela consultarla.
 
-### Fuera de alcance
+#### Fuera de alcance
 
 - Explicar las causas de los cambios. Los datos describen volúmenes registrados, no sus motivos.
 - Pronosticar meses futuros. Las estimaciones corresponden a meses ya registrados y no tienen intervalos de confianza.
@@ -456,7 +454,7 @@ Igual al del Laboratorio 10:
 - Comparar años incompletos, como 2026, con años completos.
 - Garantizar la precisión futura de un modelo. Un error histórico menor no la asegura, y los CSV no documentan una separación independiente entre entrenamiento y evaluación.
 
-## 2. Planificación de tareas y responsables · A3
+### 2. Planificación de tareas y responsables · A3
 
 Fechas de terminación propuestas. Las celdas «por confirmar» se acuerdan en el grupo; no se registran fechas de realización que no hayan ocurrido.
 
@@ -478,7 +476,7 @@ Fechas de terminación propuestas. Las celdas «por confirmar» se acuerdan en e
 
 Hugo conserva la edición del `.pbix` hasta terminar la sesión 2. Quien edite después recibe el archivo por traspaso explícito, para no sobrescribir trabajo.
 
-### Registro de tiempo efectivo (4.6)
+#### Registro de tiempo efectivo (4.6)
 
 Cada integrante anota sus minutos reales por herramienta al terminar cada tarea. Lo medido se distingue de lo estimado.
 
@@ -488,9 +486,9 @@ Cada integrante anota sus minutos reales por herramienta al terminar cada tarea.
 | Diego | Por registrar | Por registrar | — |
 | Esteban | Por registrar | Por registrar | — |
 
-## 3. Criterios de comparación y protocolo de las tres pruebas · A7
+### 3. Criterios de comparación y protocolo de las tres pruebas · A7
 
-### Criterios de la matriz (5.1)
+#### Criterios de la matriz (5.1)
 
 En la entrega final, la matriz tendrá las columnas criterio, evidencia en Dash, evidencia en Power BI e implicación para la tarea. Para el avance se fija qué evidencia se recoge en cada criterio.
 
@@ -508,7 +506,7 @@ En la entrega final, la matriz tendrá las columnas criterio, evidencia en Dash,
 
 Para costos y acceso (5.2) se registrarán sistema operativo, licencias, alojamiento y restricciones, con enlace a la documentación oficial y fecha de consulta. El uso local gratuito se separa de las condiciones para publicar y compartir. Un dato de entorno ya conocido: Power BI Desktop solo se ejecuta en Windows, mientras que el tablero de Dash corre en Linux, Windows o macOS desde un navegador.
 
-### Condiciones comunes (5.4)
+#### Condiciones comunes (5.4)
 
 - Mismos CSV de `insumos/`, sin refrescar ni modificar.
 - Estado inicial de cada versión: recién abierta, sin selecciones previas. En Power BI, grupo «Vía de ingreso» y año 2025, como deja Hugo la página.
@@ -516,7 +514,7 @@ Para costos y acceso (5.2) se registrarán sistema operativo, licencias, alojami
 - Se anotan el equipo, el sistema operativo, la ventana y la experiencia previa de quien ejecuta. Power BI necesita Windows; si se ejecuta en otro equipo o en una máquina virtual, esa diferencia se informa y no se atribuye a la herramienta.
 - Una persona ejecuta las tres pruebas en ambas versiones, en orden alterno, para no favorecer a la que se usa en segundo lugar.
 
-### Prueba 1 · Responder una pregunta de gestión con filtros
+#### Prueba 1 · Responder una pregunta de gestión con filtros
 
 **Pregunta:** ¿Qué vía de ingreso concentró más viajeros en 2025 y cuántos registró?
 
@@ -528,7 +526,7 @@ Para costos y acceso (5.2) se registrarán sistema operativo, licencias, alojami
 
 **Resultado esperado:** Vía Terrestre, **2.401.323** viajeros, seguida de Vía Aérea con **1.188.971** y Vía Marítima con **6.944**. La suma es **3.597.238**, igual al Total de 2025. Ningún país ni el Total aparecen en el ranking.
 
-### Prueba 2 · De la vista general al detalle y regreso
+#### Prueba 2 · De la vista general al detalle y regreso
 
 **Pregunta:** En la serie Total, ¿qué mes del cuarto trimestre de 2025 registró más viajeros?
 
@@ -545,7 +543,7 @@ Hay que vigilar 2026, que solo tiene seis meses. Dash no suma periodos incomplet
 
 En Dash el detalle se cambia con el selector de nivel de G1; en Power BI, con la jerarquía Año > Trimestre > Mes de V1. Se cuentan los clics de ambos recorridos completos, incluido el regreso.
 
-### Prueba 3 · Consultar las predicciones y comparar tres modelos
+#### Prueba 3 · Consultar las predicciones y comparar tres modelos
 
 **Pregunta:** Para la serie Total, entre SARIMA, Holt-Winters y SES, ¿qué modelo tiene menor error medio y cuánto?
 
@@ -565,7 +563,7 @@ En Dash el detalle se cambia con el selector de nivel de G1; en Power BI, con la
 
 SES tiene el menor error en las tres métricas. MAE y RMSE se expresan en viajeros y MAPE en porcentaje, así que solo se comparan modelos dentro de una misma métrica, nunca métricas entre sí. G7 recalcula las métricas sobre las fechas comunes y Power BI importa las del CSV. Ambas cubren los mismos 63 meses y la auditoría del Lab 10 comprobó que las 105 métricas recalculadas coinciden con el CSV, así que no se espera diferencia.
 
-### Verificación de dos indicadores (5.5)
+#### Verificación de dos indicadores (5.5)
 
 | Indicador | Filtros y agregación | Valor esperado |
 |---|---|---:|
@@ -574,7 +572,7 @@ SES tiene el menor error en las tres métricas. MAE y RMSE se expresan en viajer
 
 Si alguna versión muestra otro valor, se documenta la diferencia y su causa antes de concluir. Power BI ya mostró 3.597.237,9999999995 para el primer indicador: la diferencia viene de la representación decimal de los CSV y desaparece al redondear a enteros.
 
-## 4. Pendientes para la entrega final
+### 4. Pendientes para la entrega final
 
 - Ejecutar las tres pruebas en ambas versiones y registrar resultado, clics, tiempo y dificultades.
 - Completar la matriz con la evidencia y la implicación de cada criterio.
