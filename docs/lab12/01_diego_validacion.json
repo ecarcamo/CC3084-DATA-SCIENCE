@@ -1,0 +1,796 @@
+{
+  "fecha": "2026-11-05",
+  "herramienta": "Power BI Desktop 2.159.1231.0 64-bit (October 2026)",
+  "consultas": [
+    {
+      "tool": "dax_query_operations",
+      "request": {
+        "operation": "Execute",
+        "resultMode": "Inline",
+        "query": "EVALUATE ROW(\"Observaciones\",COUNTROWS(Observaciones),\"Predicciones\",COUNTROWS(Predicciones),\"Metricas\",COUNTROWS(Metricas),\"Total2025\",CALCULATE([Viajeros],DimSerie[clave]=\"total\",Calendario[Año]=2025),\"Total2020\",CALCULATE([Viajeros],DimSerie[clave]=\"total\",Calendario[Año]=2020),\"MAE_SES\",CALCULATE(MAX(Metricas[mae]),DimSerie[clave]=\"total\",DimModelo[clave]=\"ses\"),\"DiferenciaAbril2021\",CALCULATE([Diferencia],DimSerie[clave]=\"total\",DimModelo[clave]=\"ses\",Calendario[Date]=DATE(2021,4,1)),\"Predeterminado2025\",CALCULATE([Viajeros serie],Calendario[Año]=2025),\"EstimadoAmbiguo\",[Estimado])"
+      }
+    },
+    {
+      "tool": "relationship_operations",
+      "request": {
+        "operation": "List"
+      }
+    },
+    {
+      "tool": "dax_query_operations",
+      "request": {
+        "operation": "Execute",
+        "resultMode": "Inline",
+        "query": "EVALUATE ROW(\"DuplicadasObs\",COUNTROWS(Observaciones)-COUNTROWS(SUMMARIZE(Observaciones,Observaciones[serie_clave],Observaciones[fecha])),\"DuplicadasPred\",COUNTROWS(Predicciones)-COUNTROWS(SUMMARIZE(Predicciones,Predicciones[serie_clave],Predicciones[modelo_clave],Predicciones[fecha])),\"DuplicadasMetricas\",COUNTROWS(Metricas)-COUNTROWS(SUMMARIZE(Metricas,Metricas[serie_clave],Metricas[modelo_clave])),\"Series\",COUNTROWS(DimSerie),\"Modelos\",COUNTROWS(DimModelo),\"FueraCobertura\",CALCULATE([Diferencia],DimSerie[clave]=\"total\",DimModelo[clave]=\"ses\",Calendario[Año]=2010),\"EstimadoMultiModelo\",CALCULATE([Estimado],DimSerie[clave]=\"total\"),\"ObsHuerfanas\",COUNTROWS(EXCEPT(VALUES(Observaciones[serie_clave]),VALUES(DimSerie[clave]))),\"PredHuerfanas\",COUNTROWS(EXCEPT(VALUES(Predicciones[serie_clave]),VALUES(DimSerie[clave]))),\"ModeloHuerfano\",COUNTROWS(EXCEPT(VALUES(Predicciones[modelo_clave]),VALUES(DimModelo[clave]))))"
+      }
+    },
+    {
+      "tool": "dax_query_operations",
+      "request": {
+        "operation": "Execute",
+        "resultMode": "Inline",
+        "query": "EVALUATE SUMMARIZECOLUMNS(DimSerie[clave],FILTER(Calendario,Calendario[Año]=2025),\"Viajeros\",[Viajeros])"
+      }
+    },
+    {
+      "tool": "dax_query_operations",
+      "request": {
+        "operation": "Execute",
+        "resultMode": "Inline",
+        "query": "EVALUATE SUMMARIZECOLUMNS(Calendario[Trimestre],FILTER(Calendario,Calendario[Año]=2020),FILTER(DimSerie,DimSerie[clave]=\"total\"),\"Viajeros\",[Viajeros])"
+      }
+    },
+    {
+      "tool": "dax_query_operations",
+      "request": {
+        "operation": "Execute",
+        "resultMode": "Inline",
+        "query": "EVALUATE ROW(\"YoYEnero2025\",CALCULATE(DIVIDE(CALCULATE([Viajeros],Calendario[Date]=DATE(2025,1,1))-CALCULATE([Viajeros],Calendario[Date]=DATE(2024,1,1)),CALCULATE([Viajeros],Calendario[Date]=DATE(2024,1,1)))*100,DimSerie[clave]=\"total\"))"
+      }
+    }
+  ],
+  "resultados": [
+    {
+      "message": "DAX query executed successfully, returned 1 rows in 48ms",
+      "operation": "Execute",
+      "data": {
+        "rowCount": 1,
+        "isTruncated": false,
+        "columns": [
+          {
+            "name": "[Observaciones]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 0
+          },
+          {
+            "name": "[Predicciones]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 1
+          },
+          {
+            "name": "[Metricas]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 2
+          },
+          {
+            "name": "[Total2025]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 3
+          },
+          {
+            "name": "[Total2020]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 4
+          },
+          {
+            "name": "[MAE_SES]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 5
+          },
+          {
+            "name": "[DiferenciaAbril2021]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 6
+          },
+          {
+            "name": "[Predeterminado2025]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 7
+          },
+          {
+            "name": "[EstimadoAmbiguo]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 8
+          }
+        ],
+        "rows": [
+          {
+            "[Observaciones]": 1470,
+            "[Predicciones]": 2205,
+            "[Metricas]": 35,
+            "[Total2025]": 3597237.9999999995,
+            "[Total2020]": 1266340.1437961974,
+            "[MAE_SES]": 175088.43650293106,
+            "[DiferenciaAbril2021]": -23077.1845384029,
+            "[Predeterminado2025]": 3597237.9999999995,
+            "[EstimadoAmbiguo]": null
+          }
+        ],
+        "executionTimeMs": 48
+      }
+    },
+    {
+      "message": "Found 7 relationships",
+      "operation": "LIST",
+      "data": [
+        {
+          "fromTable": "Observaciones",
+          "fromColumn": "serie_clave",
+          "toTable": "DimSerie",
+          "toColumn": "clave",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "DimSerie_Observaciones"
+        },
+        {
+          "fromTable": "Predicciones",
+          "fromColumn": "serie_clave",
+          "toTable": "DimSerie",
+          "toColumn": "clave",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "DimSerie_Predicciones"
+        },
+        {
+          "fromTable": "Metricas",
+          "fromColumn": "serie_clave",
+          "toTable": "DimSerie",
+          "toColumn": "clave",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "DimSerie_Metricas"
+        },
+        {
+          "fromTable": "Predicciones",
+          "fromColumn": "modelo_clave",
+          "toTable": "DimModelo",
+          "toColumn": "clave",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "DimModelo_Predicciones"
+        },
+        {
+          "fromTable": "Metricas",
+          "fromColumn": "modelo_clave",
+          "toTable": "DimModelo",
+          "toColumn": "clave",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "DimModelo_Metricas"
+        },
+        {
+          "fromTable": "Observaciones",
+          "fromColumn": "fecha",
+          "toTable": "Calendario",
+          "toColumn": "Date",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "Calendario_Observaciones"
+        },
+        {
+          "fromTable": "Predicciones",
+          "fromColumn": "fecha",
+          "toTable": "Calendario",
+          "toColumn": "Date",
+          "isActive": true,
+          "crossFilteringBehavior": "OneDirection",
+          "fromCardinality": "Many",
+          "toCardinality": "One",
+          "name": "Calendario_Predicciones"
+        }
+      ]
+    },
+    {
+      "message": "DAX query executed successfully, returned 1 rows in 34ms",
+      "operation": "Execute",
+      "data": {
+        "rowCount": 1,
+        "isTruncated": false,
+        "columns": [
+          {
+            "name": "[DuplicadasObs]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 0
+          },
+          {
+            "name": "[DuplicadasPred]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 1
+          },
+          {
+            "name": "[DuplicadasMetricas]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 2
+          },
+          {
+            "name": "[Series]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 3
+          },
+          {
+            "name": "[Modelos]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 4
+          },
+          {
+            "name": "[FueraCobertura]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 5
+          },
+          {
+            "name": "[EstimadoMultiModelo]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 6
+          },
+          {
+            "name": "[ObsHuerfanas]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 7
+          },
+          {
+            "name": "[PredHuerfanas]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 8
+          },
+          {
+            "name": "[ModeloHuerfano]",
+            "dataType": "Int64",
+            "isNullable": true,
+            "ordinal": 9
+          }
+        ],
+        "rows": [
+          {
+            "[DuplicadasObs]": 0,
+            "[DuplicadasPred]": 0,
+            "[DuplicadasMetricas]": 0,
+            "[Series]": 7,
+            "[Modelos]": 5,
+            "[FueraCobertura]": null,
+            "[EstimadoMultiModelo]": null,
+            "[ObsHuerfanas]": null,
+            "[PredHuerfanas]": null,
+            "[ModeloHuerfano]": null
+          }
+        ],
+        "executionTimeMs": 34
+      }
+    },
+    {
+      "message": "DAX query executed successfully, returned 7 rows in 26ms",
+      "operation": "Execute",
+      "data": {
+        "rowCount": 7,
+        "isTruncated": false,
+        "columns": [
+          {
+            "name": "DimSerie[clave]",
+            "dataType": "String",
+            "isNullable": true,
+            "ordinal": 0
+          },
+          {
+            "name": "[Viajeros]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 1
+          }
+        ],
+        "rows": [
+          {
+            "DimSerie[clave]": "total",
+            "[Viajeros]": 3597237.9999999995
+          },
+          {
+            "DimSerie[clave]": "via_aerea",
+            "[Viajeros]": 1188971
+          },
+          {
+            "DimSerie[clave]": "via_terrestre",
+            "[Viajeros]": 2401322.9999999995
+          },
+          {
+            "DimSerie[clave]": "via_maritima",
+            "[Viajeros]": 6944
+          },
+          {
+            "DimSerie[clave]": "pais_el_salvador",
+            "[Viajeros]": 1738266.9999999995
+          },
+          {
+            "DimSerie[clave]": "pais_estados_unidos",
+            "[Viajeros]": 679282
+          },
+          {
+            "DimSerie[clave]": "pais_honduras",
+            "[Viajeros]": 298542.00000000006
+          }
+        ],
+        "executionTimeMs": 26
+      }
+    },
+    {
+      "message": "DAX query executed successfully, returned 4 rows in 3ms",
+      "operation": "Execute",
+      "data": {
+        "rowCount": 4,
+        "isTruncated": false,
+        "columns": [
+          {
+            "name": "Calendario[Trimestre]",
+            "dataType": "String",
+            "isNullable": true,
+            "ordinal": 0
+          },
+          {
+            "name": "[Viajeros]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 1
+          }
+        ],
+        "rows": [
+          {
+            "Calendario[Trimestre]": "T1",
+            "[Viajeros]": 1031872.0904283549
+          },
+          {
+            "Calendario[Trimestre]": "T2",
+            "[Viajeros]": 31635
+          },
+          {
+            "Calendario[Trimestre]": "T3",
+            "[Viajeros]": 54230.528915275994
+          },
+          {
+            "Calendario[Trimestre]": "T4",
+            "[Viajeros]": 148602.5244525665
+          }
+        ],
+        "executionTimeMs": 3
+      }
+    },
+    {
+      "message": "DAX query executed successfully, returned 1 rows in 7ms",
+      "operation": "Execute",
+      "data": {
+        "rowCount": 1,
+        "isTruncated": false,
+        "columns": [
+          {
+            "name": "[YoYEnero2025]",
+            "dataType": "Double",
+            "isNullable": true,
+            "ordinal": 0
+          }
+        ],
+        "rows": [
+          {
+            "[YoYEnero2025]": -8.064685403804035
+          }
+        ],
+        "executionTimeMs": 7
+      }
+    }
+  ],
+  "fuentes_sha256": {
+    "insumos\\resultados\\comparativo_series.csv": "8ffad5792d1cca8ac5665ad21e259615674ecd2c5ba9aa827d83ec45f849dd16",
+    "insumos\\resultados\\diagnostico_series.csv": "bbf5f17757cc49ebe124f010c4fbd3dc20db1c13dfe15d8c55d8d7b02a216314",
+    "insumos\\resultados\\maritima_anual.csv": "78ae53c121fb94b9b9e49ae9c72aa937b95a3a5bd30c0d1e5d03f8ed8c45913f",
+    "insumos\\resultados\\metricas_modelos.csv": "78fdadae099719161eecf1d3997687a164586b8a7e08a20d488755370c919aa9",
+    "insumos\\resultados\\modelos_arima.csv": "4cbdbbb4a6dfb083f42d757caee64dd7188f2f16e1755aa0409e5ab1bbedfa95",
+    "insumos\\resultados\\predicciones\\pais_el_salvador_holt_winters.csv": "0d93cfc5d7e143c07dff4cfdbc12c4419377517921fe122bd6f53df8de00069f",
+    "insumos\\resultados\\predicciones\\pais_el_salvador_prophet.csv": "d5c9a414bf99f5ae85978caaf8fe303a79b8102e70b3f36d685b1b051770ef36",
+    "insumos\\resultados\\predicciones\\pais_el_salvador_sarima.csv": "1a51c740eea0b678f9e99a697c0968d5277248e553f94a90c7f41d6a86530025",
+    "insumos\\resultados\\predicciones\\pais_el_salvador_seasonal_naive.csv": "cebabc0c5ed3c70a8b1a14c0f7140473e56908b3bc98ebb1a71989f35a13063d",
+    "insumos\\resultados\\predicciones\\pais_el_salvador_ses.csv": "353b8c72a70d7a53e2d3c84ac7e87d408653f00183c4a73f789a3c1b43808bff",
+    "insumos\\resultados\\predicciones\\pais_estados_unidos_holt_winters.csv": "f5be9b2ebd0f97ab22c6e095666c0b7a365e2368d89ce2ed369f9af20a767e45",
+    "insumos\\resultados\\predicciones\\pais_estados_unidos_prophet.csv": "b30ccdaf117f545655d97dfe5e14a2aec438f3a86d5558028ce1c22f729f1ffb",
+    "insumos\\resultados\\predicciones\\pais_estados_unidos_sarima.csv": "34926e9fe7991c4543669c99553502732974512d6a0a479a09d7646362f7d53b",
+    "insumos\\resultados\\predicciones\\pais_estados_unidos_seasonal_naive.csv": "fbe8b4691f39516267dad2d0ee2439e0d3f276d4380370ba7e24cfdf64dde2b4",
+    "insumos\\resultados\\predicciones\\pais_estados_unidos_ses.csv": "e3b0c5d0dc56295c94ef0aa70286788a06f3ddf223035db645ef5125a6175505",
+    "insumos\\resultados\\predicciones\\pais_honduras_holt_winters.csv": "81b6c0abcb88c8f14e67fa7d4081df000162195b95491cf8c48f78295dfe5b8e",
+    "insumos\\resultados\\predicciones\\pais_honduras_prophet.csv": "3ff01243076519252ea6dfd4a0a06930bead786a74b495574f63f8be7e6067c4",
+    "insumos\\resultados\\predicciones\\pais_honduras_sarima.csv": "b2335779e10650eff5b864eb178ccff12cfaf51d14b7aeb3283f92d281cbc165",
+    "insumos\\resultados\\predicciones\\pais_honduras_seasonal_naive.csv": "a21597246294570518f4fc2b0a3d80b3b1a66589c6eee23f6c019823e92b8f3a",
+    "insumos\\resultados\\predicciones\\pais_honduras_ses.csv": "41d2150d312d75f0fa5abf949159c36a977dc0bb7cb6a1cc0c29f15d8458867d",
+    "insumos\\resultados\\predicciones\\total_holt_winters.csv": "d651178dc65026efbce5ac1c95db5b27b26d159eccf8cca791d7c99993257c33",
+    "insumos\\resultados\\predicciones\\total_prophet.csv": "b4a7df0e613204c28baf9aeae10c5b31408950936d8c0e5faced6e16b1471669",
+    "insumos\\resultados\\predicciones\\total_sarima.csv": "1afa336f5198a0d73c8c5ecb8b7922c9269cbc3e2876f5d24b09a84e86995bcc",
+    "insumos\\resultados\\predicciones\\total_seasonal_naive.csv": "e349410780d0518bc8f05940e6b2485633b72828730783b8cc936edd503462f4",
+    "insumos\\resultados\\predicciones\\total_ses.csv": "8d309c72c3ed2be2f5d9177f23765ffbd380632d79e8d333c2e6c49eaef5003c",
+    "insumos\\resultados\\predicciones\\via_aerea_holt_winters.csv": "3129b0e86d5164ae89d038722004e3c97dfa0757e09c138d8402fa8b47dd804b",
+    "insumos\\resultados\\predicciones\\via_aerea_prophet.csv": "05a051b9df18f8d3aa1e094c1824365997776841bd5239fafda2854c5781c44e",
+    "insumos\\resultados\\predicciones\\via_aerea_sarima.csv": "839ce14a391c3998e64b49b07c220b051b1f4bd2a975adbb251acaac28d8e3f1",
+    "insumos\\resultados\\predicciones\\via_aerea_seasonal_naive.csv": "db43e557159c4d8330c54fe39a00cfa2fce1647ef54c26d7a95227c3552fcf4e",
+    "insumos\\resultados\\predicciones\\via_aerea_ses.csv": "62a146ffe8c5644c0e5cce00816e021d3cbf56264cb0f98232813d63aea86398",
+    "insumos\\resultados\\predicciones\\via_maritima_holt_winters.csv": "f6b5e002cf12794ba60a489eda3b1b37ab664eb4c157593deb16b3164510eedb",
+    "insumos\\resultados\\predicciones\\via_maritima_prophet.csv": "e1ee226abf74a5403889382e6c784bd402e1f2bef1bf59a3652c73d8772064e4",
+    "insumos\\resultados\\predicciones\\via_maritima_sarima.csv": "f6b5e002cf12794ba60a489eda3b1b37ab664eb4c157593deb16b3164510eedb",
+    "insumos\\resultados\\predicciones\\via_maritima_seasonal_naive.csv": "f6b5e002cf12794ba60a489eda3b1b37ab664eb4c157593deb16b3164510eedb",
+    "insumos\\resultados\\predicciones\\via_maritima_ses.csv": "375736041d5c096c6f1bd23452611dbf14c4491c22101225e94acdf13b3f4ba3",
+    "insumos\\resultados\\predicciones\\via_terrestre_holt_winters.csv": "314d3b3d96c3c332cccb1e9cfaa96595f866b91ee71f1582e3d439cc3fe4ce54",
+    "insumos\\resultados\\predicciones\\via_terrestre_prophet.csv": "5bd591800fa1eb862db17567b109b4ae9dab28173580893be4d94246a91ec229",
+    "insumos\\resultados\\predicciones\\via_terrestre_sarima.csv": "6725437624a0ff5331a710bcce15f20358b8ee9ae4b6ad9120193d1b3fe3e130",
+    "insumos\\resultados\\predicciones\\via_terrestre_seasonal_naive.csv": "8f49bc0ff7bcaf5f3f389cf79f709d23aaab1ae8bfe7545e380ded06d3c51bbb",
+    "insumos\\resultados\\predicciones\\via_terrestre_ses.csv": "d08a3563764805ea920b004397ae452c49baf37eb5726a954fd28ad9cd2875e5",
+    "insumos\\series\\serie_pais_el_salvador.csv": "db7f44a3a0f0b003ed8f13e584522e49c400f877d2be5baa7e0cb2f9a57a7b9a",
+    "insumos\\series\\serie_pais_estados_unidos.csv": "b5c76083e90404e443c047831f3ab7d14e6c29342736af7556fa9fd34cd855d2",
+    "insumos\\series\\serie_pais_honduras.csv": "38f3e44e0e2d5d769df26924558e3455916983c4e3799a5f86c6f9c88a29eca8",
+    "insumos\\series\\serie_total.csv": "31df05118e7f9b6936a1f56a69466375700653b8ca17fed9c50b64dea876b75b",
+    "insumos\\series\\serie_via_aerea.csv": "266ac51fc62da0db670febf3c3cf333f17adbd695dc8ff64809d2d1ab4a4b52e",
+    "insumos\\series\\serie_via_maritima.csv": "3c4316e2a4c172c571e5d6c2594eadd7dc1baf5c1f16a9b3e9c34ab4b607e310",
+    "insumos\\series\\serie_via_terrestre.csv": "22e4ceda99e9b072b17059d5ded2510db0607feb6b79eca868978a6979829563"
+  },
+  "reapertura": {
+    "estado": "aprobada",
+    "instancia_inicio": "2026-11-05T15:23:36.9964141-06:00",
+    "resultados": [
+      {
+        "message": "DAX query executed successfully, returned 1 rows in 34ms",
+        "operation": "Execute",
+        "data": {
+          "rowCount": 1,
+          "isTruncated": false,
+          "columns": [
+            {
+              "name": "[Observaciones]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 0
+            },
+            {
+              "name": "[Predicciones]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 1
+            },
+            {
+              "name": "[Metricas]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 2
+            },
+            {
+              "name": "[Total2025]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 3
+            },
+            {
+              "name": "[Total2020]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 4
+            },
+            {
+              "name": "[MAE_SES]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 5
+            },
+            {
+              "name": "[DiferenciaAbril2021]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 6
+            },
+            {
+              "name": "[Predeterminado2025]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 7
+            },
+            {
+              "name": "[EstimadoAmbiguo]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 8
+            }
+          ],
+          "rows": [
+            {
+              "[Observaciones]": 1470,
+              "[Predicciones]": 2205,
+              "[Metricas]": 35,
+              "[Total2025]": 3597237.9999999995,
+              "[Total2020]": 1266340.1437961974,
+              "[MAE_SES]": 175088.43650293106,
+              "[DiferenciaAbril2021]": -23077.1845384029,
+              "[Predeterminado2025]": 3597237.9999999995,
+              "[EstimadoAmbiguo]": null
+            }
+          ],
+          "executionTimeMs": 34
+        }
+      },
+      {
+        "message": "Found 7 relationships",
+        "operation": "LIST",
+        "data": [
+          {
+            "fromTable": "Observaciones",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Observaciones"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Predicciones"
+          },
+          {
+            "fromTable": "Metricas",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Metricas"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "modelo_clave",
+            "toTable": "DimModelo",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimModelo_Predicciones"
+          },
+          {
+            "fromTable": "Metricas",
+            "fromColumn": "modelo_clave",
+            "toTable": "DimModelo",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimModelo_Metricas"
+          },
+          {
+            "fromTable": "Observaciones",
+            "fromColumn": "fecha",
+            "toTable": "Calendario",
+            "toColumn": "Date",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "Calendario_Observaciones"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "fecha",
+            "toTable": "Calendario",
+            "toColumn": "Date",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "Calendario_Predicciones"
+          }
+        ]
+      }
+    ],
+    "pbix_sha256": "56f3807c641154e4ed8c8d2ecdf739594c9b96fcd4f46901e159f87716526f0b",
+    "verificacion_final": [
+      {
+        "message": "DAX query executed successfully, returned 1 rows in 88ms",
+        "operation": "Execute",
+        "data": {
+          "rowCount": 1,
+          "isTruncated": false,
+          "columns": [
+            {
+              "name": "[Observaciones]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 0
+            },
+            {
+              "name": "[Predicciones]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 1
+            },
+            {
+              "name": "[Metricas]",
+              "dataType": "Int64",
+              "isNullable": true,
+              "ordinal": 2
+            },
+            {
+              "name": "[Total2025]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 3
+            },
+            {
+              "name": "[Total2020]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 4
+            },
+            {
+              "name": "[MAE_SES]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 5
+            },
+            {
+              "name": "[DiferenciaAbril2021]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 6
+            },
+            {
+              "name": "[Predeterminado2025]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 7
+            },
+            {
+              "name": "[EstimadoAmbiguo]",
+              "dataType": "Double",
+              "isNullable": true,
+              "ordinal": 8
+            }
+          ],
+          "rows": [
+            {
+              "[Observaciones]": 1470,
+              "[Predicciones]": 2205,
+              "[Metricas]": 35,
+              "[Total2025]": 3597237.9999999995,
+              "[Total2020]": 1266340.1437961974,
+              "[MAE_SES]": 175088.43650293106,
+              "[DiferenciaAbril2021]": -23077.1845384029,
+              "[Predeterminado2025]": 3597237.9999999995,
+              "[EstimadoAmbiguo]": null
+            }
+          ],
+          "executionTimeMs": 88
+        }
+      },
+      {
+        "message": "Found 7 relationships",
+        "operation": "LIST",
+        "data": [
+          {
+            "fromTable": "Observaciones",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Observaciones"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Predicciones"
+          },
+          {
+            "fromTable": "Metricas",
+            "fromColumn": "serie_clave",
+            "toTable": "DimSerie",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimSerie_Metricas"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "modelo_clave",
+            "toTable": "DimModelo",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimModelo_Predicciones"
+          },
+          {
+            "fromTable": "Metricas",
+            "fromColumn": "modelo_clave",
+            "toTable": "DimModelo",
+            "toColumn": "clave",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "DimModelo_Metricas"
+          },
+          {
+            "fromTable": "Observaciones",
+            "fromColumn": "fecha",
+            "toTable": "Calendario",
+            "toColumn": "Date",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "Calendario_Observaciones"
+          },
+          {
+            "fromTable": "Predicciones",
+            "fromColumn": "fecha",
+            "toTable": "Calendario",
+            "toColumn": "Date",
+            "isActive": true,
+            "crossFilteringBehavior": "OneDirection",
+            "fromCardinality": "Many",
+            "toCardinality": "One",
+            "name": "Calendario_Predicciones"
+          }
+        ]
+      }
+    ]
+  }
+}
