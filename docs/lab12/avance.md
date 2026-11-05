@@ -19,7 +19,7 @@ figcaption { font-size: 8.5pt; color: #5B6B7A; }
 
 # Lab 12 · Observatorio de turismo en Power BI — Avance
 
-**Curso:** CC3066/CC3084 Data Science, UVG. **Equipo:** Diego, Esteban, Hugo, Ernesto. **Fecha:** 5 de noviembre de 2026. **Rama:** `lab12`. **Archivo:** `powerbi/observatorio_turismo.pbix` (v0.2). Detalle completo en `docs/lab12/01_diego_datos.md`, `02_hugo_diseno.md` y `03_esteban_gestion_y_comparacion.md`.
+**Curso:** CC3066/CC3084 Data Science, UVG. **Repositorio:** <https://github.com/ecarcamo/CC3084-DATA-SCIENCE/tree/lab12> (rama `lab12`). **Archivo:** `powerbi/observatorio_turismo.pbix` (v0.2). **Documentación completa:** <https://github.com/ecarcamo/CC3084-DATA-SCIENCE/tree/lab12/docs/lab12>.
 
 ## 1. Preguntas de gestión, público y alcance (A1)
 
