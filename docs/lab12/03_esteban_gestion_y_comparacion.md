@@ -61,7 +61,7 @@ Fechas de terminación propuestas. Las celdas «por confirmar» se acuerdan en e
 | Paleta, tema, boceto y navegación (A2, A4, 4.2) | Hugo | 5-nov | Hecho, `e668fd8`, `b47e73d` |
 | V1 y V2 enlazadas (A6) | Hugo | 5-nov | Hecho, `f4eb7b0` |
 | Preguntas, alcance, planificación y protocolo (A1, A3, A7) | Esteban | 5-nov | Este documento |
-| Entrega del avance en Canvas | Por confirmar | 5-nov 17:20 | Pendiente |
+| Entrega del avance en Canvas | Ernesto | 5-nov 17:20 | Pendiente |
 | Especificación de V5–V8 y equivalencia con G5–G8 | Esteban | 6-nov | Pendiente |
 | V5–V8 en Power BI | Diego | 7-nov | Pendiente |
 | V3, V4, navegación final, marcadores, restablecimiento, drillthrough y mensajes sin datos | Hugo | 7-nov | Pendiente |
