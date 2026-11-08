@@ -337,3 +337,34 @@ IF (
 | V8 | Total/SARIMA abr-2021; Total/SES abr-2021 | 11.927,75; −23.077,18 |
 
 Si una medida no da el valor esperado, corregir aquí la fórmula y anotar el cambio.
+
+## 3. Costos y acceso (5.2)
+
+Solo fuentes oficiales, **consultadas el 7 de noviembre de 2026**. Los precios son los publicados en dólares estadounidenses. Microsoft aclara que son referenciales y que el precio final depende de la moneda, el país y la región. Hay precios académicos, de gobierno y de organizaciones sin fines de lucro que no se cotizaron.
+
+| Aspecto | Power BI | Dash (Plotly) |
+|---|---|---|
+| Sistema operativo para desarrollar | Power BI Desktop solo para **Windows** (Windows 10 / Server 2016 o posterior, x64; en ARM requiere la actualización 2025-09). No hay versión para macOS. Admite Azure Virtual Desktop y Windows 365; no admite otros entornos VDI [1] | Python en Windows, macOS o Linux (`pip install dash`) [5] |
+| Licencia para desarrollar | Desktop gratuito [1] | Dash de código abierto, licencia **MIT** (© Plotly Technologies Inc.) [4] |
+| Compartir sin publicar | Enviar el `.pbix`: quien lo recibe necesita Desktop, es decir, Windows | Enviar el repositorio: quien lo recibe necesita Python y las dependencias de `requirements.txt` |
+| Publicar y compartir en la organización | Servicio Power BI. Licencia gratuita (Fabric Free): solo contenido propio, sin compartir. **Pro: USD 14 por usuario al mes**, pago anual; publica, comparte y consume contenido de otros Pro. **Premium por usuario: USD 24** por usuario al mes, pago anual; solo comparte con otros PPU [2][3] | Requiere un servidor propio o un alojamiento. Plotly Cloud: **Free USD 0** (10 apps, URL personalizada, marca Plotly, 3 lectores privados); **Pro USD 29** por creador al mes o USD 290 al año (apps ilimitadas, 10 lectores privados, dominio propio); **Enterprise** con precio a convenir (SSO/OAuth, en la nube propia o de Plotly) [6] |
+| Consumidores sin licencia por usuario | Solo si el contenido está en una capacidad **Fabric F64 o superior** o Premium P1+; la capacidad tiene precio variable (reserva anual o pago por uso) y publicar en ella sigue exigiendo Pro [2][3] | Cualquiera con un navegador y acceso a la URL; el control de acceso lo pone el alojamiento o el código (el código abierto no trae autenticación) [5][6] |
+| Público en internet | «Publicar en la web»: **cualquiera** en internet ve el informe y sus datos de detalle, sin autenticación. Requiere licencia Power BI (Pro o PPU desde áreas de trabajo) y que el administrador del inquilino habilite la opción. Caché de 1 hora; no admite seguridad de nivel de fila, DirectQuery, conexión dinámica ni visuales R/Python [7] | Desplegar la app en un servidor público (el repositorio ya tiene `Dockerfile` y `docker-compose.yml`); el costo y el mantenimiento del servidor son del equipo |
+| Mantenimiento | Desktop se actualiza cada mes y solo la última versión tiene soporte; un `.pbix` guardado en una versión nueva no abre en una anterior [1] | Dependencias de Python fijadas en `requirements.txt`; actualizarlas y mantener el servidor es responsabilidad propia |
+
+### Implicaciones para el laboratorio
+
+- **Desarrollar gratis no implica distribuir gratis.** Ambas herramientas son gratuitas para construir el tablero, pero compartirlo con otros cuesta: en Power BI, licencias Pro para quien publica y para quien consume (o una capacidad F64+); en Dash, un servidor o un plan de alojamiento y su mantenimiento.
+- La restricción de sistema operativo fue un costo real del equipo: solo 2 de 4 integrantes (Diego y Hugo, con Windows) pudieron editar el `.pbix`. Ernesto y Esteban, con macOS, trabajaron en especificación, documentación y comparación. El Lab 10 lo desarrollaron los cuatro.
+- El enunciado no exige publicar el informe. Se entrega el `.pbix` y el repositorio público, por lo que el laboratorio no generó costos de licencia.
+- «Publicar en la web» no es apto para datos confidenciales. Los datos de este observatorio son agregados públicos, pero la opción depende de un administrador del inquilino y de una cuenta organizacional.
+
+### Fuentes (consultadas el 7-nov-2026)
+
+1. Microsoft Learn, *Download Power BI Desktop* (actualizada 13-oct-2026): <https://learn.microsoft.com/power-bi/fundamentals/desktop-get-the-desktop>
+2. Microsoft, *Power BI pricing*: <https://www.microsoft.com/power-platform/products/power-bi/pricing>
+3. Microsoft Learn, *Power BI service features by license type* (actualizada 31-ago-2026): <https://learn.microsoft.com/power-bi/fundamentals/service-features-license-type>
+4. Plotly, licencia de Dash (MIT): <https://github.com/plotly/dash/blob/dev/LICENSE>
+5. Plotly, *Dash*: <https://plotly.com/dash/>
+6. Plotly, *Pricing*: <https://plotly.com/pricing/>
+7. Microsoft Learn, *Publish to web from Power BI* (actualizada 1-abr-2026): <https://learn.microsoft.com/power-bi/collaborate-share/service-publish-to-web>
