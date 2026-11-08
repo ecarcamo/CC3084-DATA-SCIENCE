@@ -27,7 +27,20 @@ La página única de Lab 10 con casillas «Gráficas visibles» se sustituye por
 
 ### Capturas del Lab 10
 
-Se agregan en la parte B (evidencia de «ambas versiones»), en `docs/figuras/lab12_ernesto_lab10_g<n>.png`.
+Evidencia de la versión Dash para comparar con Power BI. Tablero de la rama `lab10` (`b605afc`) en http://127.0.0.1:8050, macOS, Chrome, ventana de 1920 px; capturas tomadas el 7-nov-2026 con Claude in Chrome en el **estado inicial** de cada gráfica, sin interacción previa.
+
+| Captura | Muestra | Selección inicial | Comprobación |
+|---|---|---|---|
+| [G1](../figuras/lab12_ernesto_lab10_g1.png) | Serie mensual completa | Total, mensual, 01/01/2009–30/06/2026 | Caída de 2020 y pico de dic-2022 |
+| [G2](../figuras/lab12_ernesto_lab10_g2.png) | Ranking de vías | Vía de ingreso, 2025 | Terrestre > Aérea > Marítima (2.401.323 / 1.188.971 / 6.944) |
+| [G3](../figuras/lab12_ernesto_lab10_g3.png) | Mapa de calor año × mes | Total, 2009–2026 | Nota: 210 meses con dato, 6 sin dato (× en jul–dic 2026) |
+| [G4](../figuras/lab12_ernesto_lab10_g4.png) | Totales de años completos | Total, 2009–2026 | 17 años; nota «2026: 6 de 12 meses válidos» |
+| [G5](../figuras/lab12_ernesto_lab10_g5.png) | Variación interanual mensual | Total, 01/01/2010–01/06/2026 | Nota: 198 meses calculados; todos con base válida |
+| [G6](../figuras/lab12_ernesto_lab10_g6.png) | Observado frente a estimados | Total; SARIMA, Holt-Winters, SES; 01/04/2021–01/06/2026 | Nota: 63 meses; SES es una línea constante |
+| [G7](../figuras/lab12_ernesto_lab10_g7.png) | Error por modelo | Total, MAE | SES < Holt-Winters < Seasonal Naive < SARIMA < Prophet; 63 meses |
+| [G8](../figuras/lab12_ernesto_lab10_g8.png) | Observado − estimado por mes | Total, SARIMA, 01/04/2021–01/06/2026 | Pico en dic-2022; casi todos los meses por encima de 0 |
+
+Las notas de G3, G4, G5 y G6 confirman los conteos que el script y las fichas de §2 esperan en Power BI.
 
 ## 2. Especificación de V3–V8
 
