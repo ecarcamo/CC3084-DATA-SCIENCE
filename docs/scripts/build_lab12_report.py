@@ -200,13 +200,16 @@ def definitions():
         ],
     }
     prefix = f"Report/definition/pages/{PAGE}"
-    return {
+    result = {
         f"{prefix}/page.json": page,
         **{
             f"{prefix}/visuals/{item['name']}/visual.json": item
             for item in [line, ranking, group, year]
         },
     }
+    from docs.scripts.lab12_final_pages import complete_definitions
+
+    return complete_definitions(result)
 
 
 def build_report(path):
@@ -229,8 +232,10 @@ def build_report(path):
     }]
     updates["Report/definition/report.json"] = report
     pages = json.loads(entries["Report/definition/pages/pages.json"][1])
-    pages["pageOrder"] = [PAGE] + [name for name in pages["pageOrder"] if name != PAGE]
-    pages["activePageName"] = PAGE
+    from docs.scripts.lab12_final_pages import HOME, PAGES
+
+    pages["pageOrder"] = list(PAGES) + [name for name in pages["pageOrder"] if name not in PAGES]
+    pages["activePageName"] = HOME
     updates["Report/definition/pages/pages.json"] = pages
     for name, (_, content) in entries.items():
         if name.endswith("/page.json"):

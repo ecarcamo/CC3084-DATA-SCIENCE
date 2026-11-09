@@ -1,0 +1,70 @@
+{
+  "Color texto V3": {
+    "expression": "VAR Celdas = SUMMARIZE ( ALLSELECTED ( Calendario ), Calendario[Año], Calendario[MesNum] ) VAR Minimo = MINX ( Celdas, [Viajeros serie] ) VAR Maximo = MAXX ( Celdas, [Viajeros serie] ) RETURN IF ( NOT ISBLANK ( [Viajeros serie] ) && DIVIDE ( [Viajeros serie] - Minimo, Maximo - Minimo, 0 ) >= 0.55, \"#FFFFFF\", \"#1B2733\" )",
+    "formatString": ""
+  },
+  "Serie elegida": {
+    "expression": "IF ( HASONEVALUE ( DimSerie[nombre] ), SELECTEDVALUE ( DimSerie[nombre] ), \"Total\" )",
+    "formatString": ""
+  },
+  "Meses con dato serie": {
+    "expression": "COALESCE (\n    IF (\n        HASONEVALUE ( DimSerie[clave] ),\n        COUNT ( Observaciones[viajeros] ),\n        CALCULATE ( COUNT ( Observaciones[viajeros] ), REMOVEFILTERS ( DimSerie ), DimSerie[clave] = \"total\" )\n    ),\n    0\n)",
+    "formatString": "#,0"
+  },
+  "Nota V3": {
+    "expression": "VAR Meses = COUNTROWS ( VALUES ( Calendario[Año] ) ) * 12\nVAR ConDato = [Meses con dato serie]\nRETURN\n    [Serie elegida] & \" · \" & MIN ( Calendario[Año] ) & \"–\" & MAX ( Calendario[Año] ) & \". \"\n        & ConDato & \" meses con dato válido; \" & ( Meses - ConDato ) & \" sin dato (celda vacía, no cero). \"\n        & \"Azul más intenso indica más viajeros. El patrón describe la distribución temporal y no demuestra sus causas.\"",
+    "formatString": ""
+  },
+  "Mensaje V3": {
+    "expression": "IF ( ISBLANK ( [Viajeros serie] ), \"No hay datos válidos para esta selección. Cambie la serie o el rango de años.\", \"\" )",
+    "formatString": ""
+  },
+  "Total año completo": {
+    "expression": "IF ( [Meses con dato serie] = 12, [Viajeros serie] )",
+    "formatString": "#,0"
+  },
+  "Nota V4": {
+    "expression": "VAR Excluidos =\n    FILTER ( VALUES ( Calendario[Año] ), VAR m = [Meses con dato serie] RETURN m > 0 && m < 12 )\nVAR Completos =\n    COALESCE ( COUNTROWS ( FILTER ( VALUES ( Calendario[Año] ), [Meses con dato serie] = 12 ) ), 0 )\nRETURN\n    [Serie elegida] & \". Se muestran \" & Completos & \" años completos, cada uno con doce meses válidos. \"\n        & IF (\n            ISEMPTY ( Excluidos ),\n            \"No se excluyeron años incompletos.\",\n            \"Se excluyen por estar incompletos: \"\n                & CONCATENATEX ( Excluidos, Calendario[Año] & \" (\" & [Meses con dato serie] & \" de 12 meses)\", \"; \", Calendario[Año], ASC )\n                & \".\"\n        )\n        & \" No se suman vías de ingreso con países de residencia.\"",
+    "formatString": ""
+  },
+  "Mensaje V4": {
+    "expression": "IF (\n    ISEMPTY ( FILTER ( VALUES ( Calendario[Año] ), [Meses con dato serie] = 12 ) ),\n    \"No hay años completos para esta selección. Cambie la serie o amplíe el rango de años.\",\n    \"\"\n)",
+    "formatString": ""
+  },
+  "Viajeros año anterior": {
+    "expression": "CALCULATE ( [Viajeros serie], SAMEPERIODLASTYEAR ( Calendario[Date] ) )",
+    "formatString": "#,0"
+  },
+  "Variación interanual %": {
+    "expression": "VAR Actual = [Viajeros serie]\nVAR Anterior = [Viajeros año anterior]\nRETURN\n    IF (\n        HASONEVALUE ( Calendario[Año] ) && HASONEVALUE ( Calendario[MesNum] )\n            && NOT ISBLANK ( Actual ) && NOT ISBLANK ( Anterior ) && Anterior <> 0,\n        DIVIDE ( Actual - Anterior, Anterior )\n    )",
+    "formatString": "0.0 %"
+  },
+  "Meses con variación": {
+    "expression": "COALESCE (\n    COUNTROWS (\n        FILTER ( SUMMARIZE ( Calendario, Calendario[Año], Calendario[MesNum] ), NOT ISBLANK ( [Variación interanual %] ) )\n    ),\n    0\n)",
+    "formatString": "#,0"
+  },
+  "Nota V5": {
+    "expression": "VAR Meses = COUNTROWS ( SUMMARIZE ( Calendario, Calendario[Año], Calendario[MesNum] ) )\nVAR Calculados = [Meses con variación]\nRETURN\n    [Serie elegida] & \". \" & Calculados & \" meses con variación = (viajeros del mes ÷ mismo mes del año anterior − 1). \"\n        & \"Positivo: más viajeros que un año antes; negativo: menos. \"\n        & IF ( Meses > Calculados, ( Meses - Calculados ) & \" meses sin base válida no se dibujan (no son cero). \", \"\" )\n        & \"Si el año anterior tuvo pocos viajeros, como en 2020, el porcentaje puede ser muy grande.\"",
+    "formatString": ""
+  },
+  "Mensaje V5": {
+    "expression": "IF (\n    [Meses con variación] = 0,\n    \"No se puede calcular la variación interanual para ningún mes de esta selección. Elija fechas posteriores al primer año de la serie o cambie la serie.\",\n    \"\"\n)",
+    "formatString": ""
+  },
+  "Último año completo": {
+    "expression": "MAXX ( FILTER ( ALL ( Calendario[Año] ), CALCULATE ( [Meses con dato serie], REMOVEFILTERS ( Calendario ), Calendario[Año] = EARLIER ( Calendario[Año] ) ) = 12 ), Calendario[Año] )",
+    "formatString": "0"
+  },
+  "Total último año completo": {
+    "expression": "VAR Anio = [Último año completo] RETURN CALCULATE ( [Viajeros serie], REMOVEFILTERS ( Calendario ), Calendario[Año] = Anio )",
+    "formatString": "#,0"
+  },
+  "Título detalle": {
+    "expression": "\"Detalle de serie · \" & [Serie elegida]",
+    "formatString": ""
+  },
+  "Nota detalle": {
+    "expression": "\"Último año completo: \" & FORMAT ( [Último año completo], \"0\" ) & \". La evolución conserva los filtros del origen. Restablecer vista permite volver a Total.\"",
+    "formatString": ""
+  }
+}
