@@ -1,8 +1,8 @@
 # Lab 12 · Diseño, navegación y visualizaciones enlazadas
 
-**Responsable:** Hugo. **Fecha:** 5 de noviembre de 2026. **Alcance:** avance A2, A4 y A6.
+**Responsable:** Hugo. **Actualización:** 8 de noviembre de 2026. **Alcance:** diseño final 4.2, V1–V5, navegación, marcadores y obtención de detalles.
 
-**Estado:** v0.2 local, abierta y guardada con Power BI Desktop. La publicación remota y el envío a Esteban no se han realizado.
+**Estado:** v0.3 guardada y comprobada localmente, con Inicio activa y Desktop cerrado. La evidencia final se registra en `02_hugo_validacion_final.json`. No se ejecuta `git push` ni se envía el traspaso automáticamente.
 
 ## 1. Alcance y archivos
 
@@ -12,13 +12,14 @@ La propuesta conserva las preguntas, fuentes y colores del Lab 10. La consulta h
 |---|---|
 | Tema importable | `powerbi/tema_observatorio.json` |
 | Boceto de las cinco páginas | `docs/figuras/lab12_hugo_boceto.png` |
-| Informe con página Datos observados | `powerbi/observatorio_turismo.pbix` |
-| Generador de la página PBIR | `docs/scripts/build_lab12_report.py` |
+| Informe v0.3 con cinco páginas y Control oculta | `powerbi/observatorio_turismo.pbix` |
+| Generador de las cinco páginas PBIR | `docs/scripts/build_lab12_report.py` y `docs/scripts/lab12_final_pages.py` |
+| Medidas reproducibles de V3–V5 y detalle | `powerbi/medidas_hugo.json` y `docs/scripts/apply_lab12_measures.ps1` |
 | Generador del boceto | `docs/scripts/draw_lab12_wireframe.py` |
 | Pruebas automatizadas | `tests/test_lab12_design.py` |
-| Capturas reales | `docs/figuras/lab12_hugo_v1_v2_inicial.png` y `docs/figuras/lab12_hugo_v1_v2_seleccion.png` |
+| Capturas reales finales | Índice de páginas, exploración y mensajes en la sección 9 |
 
-La edición del informe fue autorizada por el usuario tras confirmar el traspaso de Diego a Hugo. Se conservan los datos importados, las relaciones y las cuatro medidas base. Se agregó únicamente la medida de presentación `Titulo V1` desde Power BI Desktop. La copia anterior permanece en `TEMP/observatorio_turismo_antes_hugo.pbix`, fuera del control de versiones.
+La edición del informe fue autorizada por el usuario tras confirmar el traspaso de Diego a Hugo. Se conservan los datos importados, las relaciones y las medidas base. El avance v0.2 agregó `Titulo V1`; v0.3 agrega las 17 medidas declaradas en `medidas_hugo.json`. Las copias anteriores permanecen en TEMP, fuera del control de versiones.
 
 ## 2. Paleta y justificación · A2
 
@@ -45,11 +46,11 @@ El tema contiene los cinco colores de modelos, pero una paleta automática no ga
 | Seasonal Naive | `#8A4B12` | Guion largo |
 | Prophet | `#D07A1E` | Guion largo y punto |
 
-Se conserva **Arial** para evitar que una tipografía diferente afecte la comparación con Dash. Los títulos tienen al menos 14 pt; los encabezados, 12 pt; las etiquetas y ayudas, 10 pt. Las tarjetas de indicadores utilizan 28 pt.
+Se conserva **Arial** para evitar que una tipografía diferente afecte la comparación con Dash. Los títulos de gráficas tienen 14 pt; las etiquetas y ayudas, 10 pt. Los mensajes sin datos utilizan 12 pt y la tarjeta del último año completo utiliza 28 pt.
 
 Las pruebas comprueban una relación de contraste de al menos **4,5:1** para los colores de texto del tema tanto sobre blanco como sobre el fondo gris. Los tonos naranjas de los modelos no se emplean como texto pequeño. La cuadrícula es decorativa y no se interpreta como texto.
 
-El significado no depende únicamente del color: los modelos tendrán nombres y trazos diferentes; la página activa tendrá una etiqueta; la ausencia de datos se indicará con `×` y un mensaje. El verde de selección deberá acompañarse de un nombre visible y del cambio de contenido en V1. El resaltado verde del boceto es una especificación visual, no una prueba del estilo de selección nativo de Power BI.
+El significado no depende únicamente del color: los modelos tendrán nombres y trazos diferentes; la página activa tiene una etiqueta; la ausencia de datos se indica con celdas vacías y un mensaje. La selección nativa atenúa las otras barras y cambia el nombre y el contenido de V1. El resaltado verde del boceto no representa el estilo nativo de selección de barras.
 
 ## 3. Boceto y navegación · A4
 
@@ -60,22 +61,22 @@ El dibujo es un boceto con marcas ilustrativas, no una captura de Power BI ni un
 | Página | Contenido | Navegación y contexto |
 |---|---|---|
 | Inicio | Propósito, cobertura, leyenda y accesos por pregunta | Botones a cada página analítica. |
-| Datos observados | V1, V2 y posteriormente V5 | Grupo y año filtran el ranking. V2 filtra V1. |
+| Datos observados | V1, V2 y V5 | Grupo y año filtran solo el ranking. V2 filtra V1 y V5. |
 | Estacionalidad y años | V3 y V4 | Selección de serie y años. V4 excluye años incompletos. |
 | Predicciones y modelos | V6, V7, V8 y tabla de apoyo | Serie única. Las métricas importadas representan los 63 meses completos. |
 | Detalle de serie | Historia y contexto de una serie | Obtención de detalles desde V2 o V7 con `DimSerie[nombre]` y botón de regreso. |
 
-En la sesión 2 todas las páginas tendrán navegación con página activa identificada, ayuda breve y «Restablecer vista». Cada marcador de restablecimiento guardará el estado inicial de su página, sus segmentadores y sus selecciones. El regreso desde Detalle de serie volverá al origen; no reemplazará el botón de restablecimiento.
+Las cinco páginas incorporan botones de navegación, página activa en verde, ayuda breve y «Restablecer vista». Cada marcador guarda datos, visualización y página actual. El botón Atrás de Detalle de serie conserva el origen y no sustituye el restablecimiento.
 
 ### Equivalencia con Lab 10
 
 - Se conservan las ocho preguntas G1–G8, las siete series, los cinco modelos, los colores y el clic ranking → serie temporal.
-- Se sustituye la página única con casillas de visibilidad por páginas temáticas. La navegación final todavía pertenece a la sesión 2.
-- V3 sustituirá el mapa de calor por una matriz año × mes con formato condicional. El cambio afecta la presentación, no la pregunta.
+- Se sustituye la página única con casillas de visibilidad por páginas temáticas. Se reduce la cantidad de gráficos simultáneos y se agrupan preguntas relacionadas.
+- V3 sustituye el mapa de calor por una matriz año × mes con formato condicional. Conserva la escala y agrega cantidades por celda, sin cambiar la pregunta.
 - Las tarjetas, segmentadores, botones, ayudas y tabla de modelos no cuentan como visualizaciones analíticas.
 - No se comparan años incompletos con años completos. Los tres países no representan todos los mercados y nunca se suman con las vías o el total.
 
-En el avance solo se incorpora «Datos observados». La página técnica «Control» de Diego se conserva y se oculta en modo de lectura. Las otras páginas del boceto no se presentan como implementadas.
+En v0.3 existen las cinco páginas del boceto. La página técnica Control se conserva oculta en modo de lectura. Predicciones y modelos contiene el título, la cobertura de evaluación y un aviso de preparación; Diego implementa V6–V8.
 
 ## 4. V1, V2 e interacciones · A6
 
@@ -133,7 +134,7 @@ Capturas requeridas:
 
 Solo se aceptan capturas reales de Power BI como evidencia de A6. El boceto y las pruebas de estructura no reemplazan la prueba gráfica → gráfica.
 
-### Comprobación realizada
+### Comprobación histórica del avance v0.2
 
 La prueba nativa se ejecutó con Power BI Desktop **2.159.1231.0**. El ranking mostró 2.401.323, 1.188.971 y 6.944 viajeros para las tres vías en 2025. La selección de Vía Aérea cambió el título a «Viajeros: Vía Aérea» y el primer punto anual de V1 a **935.379** viajeros de 2009. Al retirar la selección reaparecieron «Viajeros: Total» y **2.028.776** viajeros de 2009. La permanencia de 2009 confirma que el segmentador 2025 no limita la historia de V1.
 
@@ -156,17 +157,94 @@ Desde la raíz del repositorio, con el entorno Python académico existente:
 ..\.venv\Scripts\python.exe -m pytest tests/test_lab12_design.py tests/test_wireframe.py tests/test_theme.py -q
 ```
 
-El generador `build_lab12_report.py` se ejecuta únicamente con Desktop cerrado y sobre una copia controlada del informe que ya contenga `Medidas[Titulo V1]`. Reemplaza la definición de Datos observados y la referencia al tema; no debe ejecutarse después de ajustes manuales sin respaldarlos primero. Conserva el modelo binario de entrada y la página Control. El contenedor se escribe primero en un archivo temporal y solo reemplaza al original después de comprobar su integridad.
+El generador `build_lab12_report.py` se ejecuta únicamente con Desktop cerrado y sobre una copia controlada del informe que ya contenga las medidas requeridas. Reemplaza las cinco páginas visibles y la referencia al tema; no debe ejecutarse después de ajustes manuales sin respaldarlos primero. Conserva el modelo binario de entrada y la página Control. El contenedor se escribe primero en un archivo temporal y solo reemplaza al original después de comprobar su integridad.
 
 `RutaInsumos` continúa con el valor del equipo de Diego porque forma parte del modelo preservado. Antes de actualizar los datos en otro equipo se deberá cambiar ese parámetro a la carpeta local `insumos`. No es necesario refrescar para comprobar los datos ya importados.
 
 Los esquemas oficiales PBIR se usan para comprobar la estructura de la página y las gráficas. Esa comprobación no certifica la renderización, los nombres del modelo ni el comportamiento de la aplicación. El control nativo de apertura prevalece sobre una validación de JSON.
 
-No se refrescaron los datos, no se ejecutó la suite completa de modelos y no se certificaron todavía las páginas de la sesión 2. La exploración Año > Trimestre > Mes se configuró y se verificó en la estructura del eje; no se realizó una prueba exhaustiva de sus botones.
+Las limitaciones de esta comprobación histórica corresponden a v0.2. La evidencia final separada identifica las verificaciones nativas de v0.3, sin presentar los esquemas JSON como prueba de interacción.
 
-## 7. Pendientes de la sesión 2
+## 7. Construcción final de V3–V5
 
-V3, V4, navegación final, marcadores, restablecimiento, obtención de detalles y mensajes de ausencia de datos. V5–V8 corresponden a Diego con la especificación de Esteban. La entrega remota y el envío a Esteban requieren actuación expresa del equipo; no se ejecuta `git push`.
+La ficha de Ernesto en `04_ernesto_visualizaciones_costos.md`, secciones 2.1–2.4, determina campos, fórmulas, mensajes e interacciones. Las medidas se conservan como expresiones DAX en `powerbi/medidas_hugo.json`, se aplican a la tabla Medidas y no modifican los CSV ni entrenan modelos.
+
+| Visualización | Construcción | Contexto inicial y ausencia de datos |
+|---|---|---|
+| V3 | Matriz de Año por Mes, ordenada mediante MesNum, con Viajeros serie. Degradado `#E7EFF6` → `#1F4E79`; texto blanco desde el umbral de 55 % indicado por la ficha. Sin subtotales ni totales generales. | Serie única Total y años 2009–2026. Nota: 210 meses válidos y seis sin dato. Las celdas vacías no son ceros. |
+| V4 | Columnas por Año con Total año completo, eje desde cero. Solo se devuelve un valor cuando existen doce meses válidos. | Comparte serie y años con V3. Se muestran 17 años, de 2009 a 2025; la nota excluye 2026 por contar con seis meses. |
+| V5 | Columnas de variación mensual, jerarquía Año y Mes expandida, con línea constante discontinua en 0 %. | Fechas propias: 1-ene-2010 a 30-jun-2026. El clic en V2 cambia la serie. Grupo y año del ranking no afectan V5; sus fechas no afectan V1 ni V2. |
+
+Cada visualización incluye una medida Mensaje V3, Mensaje V4 o Mensaje V5 en rojo `#B3261E`, con Arial de 12 pt. Las notas explican el cálculo, los meses omitidos y los límites de interpretación. La falta de base del año anterior o una base igual a cero devuelve vacío, no cero.
+
+Los conteos vacíos se presentan como cero mediante `COALESCE`, para evitar notas como «Se muestran años completos» sin cantidad. Esto no convierte una observación ausente en cero. Las tarjetas usan margen interior de 4 px para mostrar completo el mensaje de V5. V3 y V5 identifican la serie mediante un subtítulo dinámico. V5 oculta los botones de exploración y su marcador desactiva esa exploración.
+
+La validación del modelo abierto compara las 1.470 observaciones con los CSV, los 119 totales completos de las siete series y las 1.344 variaciones válidas. También comprueba meses sin dato, años incompletos y ausencia de base. Los controles de Total incluyen diciembre de 2025 igual a 392.087, 2024 igual a 3.593.876, 2025 igual a 3.597.238, enero de 2025 igual a −8,06 % y 198 meses calculados.
+
+### Diseño final frente al Lab 10
+
+Se conservan Arial, la semántica de los colores, las siete series, las ocho preguntas y los cinco modelos. Se conservan el enlace del ranking con la historia, la exclusión de años incompletos y la advertencia sobre porcentajes altos tras 2020.
+
+Se modifican los controles de granularidad por exploración nativa, las casillas de visibilidad por páginas y el mapa de calor por la matriz. Las marcas de ausencia pasan a celdas vacías o meses omitidos con explicación escrita. Las notas evitan interpretar una ausencia como cero o atribuir causas al patrón temporal.
+
+El lienzo usa una cuadrícula de 1.280 px de ancho. La vista ajusta el ancho y permite desplazamiento vertical para conservar el tamaño del texto, en lugar de comprimir todas las visualizaciones. Los botones repiten su posición entre páginas; el verde y el nombre identifican la página activa.
+
+El eje mensual categórico de V5 conserva el desplazamiento horizontal nativo. La selección inicial contiene 198 meses, aunque una captura solo muestra parte del eje. Se puede desplazar la gráfica o acotar sus fechas para revisar un mes concreto.
+
+## 8. Navegación, marcadores y detalle
+
+Hay cinco botones de página en todas las páginas y tres accesos por pregunta en Inicio. El marcador `Inicial – <página>` guarda la página, los segmentadores y las selecciones. En Desktop los botones se activan con Ctrl + clic; en modo de lectura basta un clic.
+
+Datos observados vuelve a grupo Vía de ingreso, año 2025, ninguna barra seleccionada y fechas iniciales de V5. Estacionalidad y años vuelve a Total y 2009–2026. Predicciones y modelos queda preparada para que Diego actualice su marcador al agregar sus segmentadores. Control no se borra.
+
+Los marcadores incluyen el orden de las consultas y los filtros fijos de cada visualización. Sin ellos, Desktop podía restablecer V2 sin conservar el orden descendente por viajeros ni su filtro que excluye Total. La prueba final compara las posiciones de las tres categorías y el filtro guardado después de restablecer.
+
+Detalle de serie utiliza `DimSerie[nombre]` como campo de obtención de detalles y conserva los filtros del origen, conforme a la ficha de V7. La evolución resume ese contexto. El total del último año completo se calcula retirando los filtros del calendario, por lo que no compara un año incompleto con otro completo. El botón Atrás regresa al origen. Diego debe comprobar el acceso desde V7 cuando esa gráfica exista.
+
+### Reproducción de v0.3
+
+1. Respaldar el informe y abrirlo en Desktop 2.159.1231.0 o posterior, sin actualizar las consultas.
+2. Aplicar las medidas al modelo local desde Windows PowerShell 5.1:
+
+```powershell
+& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -File docs/scripts/apply_lab12_measures.ps1
+```
+
+3. Guardar desde Desktop y cerrar la aplicación. El script solo modifica las medidas declaradas y el orden de Mes por MesNum; no actualiza los hechos ni cambia RutaInsumos.
+4. Regenerar las páginas únicamente cuando se desee reemplazar sus ajustes manuales:
+
+```powershell
+..\.venv\Scripts\python.exe -m docs.scripts.build_lab12_report
+..\.venv\Scripts\python.exe -m pytest tests/test_lab12_design.py tests/test_wireframe.py tests/test_theme.py -q
+..\.venv\Scripts\python.exe -m docs.scripts.lab12_valores_referencia
+```
+
+5. Reabrir en Desktop, verificar los valores, probar botones y guardar Inicio como página activa. Una validación de estructura no reemplaza este paso.
+
+El generador conserva el modelo binario que recibe y utiliza una escritura temporal comprobada antes de reemplazar el archivo. La copia original v0.2 permanece en `TEMP/observatorio_turismo_v0.2.pbix`. No debe ejecutarse después de que Diego agregue V6–V8 sin adaptar primero la generación de su página.
+
+## 9. Evidencia y traspaso
+
+La evidencia de apertura, interacciones, controles y huellas finales se conserva en `02_hugo_validacion_final.json`. Pasaron las 18 pruebas del archivo guardado y las 78 definiciones generadas contra los esquemas oficiales. Las pruebas admiten únicamente normalizaciones conocidas de Desktop, como omitir opciones predeterminadas y listas vacías o actualizar versiones internas. Conservan la comprobación de filtros, medidas, interacciones, formatos y estados iniciales.
+
+Durante la validación se corrigieron la transmisión del nombre en drillthrough, las fechas visibles del marcador, el orden y los filtros fijos de V2 al restablecer y el mensaje truncado de V5. Se comprobó de nuevo el contenedor después de guardar en Desktop. Las capturas reales llevan el prefijo `docs/figuras/lab12_hugo_`; no se sustituyen por el boceto.
+
+| Evidencia final | Captura |
+|---|---|
+| Inicio, propósito y navegación | [Inicio](../figuras/lab12_hugo_inicio.png) |
+| V1 y V2 iniciales | [Datos observados](../figuras/lab12_hugo_datos_observados.png) |
+| V3, escala y meses | [Estacionalidad y años](../figuras/lab12_hugo_estacionalidad.png) |
+| V4, 17 años y exclusión de 2026 | [Años completos](../figuras/lab12_hugo_anios_completos.png) |
+| V5, Total y línea de cero | [Variación mensual](../figuras/lab12_hugo_variacion.png) |
+| Reserva de V6–V8 para Diego | [Predicciones y modelos](../figuras/lab12_hugo_predicciones.png) |
+| Total 2020 y trimestre T2 | [Exploración temporal](../figuras/lab12_hugo_drill.png) |
+| Drillthrough de Vía Aérea y 1.188.971 | [Detalle de serie](../figuras/lab12_hugo_detalle.png) |
+| Botón Atrás en el detalle | [Regreso](../figuras/lab12_hugo_detalle_regreso.png) |
+| V5 sin base anterior y conteo cero | [Mensaje sin datos](../figuras/lab12_hugo_sin_datos.png) |
+
+Permanecen fuera del alcance de Hugo V6–V8, las pruebas cronometradas de comparación 5.3–5.5, el informe PDF final y la entrega en Canvas. No se actualizan las fuentes ni se ejecuta entrenamiento. El traspaso se prepara en TEMP, sin publicar ni enviar mensajes externos.
+
+Los minutos efectivos nuevos de Hugo quedan pendientes de confirmación por decisión del usuario. Se conservan los registros anteriores de 30 minutos de Power BI y 60 minutos estimados de Dash. No se sustituye tiempo efectivo por duración de sesión.
 
 ## Referencias
 

@@ -1,0 +1,295 @@
+{
+  "version": "v0.3",
+  "responsable": "Hugo",
+  "fecha": "2026-11-08T19:33:35.768695-06:00",
+  "commit_implementacion": "d022104c4973aadf58dc37fc9dc8ef9731beae89",
+  "entorno": {
+    "sistema": "Windows 10.0.26300",
+    "power_bi_desktop": "2.159.1231.0, 64 bits",
+    "interfaz": "Aplicación nativa, con autorización de uso exclusivo del escritorio",
+    "sin_refresh": true,
+    "sin_entrenamiento": true
+  },
+  "pruebas_automatizadas": {
+    "comando": "python -m pytest tests/test_lab12_design.py tests/test_wireframe.py tests/test_theme.py -q",
+    "resultado": "18 passed",
+    "segundos": 1.39,
+    "alcance": "Archivo guardado por Desktop, datos y formatos declarados, navegación, marcadores, filtros fijos, interacciones, geometría y conservación del modelo al generar"
+  },
+  "esquemas_oficiales": {
+    "definiciones_generadas": 78,
+    "errores": 0,
+    "base": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/",
+    "alcance": "Definiciones generadas, no una certificación de renderización. Desktop actualiza las versiones de esquema del archivo guardado."
+  },
+  "referencias_csv": {
+    "comando": "python -m docs.scripts.lab12_valores_referencia",
+    "resultado": "Comprobaciones superadas: estructura, duplicados, cobertura y 35 métricas recalculadas",
+    "rtol_metricas": 1e-9
+  },
+  "modelo_abierto_contra_csv": {
+    "observaciones_comparadas_con_csv": 1470,
+    "variaciones_interanuales_validas": 1344,
+    "anios_completos_comparados_con_csv": 119,
+    "tolerancia_observaciones": "rtol=1e-12, atol=1e-6",
+    "tolerancia_variaciones": "rtol=1e-9, atol=1e-10",
+    "controles": {
+      "[sin datos V3]": "No hay datos válidos para esta selección. Cambie la serie o el rango de años.",
+      "[sin completos V4]": "No hay años completos para esta selección. Cambie la serie o amplíe el rango de años.",
+      "[sin base V5]": "No se puede calcular la variación interanual para ningún mes de esta selección. Elija fechas posteriores al primer año de la serie o cambie la serie.",
+      "[sin datos V3 normal]": "",
+      "[sin datos V4 normal]": "",
+      "[nota V3]": "Total · 2009–2026. 210 meses con dato válido; 6 sin dato (celda vacía, no cero). Azul más intenso indica más viajeros. El patrón describe la distribución temporal y no demuestra sus causas.",
+      "[nota V4]": "Total. Se muestran 17 años completos, cada uno con doce meses válidos. Se excluyen por estar incompletos: 2026 (6 de 12 meses). No se suman vías de ingreso con países de residencia.",
+      "[meses V5]": 198,
+      "[total 2020]": 1266340.1437961974,
+      "[T2 2020]": 31635,
+      "[detalle]": 3597237.9999999995
+    }
+  },
+  "pruebas_nativas": {
+    "paginas": {
+      "visibles": [
+        "Inicio",
+        "Datos observados",
+        "Estacionalidad y años",
+        "Predicciones y modelos",
+        "Detalle de serie"
+      ],
+      "control": "Conservada y oculta en modo de lectura",
+      "pagina_activa_al_guardar": "Inicio",
+      "desktop_cerrado": true
+    },
+    "navegacion": {
+      "resultado": "Verificada mediante Ctrl + clic y pestañas nativas",
+      "pagina_activa": "Verde #20745A y etiqueta visible"
+    },
+    "restablecer": {
+      "paginas_probadas": [
+        "Inicio",
+        "Datos observados",
+        "Estacionalidad y años",
+        "Predicciones y modelos",
+        "Detalle de serie"
+      ],
+      "datos_observados": "Vía de ingreso, 2025, Total sin selección y fechas de V5 2010-01-01 a 2026-06-30",
+      "estacionalidad": "Total, 2009–2026, 210 meses y 17 años completos",
+      "detalle": "Borra Vía Aérea y 2025 del drillthrough; vuelve a Total y muestra 2009",
+      "filtros_fijos_y_orden": "Conservados tras aplicar el marcador y guardar en Desktop; comprobados por las pruebas del archivo persistido"
+    },
+    "v2_a_v1": {
+      "seleccion": "Vía Aérea",
+      "titulo": "Viajeros: Vía Aérea",
+      "primer_anio": 2009,
+      "valor": 935379,
+      "sin_seleccion": {
+        "titulo": "Viajeros: Total",
+        "anio": 2009,
+        "valor": 2028776
+      }
+    },
+    "v2_a_v5": {
+      "resultado": "Verificado",
+      "evidencia": "La selección de Vía Terrestre cambió también el subtítulo de V5 a Vía Terrestre"
+    },
+    "grupo_ranking": {
+      "grupo": "País de residencia",
+      "anio": 2025,
+      "valores": {
+        "el_salvador": 1738267,
+        "estados_unidos": 679282,
+        "honduras": 298542
+      },
+      "historia": "V1 permaneció en Total y conservó 2009"
+    },
+    "drill_temporal": {
+      "ruta": [
+        "Año 2020",
+        "Trimestre T2 2020",
+        "Mes abril 2020",
+        "Regreso a Trimestre y Año"
+      ],
+      "valores_redondeados": {
+        "anio_2020": 1266340,
+        "trimestre_2_2020": 31635,
+        "abril_2020": 10039
+      },
+      "resultado": "Verificado en V1"
+    },
+    "drillthrough": {
+      "origen": "Barra Vía Aérea de V2, 2025",
+      "destino": "Detalle de serie",
+      "nombre": "Vía Aérea",
+      "total_ultimo_anio_completo": 1188971,
+      "anio": 2025,
+      "contexto": "La evolución conserva 2025 del origen. La tarjeta elimina filtros del calendario para buscar el último año completo.",
+      "regreso": "Ctrl + clic en Atrás regresó a Datos observados"
+    },
+    "v3": {
+      "resultado": "Matriz nativa con formato condicional, subtítulo Total y sin totales generales",
+      "nota": "210 meses válidos; 6 sin dato. El contenido completo puede requerir desplazamiento interno."
+    },
+    "v4": {
+      "resultado": "Columnas nativas y nota de 17 años completos; 2026 excluido por seis meses",
+      "sin_datos": "Selección Vía Aérea, solo 2026: mensaje No hay años completos para esta selección. Restablecer recuperó Total y 17 años."
+    },
+    "v5": {
+      "resultado": "Columnas mensuales, subtítulo dinámico, línea discontinua en cero y fechas propias",
+      "sin_datos": "Fechas 2009-01-01 a 2009-12-31: mensaje rojo completo, 0 meses calculados y 12 sin base válida. Restablecer recuperó las fechas iniciales y 198 meses.",
+      "eje": "Desplazamiento horizontal nativo. Una captura no muestra simultáneamente los 198 meses."
+    }
+  },
+  "incidencias_corregidas": [
+    "Campo de drillthrough marcado con howCreated Drillthrough para transmitir la serie.",
+    "Fechas visibles y efectivas del segmentador incluidas en el estado inicial.",
+    "Orden descendente y filtros fijos incluidos en los marcadores. Filtros por expresión y creación User equivalentes a los capturados por Desktop.",
+    "Margen de tarjetas reducido para mostrar completo el mensaje de V5.",
+    "Conteos vacíos explícitos en cero, sin convertir observaciones ausentes en cero.",
+    "Prueba de persistencia adaptada únicamente a versiones internas y valores predeterminados que Desktop omite; filtros e interacciones siguen comprobados."
+  ],
+  "no_ejecutado": [
+    "Refresh de datos o cambio de RutaInsumos.",
+    "Entrenamiento de modelos.",
+    "V6–V8 y drillthrough desde V7, todavía a cargo de Diego.",
+    "Pruebas comparativas cronometradas 5.3–5.5, PDF final y Canvas.",
+    "Suite completa ajena al alcance de diseño.",
+    "Escenario sin datos de V3 mediante interfaz: comprobado por consulta DAX, no por una captura nativa.",
+    "Git push y envío externo del traspaso."
+  ],
+  "tiempo": {
+    "minutos_nuevos_efectivos": null,
+    "estado": "Pendiente de confirmación por decisión del usuario",
+    "power_bi_previo_minutos": 30,
+    "dash_estimado_minutos": 60
+  },
+  "traspaso": {
+    "estado": "Preparado en TEMP/CONTEXTO.md, no enviado",
+    "duenio_actual": "Hugo, hasta confirmar recepción de Diego",
+    "publicado": false,
+    "advertencia": "No regenerar la página de modelos después de V6–V8 sin adaptar el generador."
+  },
+  "archivos": {
+    "powerbi/observatorio_turismo.pbix": {
+      "sha256": "8495b0f6102dc3e2f83ac7952ae88505a3b5445033950d71278bd6425f4cda24",
+      "bytes": 218979
+    },
+    "powerbi/medidas_hugo.json": {
+      "sha256": "21650010b950e3a07bfe25692ca59ffbf65073319bfda7b938c002fa83669cbc",
+      "bytes": 5384
+    },
+    "docs/scripts/build_lab12_report.py": {
+      "sha256": "b07424648ccdf42d99ddddc39f348ee881105fce0e5e4b45bc9c7d0001589a6c",
+      "bytes": 11267
+    },
+    "docs/scripts/lab12_final_pages.py": {
+      "sha256": "a7f2797dddf518ef28086688ac30cd003879651f6f509bd8a5905907b3506a76",
+      "bytes": 18972
+    },
+    "docs/scripts/apply_lab12_measures.ps1": {
+      "sha256": "d81a72e88ec6464e63eb06b9411fb2dec350dcdc3b6f3618f4163da5ccc1e186",
+      "bytes": 2108
+    },
+    "tests/test_lab12_design.py": {
+      "sha256": "a3986726373f50a39a46f864ee2005f00002363e90a0d5aacb152e0e81dac066",
+      "bytes": 14873
+    },
+    "docs/lab12/02_hugo_diseno.md": {
+      "sha256": "e3b99bbb179bf8300f5da49db07e68c809dfe89339a2ecd81939acb8421febc6",
+      "bytes": 22610
+    },
+    "docs/figuras/lab12_hugo_inicio.png": {
+      "sha256": "71a9f4e2ffe505d4482176adee8066bc854a2c44668c8a80850206bebe017fbc",
+      "bytes": 215375,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_datos_observados.png": {
+      "sha256": "56c1a5bf6587175207314ba10b497c5ad11d24fc8e89f64336fc74edfe8aaff7",
+      "bytes": 185635,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_estacionalidad.png": {
+      "sha256": "9ac1e7ddc56970765623e994ba3acaeb5dcd06b180bff4d8f7884c3a640e772d",
+      "bytes": 278183,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_anios_completos.png": {
+      "sha256": "0486e97783df06119d715eb199b015b1bda4aa8a17ef51e1af7281eccce91ab1",
+      "bytes": 232984,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_variacion.png": {
+      "sha256": "dfea64c4229b11a4fe369c10d2a568cc6797d3113b958fb4b486154918d29892",
+      "bytes": 176736,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_predicciones.png": {
+      "sha256": "92baa46d32ed2b384b203675c481daeb83cca64ec5030fe3bcdc7c7ce685d166",
+      "bytes": 172918,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_drill.png": {
+      "sha256": "613f46de2961c251c09f958d777c5d7b9d8bc256adbf9211859d29367f08a2dc",
+      "bytes": 192004,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_detalle.png": {
+      "sha256": "04effb386148d97400d9835f1fd17ac933090947b99cae1b48b107f4bb9318ad",
+      "bytes": 166669,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_detalle_regreso.png": {
+      "sha256": "48184fa628e3806a1da30b42793cf0e32fe1ebd0f63d379123bb85cadc466765",
+      "bytes": 154185,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    },
+    "docs/figuras/lab12_hugo_sin_datos.png": {
+      "sha256": "f16a5188968fdec30750546b1bc9e2f291fd5c0aaf8538d8bdb84eef9f0d3016",
+      "bytes": 179951,
+      "dimensiones_px": [
+        1938,
+        1038
+      ]
+    }
+  },
+  "modelo_sha256": "0cc21a557ec227cd2a2fe027e0a53acccd805faf376248420c189eb22bfb18c6",
+  "paginas_guardadas": {
+    "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/pagesMetadata/1.1.0/schema.json",
+    "pageOrder": [
+      "lab12_inicio",
+      "lab12_datos_observados",
+      "lab12_estacionalidad",
+      "lab12_predicciones",
+      "lab12_detalle",
+      "08325135a3a754e1a190"
+    ],
+    "activePageName": "lab12_inicio"
+  },
+  "integridad_zip": true
+}
