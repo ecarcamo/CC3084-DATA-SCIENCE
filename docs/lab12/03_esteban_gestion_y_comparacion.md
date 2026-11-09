@@ -1,8 +1,8 @@
-# Lab 12 · Preguntas de gestión, planificación y protocolo de comparación
+# Lab 12 · Preguntas de gestión, planificación y comparación de herramientas
 
-**Responsable:** Esteban. **Fecha:** 5 de noviembre de 2026. **Alcance:** avance A1, A3 y A7.
+**Responsable:** Esteban. **Fecha:** 5 de noviembre de 2026; cierre el 8 de noviembre de 2026. **Alcance:** 4.1, 4.6, protocolo de las pruebas, matriz 5.1 y recomendaciones 5.6.
 
-**Punto de partida:** `b47e73d` en `lab12`, con la importación de Diego (v0.1) y el diseño de Hugo (v0.2). La versión de referencia del Laboratorio 10 es la rama `lab10`, tablero en Dash. No se modificaron `insumos/`, `app/` ni el `.pbix`; la edición del informe sigue a cargo de Hugo.
+**Punto de partida del cierre:** `5c6090e` en `lab12`, con el `.pbix` v1.0 congelado por Diego (SHA-256 en `powerbi/version_informe.json`). La versión de referencia del Laboratorio 10 es la rama `lab10`, tablero en Dash (`b605afc`). No se modificaron `insumos/`, `app/` ni el `.pbix`.
 
 ## 1. Preguntas de gestión, público y alcance · A1
 
@@ -51,39 +51,41 @@ Igual al del Laboratorio 10:
 - Comparar años incompletos, como 2026, con años completos.
 - Garantizar la precisión futura de un modelo. Un error histórico menor no la asegura, y los CSV no documentan una separación independiente entre entrenamiento y evaluación.
 
-## 2. Planificación de tareas y responsables · A3
+## 2. Planificación de tareas, responsables y tiempo · 4.6
 
-Fechas de terminación propuestas. Las celdas «por confirmar» se acuerdan en el grupo; no se registran fechas de realización que no hayan ocurrido.
+### Tareas con fecha real de terminación
 
-| Tarea | Responsable | Terminación | Estado al 5-nov 16:30 |
-|---|---|---|---|
-| Importación, relaciones y medidas base (A5, 4.4, 4.5) | Diego | 5-nov | Hecho, `f43b181`, `c147d9e` |
-| Paleta, tema, boceto y navegación (A2, A4, 4.2) | Hugo | 5-nov | Hecho, `e668fd8`, `b47e73d` |
-| V1 y V2 enlazadas (A6) | Hugo | 5-nov | Hecho, `f4eb7b0` |
-| Preguntas, alcance, planificación y protocolo (A1, A3, A7) | Esteban | 5-nov | Este documento |
-| Entrega del avance en Canvas | Ernesto | 5-nov 17:20 | Pendiente |
-| Especificación de V5–V8 y equivalencia con G5–G8 | Esteban | 6-nov | Pendiente |
-| V5–V8 en Power BI | Diego | 7-nov | Pendiente |
-| V3, V4, navegación final, marcadores, restablecimiento, drillthrough y mensajes sin datos | Hugo | 7-nov | Pendiente |
-| Ejecución de las tres pruebas en ambas versiones y verificación de indicadores (5.3–5.5) | Esteban | 7-nov | Pendiente |
-| Costos, licencias y condiciones de distribución con fuentes oficiales (5.2) | Por confirmar | 7-nov | Pendiente |
-| Matriz de comparación y recomendaciones (5.1, 5.6) | Esteban | 8-nov | Pendiente |
-| README de Power BI, documento de diseño y PDF final | Por confirmar | 8-nov 20:00 | Pendiente |
-| Revisión cruzada y entrega final | Todo el equipo | 8-nov 23:59 | Pendiente |
+Las fechas y horas salen de `git log origin/lab12`. La columna «Prevista» es la del avance y del contexto compartido del equipo.
 
-Hugo conserva la edición del `.pbix` hasta terminar la sesión 2. Quien edite después recibe el archivo por traspaso explícito, para no sobrescribir trabajo.
+| Tarea | Responsable | Prevista | Terminada | Commits |
+|---|---|---|---|---|
+| Enunciado en el repositorio | Ernesto | 5-nov | 5-nov 12:29 | `2102fba` |
+| Importación, relaciones y medidas base (4.4, 4.5) | Diego | 5-nov | 5-nov 15:28 | `f43b181`, `c147d9e` |
+| Tema, paleta, boceto y V1–V2 enlazadas (4.2) | Hugo | 5-nov | 5-nov 16:11 | `e668fd8`, `f4eb7b0`, `b47e73d` |
+| Preguntas, planificación y protocolo (4.1) | Esteban | 5-nov | 5-nov 16:18 | `8036fb6` |
+| Avance consolidado y entregado | Ernesto | 5-nov 17:20 | 5-nov 17:12 | `104e1e0` … `9535812` |
+| Valores de referencia, tabla 4.3 y especificación V3–V8 | Ernesto | 6-nov | 7-nov 22:05 | `37599d5`, `756a9c2` |
+| Capturas G1–G8 del Lab 10 y costos 5.2 | Ernesto | 7-nov | 7-nov 22:09 | `0f37067`, `3c822b4` |
+| V3–V5, navegación, marcadores y drillthrough (v0.3) | Hugo | 7-nov 23:30 | 8-nov 19:34 | `d022104`, `645d311` |
+| V6–V8 y `.pbix` v1.0 congelado | Diego | 8-nov 12:30 | 8-nov 20:19 | `a3d5706`, `44eab4e`, `997a493` |
+| Pruebas T1–T3 y verificación 5.5 | Diego | 8-nov 15:00 | 8-nov 21:08 | `22e7a58`, `5c6090e` |
+| Matriz 5.1, recomendaciones 5.6, README y PDF final | Esteban | 8-nov 22:30 | 8-nov | este documento, `powerbi/README.md`, `informe_final.md` |
+| Entrega en Canvas | Esteban | 8-nov 23:30 | 8-nov | — |
 
-### Registro de tiempo efectivo (4.6)
+Cambios frente a lo planificado: la especificación de V3–V8 pasó de Esteban a Ernesto y las pruebas 5.3–5.5 de Esteban a Diego, porque solo Hugo y Diego tienen Windows para abrir Power BI Desktop. La v0.3 se atrasó unas 20 horas y desplazó las tareas siguientes al 8-nov.
 
-Cada integrante anota sus minutos reales por herramienta al terminar cada tarea. Lo medido se distingue de lo estimado.
+### Tiempo efectivo por persona y herramienta
 
-| Integrante | Power BI (Lab 12) | Dash (Lab 10) | Tipo |
+| Integrante | Dash (Lab 10) | Power BI (Lab 12) | Origen del dato |
 |---|---:|---:|---|
-| Hugo | 30 min | 60 min | Power BI medido; Dash estimado por recuerdo |
-| Diego | Por registrar | Por registrar | — |
-| Esteban | Por registrar | Por registrar | — |
+| Hugo | 60 min | 30 min (5-nov) | Power BI real; Dash estimado por recuerdo. Los minutos de v0.3 (8-nov) no se registraron |
+| Ernesto | No registrado | 15 min (7-nov, sin Power BI: script, especificación, capturas y 5.2) | Real |
+| Diego | No registrado | No registrado | Diego declaró que no recuerda sus tiempos de desarrollo y no los sustituyó por duración de sesión |
+| Esteban | ≈ 90 min | 0 min en Power BI; ≈ 120 min de documentación (5-nov y 8-nov) | Estimado a partir de sus commits en `lab10` (22-oct y 25-oct) y `lab12` |
 
-## 3. Criterios de comparación y protocolo de las tres pruebas · A7
+**Lectura:** el registro está incompleto, así que no permite concluir qué herramienta fue más rápida de desarrollar. Lo que sí muestra el historial es la duración en calendario: el Lab 10 se construyó entre el 22 y el 25 de octubre con 20 commits de los cuatro integrantes; el Lab 12, entre el 5 y el 8 de noviembre, con el `.pbix` editado por dos personas. Los tiempos de las pruebas T1–T3 miden uso, no desarrollo, y no se suman aquí.
+
+## 3. Criterios de comparación y protocolo de las tres pruebas
 
 ### Criterios de la matriz (5.1)
 
@@ -169,9 +171,29 @@ SES tiene el menor error en las tres métricas. MAE y RMSE se expresan en viajer
 
 Si alguna versión muestra otro valor, se documenta la diferencia y su causa antes de concluir. Power BI ya mostró 3.597.237,9999999995 para el primer indicador: la diferencia viene de la representación decimal de los CSV y desaparece al redondear a enteros.
 
-## 4. Pendientes para la entrega final
+## 4. Matriz de comparación · 5.1
 
-- Ejecutar las tres pruebas en ambas versiones y registrar resultado, clics, tiempo y dificultades.
-- Completar la matriz con la evidencia y la implicación de cada criterio.
-- Consultar la documentación oficial de licencias y distribución de Power BI, con fecha.
-- Formular las recomendaciones de los tres escenarios de 5.6 a partir de esos resultados.
+Fuentes de la evidencia: [05_diego_pruebas.md](05_diego_pruebas.md) (T1–T3, tiempos y 5.5), [04_ernesto_visualizaciones_costos.md](04_ernesto_visualizaciones_costos.md) (4.3 y 5.2), [02_hugo_diseno.md](02_hugo_diseno.md) (diseño y sustituciones), [01_diego_datos.md](01_diego_datos.md) (Power Query y DAX) y `git log` de `lab10` y `lab12`.
+
+| Criterio | Evidencia en Dash (Lab 10) | Evidencia en Power BI (Lab 12) | Implicación para la tarea |
+|---|---|---|---|
+| Facilidad de aprendizaje | Python y Plotly, que el equipo ya usaba desde el Lab 1. Los cuatro integrantes escribieron código del tablero (20 commits en `lab10`: Hugo 8, Esteban 7, Ernesto 3, Diego 2). | Interfaz visual sin código para gráficos básicos, pero el DAX dio errores reales: la medida `Viajeros` chocó con la columna `viajeros`, `CONCATENATEX` sin orden dio error semántico, el formato dinámico y el estático juntos impidieron guardar y dos campos `nombre` hicieron rechazar una consulta (01_diego §5 y §8). | Para un equipo que ya programa en Python, Dash tuvo menos barrera. Power BI facilita lo básico, pero el contexto de filtro de DAX exige aprendizaje propio. |
+| Tiempo de desarrollo | 22 al 25 de octubre, 20 commits, 1.545 líneas en `app/`. Hugo estimó 60 min para G1–G4 y el diseño. | 5 al 8 de noviembre, 17 commits. Hugo registró 30 min reales para V1, V2 y el tema. La v0.3 se atrasó unas 20 h. | Los minutos registrados están incompletos (4.6), así que no hay base para declarar un ganador. Ambas versiones tomaron unos cuatro días de calendario. |
+| Preparación y actualización de datos | `app/data.py` lee los CSV de `insumos/` y valida en código. Para actualizar se reemplazan los CSV y se reinicia la app; la ruta es relativa al repositorio. | Power Query con el parámetro `RutaInsumos` y la configuración regional `en-US`. Diego probó el refresco desde otra carpeta: se conservaron 1.470 / 2.205 / 35 filas y el Total 2025 de 3.597.238. La ruta es absoluta y debe cambiarse en cada equipo. | Power BI documenta los pasos de forma visual y se refresca con un botón. Dash no necesita configurar rutas. El README explica el cambio de `RutaInsumos`. |
+| Integración de resultados de modelos | `app/model_results.py` alinea predicciones y observado y recalcula MAE, RMSE y MAPE sobre las fechas comunes (G7). | Modelo estrella con 7 relaciones de una sola dirección y sin relaciones entre hechos; `Metricas` se importa del CSV. Las 105 métricas coinciden con el CSV (tolerancia 1e-9). Limitación: la fila «Total» de la tabla complementaria suma métricas entre modelos. | Ambas versiones dan las mismas cifras (5.5). Dash puede recalcular por periodo; en Power BI, V7 no responde a fechas y la fila Total de la tabla debe ignorarse. |
+| Interacción y navegación | Una sola página con casillas «Gráficas visibles», enlace G2 → G1 por callback y selector de granularidad. Clics: T1 5, T2 5, T3 6. | Cinco páginas con botones, marcadores `Inicial – <página>`, jerarquía Año > Trimestre > Mes, drillthrough a «Detalle de serie» con Atrás y filtrado V2 → V1 y V5. Clics: T1 6, T2 10, T3 9. | Power BI separa las preguntas por página y ofrece drill y drillthrough nativos, pero en T2 y T3 necesitó más clics. Dash llega a la cifra con menos pasos porque todo está en una página. |
+| Personalización | Mapa de calor nativo con × en meses sin dato, trazos por modelo y notas en código; cualquier comportamiento es un callback. | Sin mapa de calor nativo: V3 es una matriz con formato condicional. Las × pasaron a celdas vacías. Colores y trazos se fijan por medida. Para un diseño reproducible se escribieron generadores PBIR (`build_lab12_report.py`, `lab12_model_pages.py`). | Dash reproduce exactamente lo diseñado. Power BI obliga a sustituciones (4.3), aceptables pero documentadas. |
+| Rendimiento | Recarga 15,75 s con el servidor ya iniciado; cambio de métrica en G7, 16,16 s. | Reapertura del `.pbix` 36,35 s; cambio de métrica en V7, 44,91 s. Hubo una ventana en blanco que obligó a cerrar y reabrir Desktop. | Los intervalos incluyen el control del agente y una sola ejecución; no aíslan el tiempo de dibujo. Sirven como registro, no como clasificación. |
+| Colaboración y control de versiones | Código Python en texto: diferencias legibles por línea; cuatro autores trabajaron en paralelo en `lab10`. | El `.pbix` es binario (240 KB): no se puede combinar. Se usó un solo dueño a la vez, una cadena de traspasos, medidas en `medidas_*.json`, generadores PBIR y SHA-256 en `version_informe.json`. | Dash se adapta mejor a Git y al trabajo simultáneo. Power BI exige coordinación explícita para no sobrescribir trabajo. |
+| Requisitos para compartir o desplegar | Python y `requirements.txt` en Windows, macOS o Linux; el repositorio ya trae `Dockerfile` y `docker-compose.yml`. Quien consulta solo necesita un navegador. Licencia MIT. | Desktop gratuito pero solo para Windows: 2 de 4 integrantes pudieron editarlo. Para compartir en la nube: Pro, USD 14 por usuario al mes, para quien publica y quien consume, o una capacidad F64. «Publicar en la web» expone los datos sin autenticación (5.2). | Desarrollar es gratis en ambas; distribuir no. Dash cuesta servidor y mantenimiento; Power BI cuesta licencias por usuario. |
+
+## 5. Recomendaciones · 5.6
+
+Se basan en la matriz, las pruebas T1–T3 y los costos de 5.2 (consultados el 7-nov-2026).
+
+| Escenario | Herramienta | Justificación | Costos y límites encontrados | Limitaciones de la recomendación |
+|---|---|---|---|---|
+| (a) Consulta periódica de indicadores por directivos | **Power BI** | Páginas por pregunta, marcadores para volver a la vista inicial y drill o drillthrough sin programar. Las cifras coinciden con Dash (5.5). | Para compartir en el servicio se necesita Pro para cada lector (USD 14 al mes) o una capacidad F64. Sin licencias, solo se puede pasar el `.pbix`, que exige Windows. En T2 y T3 se necesitaron más clics que en Dash. | Las pruebas las ejecutó un agente, no directivos. Conviene solo si la organización ya tiene licencias de Microsoft. Si no, sirve mejor Dash desplegado. |
+| (b) Exploración con controles o visualizaciones personalizadas | **Dash** | Reproduce el mapa de calor con marcas de meses sin dato, recalcula métricas por fechas comunes y admite cualquier control. En Power BI hubo que sustituir V3 y corregir errores de DAX. | Licencia MIT, sin costo de uso. Requiere programar en Python y mantener las dependencias. | Refleja la experiencia previa del equipo en Python. Un equipo sin programadores podría preferir Power BI con visuales de terceros, que no se evaluaron. |
+| (c) Consulta desde un navegador por usuarios externos sin instalar software | **Dash desplegado** | Solo exige un navegador. El contenedor Docker ya existe en el repositorio. | Servidor propio, o Plotly Cloud: Free con 3 lectores privados, Pro a USD 29 al mes. La autenticación debe añadirla el alojamiento o el código. En Power BI, el acceso externo sin licencia solo es posible con «Publicar en la web», que deja los datos públicos sin autenticación. | No se midió el costo real del servidor ni se probó el despliegue con usuarios externos. |
+| Observatorio de turismo sostenible | **Dash como plataforma principal** y Power BI opcional para el uso interno | Un observatorio publica para un público amplio, necesita visualizaciones propias (estimaciones rotuladas, meses sin dato) y trabajo con Git entre varias personas. Dash cubre los tres puntos; Power BI encaja solo en la consulta interna si INGUAT ya tiene licencias. | Mantener el servidor y el código recae en el equipo. Mantener dos versiones duplica la verificación de cifras (5.5). | Los precios pueden cambiar; los datos usados son agregados públicos. No hubo pruebas con usuarios reales del observatorio. |
