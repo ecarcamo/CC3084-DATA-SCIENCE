@@ -1,5 +1,5 @@
 {
-  "estado": "validación técnica aprobada; pruebas cronometradas humanas pendientes",
+  "estado": "validación técnica aprobada; T1–T3 asistidas completas; modalidad y límites documentados",
   "resultados": [
     {
       "message": "DAX query executed successfully, returned 35 rows in 110ms",
@@ -395,5 +395,21 @@
   },
   "version": "1.0",
   "pbix_sha256": "b4cfc73211f2130d8e262ad0a583d2c9566cb22894363f54c107d45ae0f76d54",
-  "limitacion_verificacion": "La navegación por pestañas y el drillthrough se comprobaron en Desktop. Los marcadores y sus vínculos se comprobaron estructuralmente; la ejecución humana de botones y recorridos cronometrados sigue pendiente."
+  "limitacion_verificacion": "La navegación por pestañas y el drillthrough se comprobaron en Desktop. Los marcadores y sus vínculos se comprobaron estructuralmente; la ejecución humana de botones y recorridos cronometrados sigue pendiente.",
+  "pruebas_asistidas": {
+    "documento": "05_diego_pruebas.md",
+    "registro": "05_diego_cronometro.json",
+    "operador": "Codex",
+    "autorizacion": "catedrático según comunicación de Diego en chat",
+    "ejecuciones_completas": 6,
+    "intentos_incompletos": 2,
+    "pruebas_humanas": false,
+    "pbix_sin_modificar": true
+  },
+  "limitaciones_adicionales": [
+    "V1 incluye 2026 parcial; no compararlo como año completo.",
+    "La fila Total de métricas complementarias agrega modelos y no se usa como indicador.",
+    "Tiempos incluyen control del agente y no miden rendimiento intrínseco.",
+    "Tiempo de desarrollo humano previo no registrado: Diego no lo recuerda."
+  ]
 }

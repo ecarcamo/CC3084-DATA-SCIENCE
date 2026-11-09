@@ -1,6 +1,6 @@
 # Lab 12 — Importación y modelo de datos en Power BI
 
-**Responsable:** Diego. **Versión del informe:** v1.0 congelada tras la validación técnica; pruebas humanas pendientes. **Fecha:** 5 de noviembre de 2026.
+**Responsable:** Diego. **Versión del informe:** v1.0 congelada; pruebas asistidas completas en modalidad autorizada según comunicación de Diego. **Actualización:** 8 de noviembre de 2026.
 
 ## 1. Alcance y estado
 
@@ -554,11 +554,17 @@ La integración de páginas modifica exclusivamente la definición de Prediccion
 
 ### Estado del cierre
 
-La medición humana de T1–T3 y las capturas correspondientes permanecen pendientes. Las comprobaciones de datos y estructura no se presentan como tiempos o resultados de una prueba humana. Véase `05_diego_pruebas.md`.
+T1–T3 se completaron en ambas interfaces con Codex como operador y un cronómetro manual. Diego comunicó la autorización del catedrático para esta modalidad. Se conservan capturas reales, seis recorridos completos y dos intentos incompletos; no se presentan como pruebas humanas ni tiempos de rendimiento aislado. Véase [05_diego_pruebas.md](05_diego_pruebas.md).
 
 
 ### Congelación técnica de v1.0
 
-Se reabrió el archivo corregido y se revisaron V1–V8 sin gráficas en error. V7 se probó con MAE y MAPE, conservando sus unidades y el orden; el detalle desde V7 recibió la serie Total. Se conservan Inicio como página activa, Control oculta y los segmentadores iniciales en la definición guardada. Desktop quedó cerrado después de la revisión. El archivo congelado se identifica mediante SHA-256 en `powerbi/version_informe.json`. Las 23 pruebas de diseño/modelos y las 33 pruebas de modelos de Lab 10 pasaron. La ejecución humana de los recorridos y botones, con tiempos y clics, no se da por completada.
+Se reabrió el archivo corregido y se revisaron V1–V8 sin gráficas en error. V7 se probó con MAE y MAPE, conservando sus unidades y el orden; el detalle desde V7 recibió la serie Total. Se conservan Inicio como página activa, Control oculta y los segmentadores iniciales en la definición guardada. Desktop quedó cerrado después de la revisión. El archivo congelado se identifica mediante SHA-256 en `powerbi/version_informe.json`. Las 23 pruebas de diseño/modelos y las 33 pruebas de modelos de Lab 10 pasaron. La ejecución humana no se realizó; los recorridos con tiempos y clics se completaron mediante el agente en la modalidad adaptada documentada. Los botones generales de restablecimiento no forman parte de esa comprobación.
 
 ![Detalle abierto desde V7](../figuras/lab12_diego_detalle.png)
+
+### Cierre de pruebas — 8-nov
+
+Power BI se recuperó de una ventana en blanco cerrando sin guardar y reabriendo el PBIX. Durante cambios de aplicación se necesitó recuperar el dibujo con Alt+Espacio/Escape; no se determinó causa raíz. T2 y T3 se completaron y Desktop volvió a cerrarse descartando los filtros. El SHA-256 del PBIX conserva el valor del manifiesto, sin guardar cambios de prueba.
+
+T2 confirmó que V1 muestra 2026 como total parcial (1.682.636), mientras Dash anual lo omite. En la tabla complementaria de modelos, la fila Total suma métricas entre modelos y no debe interpretarse como indicador de desempeño; usar filas individuales y V7. Ambas limitaciones se incluyen en el traspaso, sin modificar la versión congelada.

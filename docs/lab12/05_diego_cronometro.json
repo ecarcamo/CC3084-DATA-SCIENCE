@@ -1,0 +1,155 @@
+{
+  "modalidad": "cronómetro iniciado y detenido con clics; operador agente",
+  "autorizacion": "reportada por Diego en chat; no verificada independientemente con el catedrático",
+  "incluye": "latencia de herramientas, lectura, capturas, cambios de aplicación y pausas; no es tiempo humano ni latencia aislada",
+  "conteo": "clics de la aplicación; excluye cronómetro y cambio de pestaña/ventana",
+  "registros": [
+    {
+      "test": "T1 Power BI",
+      "seconds": 74.254,
+      "start": "2026-11-09T02:37:45.710Z",
+      "end": "2026-11-09T02:38:59.964Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T1 Dash",
+      "seconds": 178.11539999997615,
+      "start": "2026-11-09T02:39:49.023Z",
+      "end": "2026-11-09T02:42:47.138Z",
+      "estado": "incompleto: no se leyó el cursor",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T1 Dash",
+      "seconds": 35.25030000001192,
+      "start": "2026-11-09T02:43:39.463Z",
+      "end": "2026-11-09T02:44:14.713Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T2 Dash",
+      "seconds": 192.38689999997615,
+      "start": "2026-11-09T02:44:58.695Z",
+      "end": "2026-11-09T02:48:11.082Z",
+      "estado": "interrumpido: recorrido no terminado",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "Carga Power BI",
+      "seconds": 36.35410000002384,
+      "start": "2026-11-09T02:50:35.941Z",
+      "end": "2026-11-09T02:51:12.297Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T2 Dash",
+      "seconds": 42.93680000001192,
+      "start": "2026-11-09T02:51:47.384Z",
+      "end": "2026-11-09T02:52:30.320Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T2 Power BI",
+      "seconds": 131.13069999998808,
+      "start": "2026-11-09T02:52:41.347Z",
+      "end": "2026-11-09T02:54:52.478Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T3 Power BI",
+      "seconds": 105.55420000004769,
+      "start": "2026-11-09T02:55:06.560Z",
+      "end": "2026-11-09T02:56:52.114Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "T3 Dash",
+      "seconds": 42.46509999996424,
+      "start": "2026-11-09T02:57:16.766Z",
+      "end": "2026-11-09T02:57:59.231Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "Carga Dash",
+      "seconds": 15.752900000035762,
+      "start": "2026-11-09T02:58:19.824Z",
+      "end": "2026-11-09T02:58:35.577Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "Filtro Dash",
+      "seconds": 16.15919999998808,
+      "start": "2026-11-09T02:58:39.098Z",
+      "end": "2026-11-09T02:58:55.257Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    },
+    {
+      "test": "Filtro Power BI",
+      "seconds": 44.909199999988076,
+      "start": "2026-11-09T02:59:07.208Z",
+      "end": "2026-11-09T02:59:52.118Z",
+      "estado": "completo",
+      "operador": "Codex",
+      "zona_horaria_presentacion": "UTC; fecha local America/Guatemala 2026-11-08"
+    }
+  ],
+  "ejecuciones_completas": [
+    {
+      "prueba": "T1",
+      "version": "Power BI",
+      "clics": 6,
+      "segundos_redondeados": 74.25
+    },
+    {
+      "prueba": "T1",
+      "version": "Dash",
+      "clics": 5,
+      "segundos_redondeados": 35.25
+    },
+    {
+      "prueba": "T2",
+      "version": "Dash",
+      "clics": 5,
+      "segundos_redondeados": 42.94
+    },
+    {
+      "prueba": "T2",
+      "version": "Power BI",
+      "clics": 10,
+      "segundos_redondeados": 131.13
+    },
+    {
+      "prueba": "T3",
+      "version": "Power BI",
+      "clics": 9,
+      "segundos_redondeados": 105.55
+    },
+    {
+      "prueba": "T3",
+      "version": "Dash",
+      "clics": 6,
+      "segundos_redondeados": 42.47
+    }
+  ],
+  "cierre": "Power BI cerrado sin guardar filtros; SHA-256 intacto; servidores y worktree de pruebas retirados."
+}

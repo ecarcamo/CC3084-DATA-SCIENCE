@@ -6,6 +6,7 @@
   "base": "645d311",
   "estado": "congelado tras validación técnica",
   "power_bi_desktop": "2.159.1231.0 64-bit",
-  "pruebas_humanas": "pendientes; no modifican el informe congelado",
-  "regla": "no regenerar ni guardar cambios de prueba sobre esta versión; documentar cualquier corrección grave"
+  "pruebas_humanas": "no ejecutadas; sustituidas por modalidad asistida autorizada según comunicación de Diego",
+  "regla": "no regenerar ni guardar cambios de prueba sobre esta versión; documentar cualquier corrección grave",
+  "pruebas_asistidas": "T1–T3 completas; docs/lab12/05_diego_pruebas.md y 05_diego_cronometro.json"
 }
