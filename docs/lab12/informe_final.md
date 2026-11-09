@@ -97,7 +97,7 @@ Tarjetas, segmentadores, botones, textos y la tabla de métricas son complementa
 
 <div class="par"><div><img src="../figuras/lab12_ernesto_lab10_g5.png"><div class="pie">G5 (Dash)</div></div><div><img src="../figuras/lab12_hugo_variacion.png"><div class="pie">V5, variación interanual con línea 0 %</div></div></div>
 
-<div class="par"><div><img src="../figuras/lab12_ernesto_lab10_g6.png"><div class="pie">G6 (Dash)</div></div><div><img src="../figuras/lab12_diego_t3_pbi_mae.png"><div class="pie">V6 (leyenda y nota, parte superior), V7 con MAE y V8</div></div></div>
+<div class="par"><div><img src="../figuras/lab12_ernesto_lab10_g6.png"><div class="pie">G6 (Dash)</div></div><div><img src="../figuras/lab12_diego_t3_pbi_mae.png"><div class="pie">Predicciones y modelos: leyenda y nota de V6, V7 con MAE y V8</div></div></div>
 
 <div class="par"><div><img src="../figuras/lab12_ernesto_lab10_g7.png"><div class="pie">G7 (Dash)</div></div><div><img src="../figuras/lab12_diego_mape.png"><div class="pie">V7 con MAPE y V8 con SARIMA</div></div></div>
 
@@ -147,13 +147,13 @@ Limitación: en la tabla complementaria de la página de modelos, la fila Total 
 | V3–V5, navegación, marcadores y drillthrough (v0.3) | Hugo | 8-nov 19:34 | `d022104`, `645d311` |
 | V6–V8 y `.pbix` v1.0 congelado | Diego | 8-nov 20:19 | `a3d5706`, `44eab4e`, `997a493` |
 | Pruebas T1–T3 y verificación 5.5 | Diego | 8-nov 21:08 | `22e7a58`, `5c6090e` |
-| Matriz, recomendaciones, README y documento final | Esteban | 8-nov | `4a09b9e`, `44908ae` y el commit de este documento |
+| Matriz, recomendaciones, README y documento final | Esteban | 8-nov | `4a09b9e`, `44908ae`, `8134f49` |
 
 Las pruebas pasaron de Esteban a Diego y la especificación de V3–V8 de Esteban a Ernesto, porque solo Hugo y Diego tienen Windows para abrir Power BI Desktop.
 
 | Integrante | Dash (Lab 10) | Power BI (Lab 12) | Origen |
 |---|---:|---:|---|
-| Hugo | 60 min | 30 min | Power BI real; Dash estimado por recuerdo; v0.3 sin registrar |
+| Hugo | 60 min | 30 min | Power BI real; Dash estimado por recuerdo |
 | Ernesto | No registrado | 15 min (sin Power BI) | Real |
 | Diego | No registrado | No registrado | Declaró no recordar sus tiempos |
 | Esteban | ≈ 90 min | 0 min (≈ 120 min de documentación) | Estimado por sus commits |

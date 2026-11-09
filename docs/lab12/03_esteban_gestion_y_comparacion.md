@@ -69,7 +69,7 @@ Las fechas y horas salen de `git log origin/lab12`. La columna «Prevista» es l
 | V3–V5, navegación, marcadores y drillthrough (v0.3) | Hugo | 7-nov 23:30 | 8-nov 19:34 | `d022104`, `645d311` |
 | V6–V8 y `.pbix` v1.0 congelado | Diego | 8-nov 12:30 | 8-nov 20:19 | `a3d5706`, `44eab4e`, `997a493` |
 | Pruebas T1–T3 y verificación 5.5 | Diego | 8-nov 15:00 | 8-nov 21:08 | `22e7a58`, `5c6090e` |
-| Matriz 5.1, recomendaciones 5.6, README y PDF final | Esteban | 8-nov 22:30 | 8-nov | este documento, `powerbi/README.md`, `informe_final.md` |
+| Matriz 5.1, recomendaciones 5.6, README y PDF final | Esteban | 8-nov 22:30 | 8-nov | `4a09b9e`, `44908ae`, `8134f49` |
 | Entrega en Canvas | Esteban | 8-nov 23:30 | 8-nov | — |
 
 Cambios frente a lo planificado: la especificación de V3–V8 pasó de Esteban a Ernesto y las pruebas 5.3–5.5 de Esteban a Diego, porque solo Hugo y Diego tienen Windows para abrir Power BI Desktop. La v0.3 se atrasó unas 20 horas y desplazó las tareas siguientes al 8-nov.
@@ -89,7 +89,7 @@ Cambios frente a lo planificado: la especificación de V3–V8 pasó de Esteban 
 
 ### Criterios de la matriz (5.1)
 
-En la entrega final, la matriz tendrá las columnas criterio, evidencia en Dash, evidencia en Power BI e implicación para la tarea. Para el avance se fija qué evidencia se recoge en cada criterio.
+Esta tabla fija qué evidencia se recogió en cada criterio. La matriz completa, con las columnas criterio, evidencia en Dash, evidencia en Power BI e implicación para la tarea, está en la sección 4.
 
 | Criterio | Evidencia a recoger en ambas versiones |
 |---|---|
@@ -138,7 +138,7 @@ Para costos y acceso (5.2) se registrarán sistema operativo, licencias, alojami
 
 **Resultado esperado:** 2025 suma **3.597.238**; T4 2025, **997.817**; octubre **277.299**, noviembre **328.431** y diciembre **392.087**. Diciembre es el máximo del trimestre. Al regresar se ven de nuevo los totales anuales.
 
-Hay que vigilar 2026, que solo tiene seis meses. Dash no suma periodos incompletos: omite 2026 en el nivel anual y lo menciona en la nota. La jerarquía de Power BI suma lo que haya y mostraría 2026 con **1.682.636**, que puede leerse como una caída anual. La diferencia se registra en la prueba, y en Power BI se marca 2026 como año parcial o se excluye del nivel Año.
+Hay que vigilar 2026, que solo tiene seis meses. Dash no suma periodos incompletos: omite 2026 en el nivel anual y lo menciona en la nota. La jerarquía de Power BI suma lo que haya y mostraría 2026 con **1.682.636**, que puede leerse como una caída anual. La prueba lo confirmó: V1 muestra 2026 con 1.682.636 como total parcial, y V4 es la visualización que compara solo años completos.
 
 En Dash el detalle se cambia con el selector de nivel de G1; en Power BI, con la jerarquía Año > Trimestre > Mes de V1. Se cuentan los clics de ambos recorridos completos, incluido el regreso.
 
@@ -169,7 +169,7 @@ SES tiene el menor error en las tres métricas. MAE y RMSE se expresan en viajer
 | Viajeros totales 2025 | Serie Total, año 2025, suma de los 12 meses | 3.597.238 |
 | MAE de SES para la serie Total | 63 meses comunes, sin filtro de fechas | 175.088,44 |
 
-Si alguna versión muestra otro valor, se documenta la diferencia y su causa antes de concluir. Power BI ya mostró 3.597.237,9999999995 para el primer indicador: la diferencia viene de la representación decimal de los CSV y desaparece al redondear a enteros.
+Resultado: ambas versiones muestran los dos valores esperados ([05_diego_pruebas.md](05_diego_pruebas.md)). Power BI calcula internamente 3.597.237,9999999995 para el primer indicador: la diferencia viene de la representación decimal de los CSV y desaparece al redondear a enteros.
 
 ## 4. Matriz de comparación · 5.1
 
