@@ -34,6 +34,13 @@ Para añadir una visualización: crear `app/components/<nombre>.py` con `layout(
 y agregarla a `OBSERVED` o `MODELS` en `app/main.py`; el menú y «Gráficas visibles» la incluyen. Para
 enlazar una gráfica con la serie temporal, su callback escribe en `Output("series-selector", "value")`.
 
+## Laboratorio 12: Power BI
+
+Segunda versión del tablero en Power BI Desktop (`powerbi/observatorio_turismo.pbix`, v1.0). Instrucciones para
+abrir el informe, cambiar `RutaInsumos`, actualizar, identificar las tablas de predicciones y métricas, reproducir
+las tres pruebas y abrir el Lab 10 en [powerbi/README.md](powerbi/README.md). Documento final:
+`docs/lab12/Lab12_PowerBI_Final.pdf`; detalle en `docs/lab12/`.
+
 ## Laboratorio 11: MLOps
 
 Detalle técnico en `docs/lab11/` (`contratos.md`, `evaluacion.md`, `seguimiento.md`).
