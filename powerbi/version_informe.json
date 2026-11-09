@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "fecha": "2026-11-08",
+  "archivo": "observatorio_turismo.pbix",
+  "sha256": "b4cfc73211f2130d8e262ad0a583d2c9566cb22894363f54c107d45ae0f76d54",
+  "base": "645d311",
+  "estado": "congelado tras validación técnica",
+  "power_bi_desktop": "2.159.1231.0 64-bit",
+  "pruebas_humanas": "pendientes; no modifican el informe congelado",
+  "regla": "no regenerar ni guardar cambios de prueba sobre esta versión; documentar cualquier corrección grave"
+}
