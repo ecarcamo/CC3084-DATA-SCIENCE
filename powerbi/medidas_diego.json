@@ -1,0 +1,71 @@
+{
+  "Estimado serie": {
+    "expression": "IF (\n    HASONEVALUE ( DimSerie[clave] ),\n    [Estimado],\n    CALCULATE ( [Estimado], REMOVEFILTERS ( DimSerie ), DimSerie[clave] = \"total\" )\n)",
+    "formatString": "#,0.00"
+  },
+  "Observado V6": {
+    "expression": "IF ( NOT ISEMPTY ( Predicciones ), [Viajeros serie] )",
+    "formatString": "#,0.00"
+  },
+  "Estimado SARIMA": {
+    "expression": "CALCULATE ( [Estimado serie], KEEPFILTERS ( DimModelo[clave] = \"sarima\" ) )",
+    "formatString": "#,0.00"
+  },
+  "Estimado Holt-Winters": {
+    "expression": "CALCULATE ( [Estimado serie], KEEPFILTERS ( DimModelo[clave] = \"holt_winters\" ) )",
+    "formatString": "#,0.00"
+  },
+  "Estimado SES": {
+    "expression": "CALCULATE ( [Estimado serie], KEEPFILTERS ( DimModelo[clave] = \"ses\" ) )",
+    "formatString": "#,0.00"
+  },
+  "Estimado Seasonal Naive": {
+    "expression": "CALCULATE ( [Estimado serie], KEEPFILTERS ( DimModelo[clave] = \"seasonal_naive\" ) )",
+    "formatString": "#,0.00"
+  },
+  "Estimado Prophet": {
+    "expression": "CALCULATE ( [Estimado serie], KEEPFILTERS ( DimModelo[clave] = \"prophet\" ) )",
+    "formatString": "#,0.00"
+  },
+  "Nota V6": {
+    "expression": "VAR Meses = COUNTROWS ( FILTER ( VALUES ( Calendario[Date] ), NOT ISBLANK ( [Observado V6] ) ) )\nVAR Modelos = CONCATENATEX ( VALUES ( DimModelo[nombre] ), DimModelo[nombre], \", \", CALCULATE ( MIN ( DimModelo[orden] ) ), ASC )\nRETURN\n    [Serie elegida] & \" · \" & Modelos & \". \" & Meses & \" meses con dato registrado y estimación. \"\n        & \"Las estimaciones son resultados existentes (insumos/resultados/predicciones); no se entrenó ningún modelo. \"\n        & \"Corresponden a meses ya registrados: no son un pronóstico de meses futuros ni incluyen intervalos de confianza.\"",
+    "formatString": ""
+  },
+  "Mensaje V6": {
+    "expression": "IF (\n    ISBLANK ( [Observado V6] ),\n    \"No hay meses con dato registrado y estimación en este periodo. Amplíe las fechas o cambie los modelos.\",\n    \"\"\n)",
+    "formatString": ""
+  },
+  "Error modelo": {
+    "expression": "VAR Metrica = SELECTEDVALUE ( MetricaV7[Metrica], \"MAE\" )\nVAR Serie = IF ( HASONEVALUE ( DimSerie[clave] ), SELECTEDVALUE ( DimSerie[clave] ), \"total\" )\nRETURN\n    CALCULATE (\n        SWITCH ( Metrica, \"MAE\", SUM ( Metricas[mae] ), \"RMSE\", SUM ( Metricas[rmse] ), \"MAPE\", SUM ( Metricas[mape] ) ),\n        REMOVEFILTERS ( DimSerie ),\n        DimSerie[clave] = Serie\n    )",
+    "formatString": "",
+    "formatStringExpression": "IF ( SELECTEDVALUE ( MetricaV7[Metrica], \"MAE\" ) = \"MAPE\", \"0.00 \\%\", \"#,0.00\" )"
+  },
+  "Subtitulo V7": {
+    "expression": "VAR M = SELECTEDVALUE(MetricaV7[Metrica], \"MAE\") VAR E = CALCULATE(MAX(Metricas[mape_excluidos]),REMOVEFILTERS(DimModelo)) RETURN M & \" (\" & SELECTEDVALUE(MetricaV7[Unidad], \"viajeros\") & \") · \" & [Serie elegida] & \" · abr-2021–jun-2026 (63 meses)\" & IF(M = \"MAPE\" && E > 0, \" · excluidos: \" & E, \"\")",
+    "formatString": ""
+  },
+  "Mensaje V7": {
+    "expression": "IF ( ISBLANK ( [Error modelo] ), \"No hay datos coincidentes para comparar los modelos de esta selección.\", \"\" )",
+    "formatString": ""
+  },
+  "Titulo V8": {
+    "expression": "\"¿En qué meses se alejó el modelo de lo observado? · \" & [Serie elegida] & \" · \"\n    & SELECTEDVALUE ( DimModelo[nombre], \"elija un modelo\" )",
+    "formatString": ""
+  },
+  "Mensaje V8": {
+    "expression": "IF (\n    ISBLANK ( [Diferencia] ),\n    \"No hay datos observados y estimados coincidentes para esta selección. Amplíe las fechas o cambie el modelo.\",\n    \"\"\n)",
+    "formatString": ""
+  },
+  "MAE modelo": {
+    "expression": "VAR Serie = SELECTEDVALUE(DimSerie[clave], \"total\") RETURN CALCULATE(SUM(Metricas[mae]), REMOVEFILTERS(DimSerie), DimSerie[clave] = Serie)",
+    "formatString": "#,0.00"
+  },
+  "RMSE modelo": {
+    "expression": "VAR Serie = SELECTEDVALUE(DimSerie[clave], \"total\") RETURN CALCULATE(SUM(Metricas[rmse]), REMOVEFILTERS(DimSerie), DimSerie[clave] = Serie)",
+    "formatString": "#,0.00"
+  },
+  "MAPE modelo": {
+    "expression": "VAR Serie = SELECTEDVALUE(DimSerie[clave], \"total\") RETURN CALCULATE(SUM(Metricas[mape]), REMOVEFILTERS(DimSerie), DimSerie[clave] = Serie)",
+    "formatString": "0.00 \\%"
+  }
+}

@@ -382,4 +382,6 @@ def complete_definitions(original):
         "$schema": SCHEMA + "bookmarksMetadata/1.0.0/schema.json",
         "items": [{"name": "inicial_" + page} for page in PAGES],
     }
-    return result
+    from docs.scripts.lab12_model_pages import definitions as model_definitions
+
+    return model_definitions(result)
